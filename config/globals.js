@@ -21,6 +21,6 @@ module.exports = {
      *
      * @type {string}
      */
-    srcDir: path.join(__dirname, '../..'),
+    srcDir: path.join(__dirname, '../..')
 
 };

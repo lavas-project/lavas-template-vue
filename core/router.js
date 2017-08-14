@@ -7,12 +7,12 @@
 
 import Vue from 'vue';
 import Router from 'vue-router';
-import config from '';
+import config from '&router';
 
 Vue.use(Router);
 
 export function createRouter() {
     return new Router({
-        mode: ''
+        mode: config.mode
     });
 }

@@ -47,6 +47,6 @@ module.exports = {
      *
      * @type {boolean}
      */
-    jsSourceMap: true,
+    jsSourceMap: true
 
 };

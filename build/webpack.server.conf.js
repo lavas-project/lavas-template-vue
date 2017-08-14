@@ -3,14 +3,12 @@
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
- const path = require('path');
 const webpack = require('webpack');
 const merge = require('webpack-merge');
 const nodeExternals = require('webpack-node-externals');
 const VueSSRServerPlugin = require('vue-server-renderer/server-plugin');
 
 const webpackBaseConfig = require('./webpack.base.conf');
-const config = require('./config');
 
 module.exports = merge(webpackBaseConfig, {
     target: 'node',

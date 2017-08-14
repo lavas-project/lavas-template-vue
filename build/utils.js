@@ -5,9 +5,7 @@
 
 'use strict';
 
-const path = require('path');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
-const config = require('./config');
 
 exports.cssLoaders = function (options) {
     options = options || {};
