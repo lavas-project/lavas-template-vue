@@ -1,0 +1,75 @@
+/**
+ * @file webpack client config
+ * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
+ */
+
+'use strict';
+
+const path = require('path');
+const webpack = require('webpack');
+const merge = require('webpack-merge');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const VueSSRClientPlugin = require('vue-server-renderer/client-plugin');
+
+const config = require('./config');
+const webpackBaseConfig = require('./webpack.base.conf');
+
+module.exports = merge(webpackBaseConfig, {
+    entry: {
+        app: ['./.lavas/entry-client.js']
+    },
+    output: {
+        filename: 'js/[name].[chunkhash].js',
+        chunkFilename: 'js/[id].[chunkhash].js'
+    },
+    plugins: [
+        // http://vuejs.github.io/vue-loader/en/workflow/production.html
+        new webpack.DefinePlugin({
+            'process.env.VUE_ENV': '"client"',
+            'process.env.NODE_ENV': process.env.NODE_ENV
+        }),
+
+        // split vendor js into its own file
+        new webpack.optimize.CommonsChunkPlugin({
+            name: 'vendor',
+            minChunks(module, count) {
+                // any required modules inside node_modules are extracted to vendor
+                return
+                    module.resource
+                    && /\.js$/.test(module.resource)
+                    && module.resource.indexOf(path.join(__dirname, '../node_modules')) === 0;
+            }
+        }),
+
+        // split vue, vue-router, vue-meta and vuex into vue chunk
+        new webpack.optimize.CommonsChunkPlugin({
+            name: 'vue',
+            minChunks(module, count) {
+                let context = module.context;
+                let targets = ['vue', 'vue-router', 'vuex', 'vue-meta'];
+                return context
+                    && context.indexOf('node_modules') >= 0
+                    && targets.find(t => new RegExp('/' + t + '/', 'i').test(context));
+            }
+        }),
+
+        // extract webpack runtime and module manifest to its own file in order to
+        // prevent vendor hash from being updated whenever app bundle is updated
+        new webpack.optimize.CommonsChunkPlugin({
+            name: 'manifest',
+            chunks: ['vue']
+        }),
+
+        // copy custom static assets
+        new CopyWebpackPlugin([{
+            from: path.resolve(config.globals.rootDir, 'static'),
+            to: 'static',
+            ignore: ['.*']
+        }])
+    ]
+});
+
+// if ssr enabled, add VueSSRClientPlugin
+if (config.ssr.enable) {
+    module.exports.plugins.push(new VueSSRClientPlugin());
+}
