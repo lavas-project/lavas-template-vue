@@ -5,6 +5,9 @@
 
 'use strict';
 
+const path = require('path');
+const fs = require('fs');
+
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 exports.cssLoaders = function (options) {
@@ -70,4 +73,93 @@ exports.styleLoaders = function (options) {
     });
 
     return output;
+};
+
+/**
+ * generate router by the structure of pages/
+ *
+ * @param {Object=} options options of generate
+ * @param {string} options.baseDir root folder, default value is path.resolve(__dirname, '../pages')
+ * @return {Array} router tree
+ */
+exports.generateRouter = function (options) {
+    options = options || {};
+
+    let baseDir = options.baseDir || path.resolve(__dirname, '../pages');
+    let parentFolders = options.folders || [path.basename(baseDir)];
+    let foldersWithoutBase = parentFolders.slice(1);
+    let relativeFolders;
+
+    if (options.rootRouteFolders) {
+        relativeFolders = parentFolders.slice(options.rootRouteFolders.length)
+    }
+    else {
+        relativeFolders = foldersWithoutBase;
+    }
+
+    let parentDir = path.resolve(baseDir, ...foldersWithoutBase);
+
+    return fs.readdirSync(parentDir)
+        .reduce((res, dirname) => {
+            let currentFolders = [...parentFolders, dirname];
+            let currentDir = path.resolve(parentDir, dirname);
+            let filename = path.basename(dirname, '.vue');
+
+            let currentPath;
+
+            if (options.rootRouteFolders) {
+                currentPath = [...relativeFolders, filename];
+            }
+            else {
+                currentPath = ['', ...relativeFolders, filename];
+            }
+
+            currentPath = currentPath
+                .join('/')
+                .replace(/\/?index$/, '');
+
+            if (!options.rootRouteFolders) {
+                currentPath = currentPath || '/';
+            }
+
+            let info = {
+                path: currentPath,
+                component: currentFolders.join('/')
+            };
+
+            let stat = fs.statSync(currentDir);
+            if (stat.isDirectory()) {
+                let vueFile = path.resolve(parentDir, dirname + '.vue');
+                if (fs.existsSync(vueFile)) {
+                    info.children = exports.generateRouter({
+                        baseDir: baseDir,
+                        folders: currentFolders,
+                        rootRouteFolders: currentFolders
+                    });
+                    info.component = info.component + '.vue';
+                }
+                else {
+                    let children = exports.generateRouter({
+                        baseDir: baseDir,
+                        folders: currentFolders,
+                        rootRouteFolders: options.rootRouteFolders
+                    });
+
+                    return res.concat(children);
+                }
+            }
+            else {
+                info.name = [...foldersWithoutBase, filename]
+                    .join('-')
+                    .replace(/-?index$/, '')
+                    || 'index';
+            }
+
+            return res.concat(info);
+        }, [])
+        .filter((route, i, arr) => {
+            return route.children || arr.every(function (item) {
+                return !item.children || item.component !== route.component;
+            });
+        });
 };
