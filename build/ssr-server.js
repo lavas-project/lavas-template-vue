@@ -20,9 +20,12 @@ router.get('/manifest.json', async ctx => await send(ctx, ctx.path, {root: './la
 let renderer;
 
 // init renderer
-getRenderer(app).then(r => renderer = r);
+let readyPromise = getRenderer(app).then(r => renderer = r);
 
 router.all('/', async ctx => {
+    if (!renderer) {
+        await readyPromise;
+    }
     ctx.body = await new Promise((resolve, reject) => {
         // render to string
         renderer.renderToString(ctx, (err, html) => {
