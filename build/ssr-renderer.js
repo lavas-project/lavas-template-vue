@@ -30,6 +30,7 @@ module.exports = async function getRenderer(app) {
 
     let renderer = createBundleRenderer(bundle, {
         template,
+        clientManifest,
         runInNewContext: false
     });
 
@@ -57,24 +58,28 @@ async function getBundleAndClientManifest(app) {
     let clientCompiler = webpack(clientConfig);
 
     let devMiddleware = webpackDevMiddleware(clientCompiler, {
-        publicPath: clientConfig.output.publicPath
+        publicPath: clientConfig.output.publicPath,
+        noInfo: true
     });
     // use webpack-dev-middleware to serve some flies
-    app.use(async ctx => {
-        await devMiddleware(ctx.request, ctx.response, () => {});
+    app.use(async (ctx, next) => {
+        await devMiddleware(ctx.req, ctx.res, () => {});
+        await next();
     });
 
     let hotMiddleware = webpackHotMiddleware(clientCompiler, {heartbeat: 5000});
     // use webpack-hot-middleware
-    app.use(async ctx => {
+    app.use(async (ctx, next) => {
         await new Promise((resolve, reject) => {
-            hotMiddleware(ctx.request, ctx.response, (err) => {
+            hotMiddleware(ctx.req, ctx.res, err => {
                 if (err) {
+                    console.log(err);
                     return reject(err);
                 }
                 resolve();
             });
         });
+        await next();
     });
 
     clientCompiler.plugin('done', stats => {
@@ -130,7 +135,7 @@ async function getBundleAndClientManifest(app) {
     }
 
     return await readyPromise;
-};
+}
 
 /**
  * read file sync
@@ -144,4 +149,4 @@ function readFile(fs, file) {
         return fs.readFileSync(path.join(clientConfig.output.path, file), 'utf-8');
     }
     catch (e) {}
-};
+}

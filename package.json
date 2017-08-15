@@ -5,7 +5,7 @@
   "author": "*__author__* <*__email__*>",
   "private": true,
   "scripts": {
-    "dev": "rimraf dist && node build/ssr-server.js",
+    "dev": "NODE_ENV=development node build/ssr-server.js",
     "start": "cross-env NODE_ENV=production node server.js",
     "lint": "fecs ./ --rule --type 'vue,js,css'",
     "build": "rimraf dist && npm run build:client && npm run build:server",
