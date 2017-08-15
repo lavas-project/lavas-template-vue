@@ -27,7 +27,7 @@ module.exports = {
             '~': config.globals.srcDir,
             '@@': config.globals.rootDir,
             '~~': config.globals.rootDir,
-            '&': path.join(config.globals.rootDir, '.lavas') + '/'
+            '$': path.join(config.globals.rootDir, '.lavas')
         }
     },
     module: {

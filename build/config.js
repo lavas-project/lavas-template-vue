@@ -23,9 +23,10 @@ const config = {};
  */
 let files = glob.sync(
     '**/*.js', {
-        cwd: path.join(process.cwd(), '../config')
+        cwd: path.join(process.cwd(), 'config')
     }
 );
+
 
 // require all files and assign them to config recursively
 files.forEach(filepath => {

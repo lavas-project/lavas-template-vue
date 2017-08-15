@@ -12,7 +12,7 @@ const webpackBaseConfig = require('./webpack.base.conf');
 
 module.exports = merge(webpackBaseConfig, {
     target: 'node',
-    entry: './.lavas/entry-server.js',
+    entry: './core/entry-server.js',
     output: {
         filename: 'server-bundle.js',
         libraryTarget: 'commonjs2'
