@@ -6,7 +6,7 @@
 const Koa = require('koa');
 const Router = require('koa-router');
 const send = require('koa-send');
-const getRenderer = require('./ssr-renderer');
+const rendererFactory = require('./ssr-renderer');
 
 const app = new Koa();
 const router = new Router();
@@ -16,16 +16,13 @@ router.get('/assets/(.*)', async ctx => await send(ctx, ctx.path));
 router.get('/service-worker.js', async ctx => await send(ctx, ctx.path, {root: './.lavas'}));
 router.get('/manifest.json', async ctx => await send(ctx, ctx.path, {root: './lavas'}));
 
-
-let renderer;
-
-// init renderer
-let readyPromise = getRenderer(app).then(r => renderer = r);
+// init renderer factory
+rendererFactory.initRenderer(app);
 
 router.all('/', async ctx => {
-    if (!renderer) {
-        await readyPromise;
-    }
+    /* eslint-disable fecs-prefer-async-await */
+    let renderer = await rendererFactory.getRenderer();
+
     ctx.body = await new Promise((resolve, reject) => {
         // render to string
         renderer.renderToString(ctx, (err, html) => {
@@ -36,6 +33,7 @@ router.all('/', async ctx => {
             resolve(html);
         });
     });
+    /* eslint-enable fecs-prefer-async-await */
 });
 
 app.use(router.routes());
