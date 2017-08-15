@@ -12,6 +12,6 @@ module.exports = {
      *
      * @type {boolean}
      */
-    enable: false
+    enable: true
 
 };

@@ -14,13 +14,13 @@ module.exports = {
      *
      * @type {string}
      */
-    rootDir: path.join(__dirname, '../..'),
+    rootDir: path.join(__dirname, '..'),
 
     /**
      * source code directory
      *
      * @type {string}
      */
-    srcDir: path.join(__dirname, '../..')
+    srcDir: path.join(__dirname, '..')
 
 };

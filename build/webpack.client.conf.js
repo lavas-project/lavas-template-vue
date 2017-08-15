@@ -16,7 +16,7 @@ const webpackBaseConfig = require('./webpack.base.conf');
 
 module.exports = merge(webpackBaseConfig, {
     entry: {
-        app: ['./.lavas/entry-client.js']
+        app: ['./core/entry-client.js']
     },
     output: {
         filename: 'js/[name].[chunkhash].js',
