@@ -6,7 +6,6 @@
 'use strict';
 
 const path = require('path');
-const globals = require('./globals');
 
 module.exports = {
 
@@ -17,14 +16,21 @@ module.exports = {
          *
          * @type {string}
          */
-        path: path.join(globals.rootDir, 'dist'),
+        path: path.resolve(__dirname, '../dist'),
 
         /**
          * public path
          *
          * @type {string}
          */
-        publicPath: '/dist'
+        publicPath: '',
+
+        /**
+         * assets directory name
+         *
+         * @type {string}
+         */
+        assetsDir: 'static'
 
     },
 

@@ -9,12 +9,13 @@ const path = require('path');
 const fs = require('fs');
 const webpack = require('webpack');
 const MFS = require('memory-fs');
-const webpackDevMiddleware = require('webpack-dev-middleware');
-const webpackHotMiddleware = require('webpack-hot-middleware');
+const koaWebpack = require('koa-webpack');
 const vueServerRenderer = require('vue-server-renderer');
 
+const isProd = process.env.NODE_ENV === 'production';
 const clientConfig = require('./webpack.client.conf');
 const serverConfig = require('./webpack.server.conf');
+const config = require('./config');
 
 const template = fs.readFileSync(path.resolve('./core/index.template.html'), 'utf-8');
 const createBundleRenderer = vueServerRenderer.createBundleRenderer;
@@ -35,17 +36,24 @@ module.exports = {
      * @param {Koa} app koa app instance
      */
     initRenderer(app) {
-        // get client manifest
-        getClientManifest(app, (err, manifest) => {
-            clientManifest = manifest;
+        if (isProd) {
+            bundle = require('../dist/vue-ssr-server-bundle.json');
+            clientManifest = require('../dist/vue-ssr-client-manifest.json');
             createRenderer();
-        });
+        }
+        else {
+            // get client manifest
+            getClientManifest(app, (err, manifest) => {
+                clientManifest = manifest;
+                createRenderer();
+            });
 
-        // get server bundle
-        getServerBundle((err, serverBundle) => {
-            bundle = serverBundle;
-            createRenderer();
-        });
+            // get server bundle
+            getServerBundle((err, serverBundle) => {
+                bundle = serverBundle;
+                createRenderer();
+            });
+        }
     },
 
     /**
@@ -91,7 +99,6 @@ function getClientManifest(app, callback) {
     let clientManifest;
 
     clientConfig.entry.app = ['webpack-hot-middleware/client', ...clientConfig.entry.app];
-    clientConfig.output.filename = '[name].js';
     clientConfig.plugins.push(
         new webpack.HotModuleReplacementPlugin(),
         new webpack.NoEmitOnErrorsPlugin()
@@ -100,29 +107,18 @@ function getClientManifest(app, callback) {
     // init client compiler
     let clientCompiler = webpack(clientConfig);
 
-    let devMiddleware = webpackDevMiddleware(clientCompiler, {
-        publicPath: clientConfig.output.publicPath,
-        noInfo: true
+    // use koa webpack middleware which already includes dev&hot middleware
+    let koaWebpackMiddleware = koaWebpack({
+        compiler: clientCompiler,
+        dev: {
+            publicPath: config.webpack.output.publicPath,
+            noInfo: true
+        },
+        hot: {
+            heartbeat: 5000
+        }
     });
-    // use webpack-dev-middleware to serve some flies
-    app.use(async (ctx, next) => {
-        await devMiddleware(ctx.req, ctx.res, () => {});
-        await next();
-    });
-
-    let hotMiddleware = webpackHotMiddleware(clientCompiler, {heartbeat: 5000});
-    // use webpack-hot-middleware
-    app.use(async (ctx, next) => {
-        await new Promise((resolve, reject) => {
-            hotMiddleware(ctx.req, ctx.res, err => {
-                if (err) {
-                    return reject(err);
-                }
-                resolve();
-            });
-        });
-        await next();
-    });
+    app.use(koaWebpackMiddleware);
 
     clientCompiler.plugin('done', stats => {
         stats = stats.toJson();
@@ -134,7 +130,7 @@ function getClientManifest(app, callback) {
         }
 
         clientManifest = JSON.parse(readFile(
-            devMiddleware.fileSystem,
+            koaWebpackMiddleware.dev.fileSystem,
             'vue-ssr-client-manifest.json'
         ));
 

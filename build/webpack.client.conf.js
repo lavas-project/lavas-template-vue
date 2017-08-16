@@ -11,6 +11,7 @@ const merge = require('webpack-merge');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const VueSSRClientPlugin = require('vue-server-renderer/client-plugin');
 
+const utils = require('./utils');
 const config = require('./config');
 const webpackBaseConfig = require('./webpack.base.conf');
 
@@ -19,8 +20,9 @@ module.exports = merge(webpackBaseConfig, {
         app: ['./core/entry-client.js']
     },
     output: {
-        filename: 'js/[name].[chunkhash].js',
-        chunkFilename: 'js/[id].[chunkhash].js'
+        path: config.webpack.output.path,
+        filename: utils.assetsPath('js/[name].[hash].js'),
+        chunkFilename: utils.assetsPath('js/[name].[chunkhash].js')
     },
     plugins: [
         // http://vuejs.github.io/vue-loader/en/workflow/production.html
@@ -61,8 +63,8 @@ module.exports = merge(webpackBaseConfig, {
 
         // copy custom static assets
         new CopyWebpackPlugin([{
-            from: path.resolve(config.globals.rootDir, 'static'),
-            to: 'static',
+            from: path.resolve(__dirname, '../static'),
+            to: config.webpack.output.assetsDir,
             ignore: ['.*']
         }])
     ]

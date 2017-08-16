@@ -12,11 +12,11 @@ const FriendlyErrorsPlugin = require('friendly-errors-webpack-plugin');
 const OptimizeCSSPlugin = require('optimize-css-assets-webpack-plugin');
 
 const vueLoaderConfig = require('./vue-loader.conf');
+const utils = require('./utils');
 const config = require('./config');
 
 module.exports = {
     output: {
-        filename: '[name].js',
         path: config.webpack.output.path,
         publicPath: config.webpack.output.publicPath
     },
@@ -49,7 +49,7 @@ module.exports = {
                 loader: 'url-loader',
                 options: {
                     limit: 10000,
-                    name: 'img/[name].[hash:7].[ext]'
+                    name: utils.assetsPath('img/[name].[hash:7].[ext]')
                 }
             },
             {
@@ -57,7 +57,7 @@ module.exports = {
                 loader: 'url-loader',
                 options: {
                     limit: 10000,
-                    name: 'fonts/[name].[hash:7].[ext]'
+                    name: utils.assetsPath('fonts/[name].[hash:7].[ext]')
                 }
             }
         ]
@@ -71,7 +71,7 @@ module.exports = {
                 sourceMap: config.webpack.jsSourceMap
             }),
             new ExtractTextPlugin({
-                filename: path.join(config.webpack.output.path, 'css/[name].[contenthash].css')
+                filename: utils.assetsPath('css/[name].[contenthash].css')
             }),
             new OptimizeCSSPlugin({
                 cssProcessorOptions: {

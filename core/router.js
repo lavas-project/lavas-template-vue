@@ -11,6 +11,7 @@ import Router from 'vue-router';
 Vue.use(Router);
 
 let Home = () => import('@/pages/Home.vue');
+let Detail = () => import('@/pages/Detail.vue');
 
 export function createRouter() {
     return new Router({
@@ -20,6 +21,11 @@ export function createRouter() {
                 path: '/',
                 name: 'home',
                 component: Home
+            },
+            {
+                path: '/detail/:id',
+                name: 'detail',
+                component: Detail
             }
         ]
     });
