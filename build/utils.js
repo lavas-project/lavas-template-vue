@@ -5,7 +5,13 @@
 
 'use strict';
 
+const path = require('path');
+const config = require('./config');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
+
+exports.assetsPath = function (newPath) {
+    return path.posix.join(config.webpack.output.assetsDir, newPath);
+};
 
 exports.cssLoaders = function (options) {
     options = options || {};

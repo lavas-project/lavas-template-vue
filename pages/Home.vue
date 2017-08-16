@@ -2,12 +2,16 @@
     <div>
         <h2 class="gray--text">LAVAS</h2>
         <h4 class="gray--text">[ˈlɑ:vəz]</h4>
+        <router-link :to="{
+            name: 'detail',
+            params: {
+                id: 1
+            }
+        }">detail</router-link>
     </div>
 </template>
 
 <script>
-let state = {
-};
 
 function setState(store) {
 }

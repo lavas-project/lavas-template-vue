@@ -13,7 +13,7 @@ module.exports = {
         jsSourceMap: false,
         output: {
             assetsDir: 'static',
-            publicPath: '/dist/'
+            publicPath: ''
         }
     }
 
