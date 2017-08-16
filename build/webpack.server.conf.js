@@ -1,5 +1,5 @@
 /**
- * @file webpack server
+ * @file webpack server config
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
