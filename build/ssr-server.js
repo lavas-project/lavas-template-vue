@@ -16,7 +16,6 @@ const router = new Router();
 rendererFactory.initRenderer(app);
 
 router.all('/', async ctx => {
-
     /* eslint-disable fecs-prefer-async-await */
     let renderer = await rendererFactory.getRenderer();
 

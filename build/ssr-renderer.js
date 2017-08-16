@@ -126,6 +126,11 @@ function getClientManifest(app, callback) {
         stats.warnings.forEach(err => console.warn(err));
 
         if (stats.errors.length) {
+            // print all errors
+            for (let error of stats.errors) {
+                console.error(error);
+            }
+
             return;
         }
 
