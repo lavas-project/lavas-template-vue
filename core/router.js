@@ -10,7 +10,17 @@ import Router from 'vue-router';
 
 Vue.use(Router);
 
+let Home = () => import('@/pages/Home.vue');
+
 export function createRouter() {
     return new Router({
+        mode: 'history',
+        routes: [
+            {
+                path: '/',
+                name: 'home',
+                component: Home
+            }
+        ]
     });
 }

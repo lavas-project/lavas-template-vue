@@ -26,7 +26,7 @@ module.exports = merge(webpackBaseConfig, {
         // http://vuejs.github.io/vue-loader/en/workflow/production.html
         new webpack.DefinePlugin({
             'process.env.VUE_ENV': '"client"',
-            'process.env.NODE_ENV': process.env.NODE_ENV
+            'process.env.NODE_ENV': `"${process.env.NODE_ENV}"`
         }),
 
         // split vendor js into its own file

@@ -27,7 +27,7 @@ module.exports = merge(webpackBaseConfig, {
     plugins: [
         new webpack.DefinePlugin({
             'process.env.VUE_ENV': '"server"',
-            'process.env.NODE_ENV': process.env.NODE_ENV
+            'process.env.NODE_ENV': `"${process.env.NODE_ENV}"`
         }),
         new VueSSRServerPlugin()
     ]
