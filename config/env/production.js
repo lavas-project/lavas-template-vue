@@ -8,7 +8,7 @@
 module.exports = {
 
     webpack: {
-        cssExtract: false,
+        cssExtract: true,
         cssSourceMap: false,
         jsSourceMap: false,
         output: {

@@ -8,36 +8,48 @@ const Router = require('koa-router');
 const serve = require('koa-static');
 const rendererFactory = require('./ssr-renderer');
 const config = require('./config');
+const routeManager = require('./route-manager');
 
 const app = new Koa();
 const router = new Router();
 
-// init renderer factory
-rendererFactory.initRenderer(app);
+(async () => {
 
-router.all('/', async ctx => {
-    /* eslint-disable fecs-prefer-async-await */
-    let renderer = await rendererFactory.getRenderer();
+    await routeManager.run();
 
-    ctx.body = await new Promise((resolve, reject) => {
-        // render to string
-        renderer.renderToString(ctx, (err, html) => {
-            if (err) {
-                return reject(err);
-            }
+    app.use(serve(config.webpack.output.path));
 
-            resolve(html);
-        });
+    // init renderer factory
+    rendererFactory.initRenderer(app);
+
+    router.all('*', async ctx => {
+
+        if (routeManager.shouldPrerender(ctx.path)) {
+            ctx.body = await routeManager.prerender(ctx.path);
+        }
+        else {
+            /* eslint-disable fecs-prefer-async-await */
+            let renderer = await rendererFactory.getRenderer();
+
+            ctx.body = await new Promise((resolve, reject) => {
+                // render to string
+                renderer.renderToString(ctx, (err, html) => {
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(html);
+                });
+            });
+            /* eslint-enable fecs-prefer-async-await */
+        }
     });
-    /* eslint-enable fecs-prefer-async-await */
-});
 
-app.use(router.routes());
-app.use(router.allowedMethods());
+    app.use(router.routes());
+    app.use(router.allowedMethods());
 
-app.use(serve(config.webpack.output.path));
-
-let port = process.env.PORT || 3000;
-app.listen(port, () => {
-    console.log('server started at localhost:' + port);
-});
+    let port = process.env.PORT || 3000;
+    app.listen(port, () => {
+        console.log('server started at localhost:' + port);
+    });
+})();

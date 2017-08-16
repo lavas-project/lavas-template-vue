@@ -3,7 +3,7 @@
         <h2 class="gray--text">LAVAS</h2>
         <h4 class="gray--text">[ˈlɑ:vəz]</h4>
         <router-link :to="{
-            name: 'detail',
+            name: 'detail-_id',
             params: {
                 id: 1
             }
@@ -17,7 +17,7 @@ function setState(store) {
 }
 
 export default {
-    name: 'home',
+    name: 'index',
     head: {
         title: 'Home',
         titleTemplate: '%s - Lavas',
@@ -25,7 +25,7 @@ export default {
             {name: 'keywords', content: 'lavas PWA'},
             {name: 'description', content: '基于 Vue 的 PWA 解决方案，帮助开发者快速搭建 PWA 应用，解决接入 PWA 的各种问题'}
         ]
-    },
+    }
     async asyncData({store, route}) {
         setState(store);
     },

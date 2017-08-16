@@ -14,8 +14,7 @@ exports.assetsPath = function (newPath) {
     return path.posix.join(config.webpack.output.assetsDir, newPath);
 };
 
-exports.cssLoaders = function (options) {
-    options = options || {};
+exports.cssLoaders = function (options = {}) {
 
     let cssLoader = {
         loader: 'css-loader',
@@ -108,14 +107,16 @@ exports.generateRouter = function (options) {
             let currentFolders = [...parentFolders, dirname];
             let currentDir = path.resolve(parentDir, dirname);
             let filename = path.basename(dirname, '.vue');
+            // replace "_" with ":" in route path
+            let pathSegment = filename.replace(/^_/, ':');
 
             let currentPath;
 
             if (options.rootRouteFolders) {
-                currentPath = [...relativeFolders, filename];
+                currentPath = [...relativeFolders, pathSegment];
             }
             else {
-                currentPath = ['', ...relativeFolders, filename];
+                currentPath = ['', ...relativeFolders, pathSegment];
             }
 
             currentPath = currentPath

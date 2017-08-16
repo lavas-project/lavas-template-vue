@@ -24,6 +24,13 @@ module.exports = merge(webpackBaseConfig, {
         filename: utils.assetsPath('js/[name].[hash].js'),
         chunkFilename: utils.assetsPath('js/[name].[chunkhash].js')
     },
+    module: {
+        rules: utils.styleLoaders({
+            sourceMap: config.webpack.cssSourceMap,
+            extract: true
+        })
+    },
+    devtool: config.webpack.jsSourceMap ? '#source-map' : false,
     plugins: [
         // http://vuejs.github.io/vue-loader/en/workflow/production.html
         new webpack.DefinePlugin({

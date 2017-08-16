@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "fastclick": "^1.0.6",
+    "fs-extra": "^4.0.1",
     "vue": "^2.4.2",
     "vue-meta": "^1.0.5",
     "vue-router": "^2.7.0",
@@ -37,7 +38,10 @@
     "koa-static": "^4.0.1",
     "koa-webpack": "^1.0.0",
     "lodash": "^4.17.4",
+    "lodash.template": "^4.4.0",
+    "multipage-webpack-plugin": "^0.4.0",
     "optimize-css-assets-webpack-plugin": "^3.0.0",
+    "pify": "^3.0.0",
     "shelljs": "^0.7.8",
     "stylus": "^0.54.5",
     "stylus-loader": "^3.0.1",
