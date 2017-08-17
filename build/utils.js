@@ -46,7 +46,7 @@ exports.cssLoaders = function (options = {}) {
             });
         }
 
-        return ['vue-style-loader'].concat(loaders);
+        return ['vue-style-loader', ...loaders];
     }
 
     // https://vue-loader.vuejs.org/en/configurations/extract-css.html
@@ -85,8 +85,7 @@ exports.styleLoaders = function (options) {
  * @param {string} options.baseDir root folder, default value is path.resolve(__dirname, '../pages')
  * @return {Array} router tree
  */
-exports.generateRouter = function (options) {
-    options = options || {};
+exports.generateRouter = function (options = {}) {
 
     let baseDir = options.baseDir || path.resolve(__dirname, '../pages');
     let parentFolders = options.folders || [path.basename(baseDir)];
@@ -94,7 +93,7 @@ exports.generateRouter = function (options) {
     let relativeFolders;
 
     if (options.rootRouteFolders) {
-        relativeFolders = parentFolders.slice(options.rootRouteFolders.length)
+        relativeFolders = parentFolders.slice(options.rootRouteFolders.length);
     }
     else {
         relativeFolders = foldersWithoutBase;
@@ -107,6 +106,7 @@ exports.generateRouter = function (options) {
             let currentFolders = [...parentFolders, dirname];
             let currentDir = path.resolve(parentDir, dirname);
             let filename = path.basename(dirname, '.vue');
+            let extname = path.extname(dirname);
             // replace "_" with ":" in route path
             let pathSegment = filename.replace(/^_/, ':');
 
@@ -158,6 +158,11 @@ exports.generateRouter = function (options) {
                     .join('-')
                     .replace(/-?index$/, '')
                     || 'index';
+            }
+
+            // ignore files whose suffix are not '.vue'
+            if (extname !== '.vue') {
+                return res;
             }
 
             return res.concat(info);

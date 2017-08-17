@@ -9,13 +9,16 @@ const serve = require('koa-static');
 const rendererFactory = require('./ssr-renderer');
 const config = require('./config');
 const routeManager = require('./route-manager');
+const isProd = process.env.NODE_ENV === 'production';
 
 const app = new Koa();
 const router = new Router();
 
 (async () => {
 
-    await routeManager.run();
+    if (isProd) {
+        require('./prerender');
+    }
 
     app.use(serve(config.webpack.output.path));
 

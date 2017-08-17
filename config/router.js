@@ -12,6 +12,20 @@ module.exports = {
      *
      * @type {string}
      */
-    mode: 'history'
+    mode: 'history',
+
+    routes: [
+        {
+            name: 'detail-_id',
+            prerender: true,
+            chunkname: '',
+            pagename: 'detail',
+            // path: '/detail/rewrite/:id',
+            // meta: {},
+            template: ''
+            // entry: '',
+            // skeleton: ''
+        }
+    ]
 
 };
