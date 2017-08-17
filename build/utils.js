@@ -202,7 +202,9 @@ function treeToRouter(tree, parent) {
         }
 
         let route = {
-            path: info.dir.slice(parent.dir.length).replace(/(\/?index)?\.vue$/, ''),
+            path: info.dir.slice(parent.dir.length)
+                .replace(/_/g, ':')
+                .replace(/(\/?index)?\.vue$/, ''),
             component: info.level.join('/')
         };
 
@@ -218,7 +220,9 @@ function treeToRouter(tree, parent) {
             route.children = treeToRouter(children, info);
         }
         else {
-            route.name = info.level.slice(1).join('-').replace(/(-index)?\.vue$/, '');
+            route.name = info.level.slice(1).join('-')
+                .replace(/_/g, '')
+                .replace(/(-index)?\.vue$/, '');
         }
 
         router.push(route);
