@@ -3,9 +3,11 @@
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
+const path = require('path');
 const Koa = require('koa');
 const Router = require('koa-router');
 const serve = require('koa-static');
+const chokidar = require('chokidar');
 const rendererFactory = require('./ssr-renderer');
 const config = require('./config');
 const routeManager = require('./route-manager');
@@ -16,6 +18,11 @@ const router = new Router();
 (async () => {
 
     await routeManager.run();
+
+    // watch pages changing, and regenerate files
+    chokidar
+        .watch(path.join(config.globals.srcDir, 'pages'))
+        .on('change', () => routeManager.run());
 
     app.use(serve(config.webpack.output.path));
 
