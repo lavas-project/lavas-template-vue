@@ -7,8 +7,15 @@ const routeManager = require('./route-manager');
 
 (async () => {
 
-    await routeManager.autoCompileRoutes();
+    try {
 
-    await routeManager.prerenderMultiEntries();
+        await routeManager.autoCompileRoutes();
+
+        await routeManager.prerenderMultiEntries();
+
+    }
+    catch (e) {
+        console.log(e);
+    }
 
 })();

@@ -6,7 +6,6 @@
 'use strict';
 
 const path = require('path');
-const fs = require('fs');
 const config = require('./config');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const glob = require('glob');
@@ -85,22 +84,18 @@ exports.styleLoaders = function (options) {
  * @param {string} baseDir root folder path
  * @param {Function} callback callback params is err and router tree
  */
-exports.generateRouter = function (baseDir, callback) {
-    getDirs(baseDir)
+exports.generateRouter = function (baseDir) {
+    return getDirs(baseDir, '.vue')
         .then(dirs => {
             let tree = mapDirsInfo(dirs, baseDir)
                 .reduce((tree, info) => appendToTree(tree, info.level, info), []);
-            let router = treeToRouter(tree[0].children, {dir: baseDir});
-            callback(0, router);
-        })
-        .catch(err => {
-            callback(err);
+            return treeToRouter(tree[0].children, {dir: baseDir});
         });
 };
 
-function getDirs(baseDir) {
+function getDirs(baseDir, ext = '') {
     return new Promise((resolve, reject) => {
-        glob(path.resolve(baseDir, '**/*.vue'), (err, dirs) => {
+        glob(path.resolve(baseDir, '**/*' + ext), (err, dirs) => {
             if (err) {
                 reject(err);
             }
@@ -112,7 +107,7 @@ function getDirs(baseDir) {
                 }, new Set());
                 resolve(Array.from(set));
             }
-        })
+        });
     });
 }
 

@@ -16,7 +16,7 @@ module.exports = {
 
     routes: [
         {
-            name: 'detail-_id',
+            name: 'detail-id',
             prerender: true,
             pagename: 'detail',
             lazyLoading: true,

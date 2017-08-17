@@ -53,11 +53,13 @@ class RouteManager {
      * @return {Promise}
      */
     async prerender(path) {
-        // TODO
+        let matchedRoute = this.routes.find(route => route.pathRegExp.test(path));
+        if (matchedRoute && matchedRoute.htmlPath) {
+            return await fs.readFile(matchedRoute.htmlPath, 'utf8');
+        }
     }
 
     async prerenderMultiEntries() {
-        const routes = config.router.routes;
 
         // let prerenderDir = path.join(this.targetDir, this.prerenderDirname);
         // await fs.emptyDirSync(prerenderDir);
@@ -71,51 +73,37 @@ class RouteManager {
         // remove vue-ssr-client plugin
         mpaConfig.plugins.pop();
 
-        await Promise.all(
-            routes.map(async page => {
-                let {name, pagename, template,
-                    path: routePath,
-                    prerender, meta, lazyLoading, chunkname} = page;
+        this.routes.map(route => {
+            let {pagename, template, prerender} = route;
 
-                // find route
-                let matchedRoute = this.routes.find(route => route.name === name);
+            if (prerender) {
+                let htmlTemplatePath = template
+                    || path.join(__dirname, './templates/index.template.html');
+                let htmlFilename = `${pagename}.html`;
 
-                if (matchedRoute) {
-                    // override route path if passed in
-                    Object.assign(matchedRoute, {
-                        path: routePath || matchedRoute.path,
-                        prerender,
-                        meta,
-                        chunkname,
-                        lazyLoading: lazyLoading || !!chunkname
-                    });
-                    if (prerender) {
-                        let htmlTemplatePath = template
-                            || path.join(__dirname, './templates/index.template.html');
+                route.htmlPath = path.join(htmlTemplatePath, htmlFilename);
 
-                        mpaConfig.entry[pagename] = './core/entry-client.js';
+                mpaConfig.entry[pagename] = './core/entry-client.js';
 
-                        // add skeleton & html webpack plugin
-                        mpaConfig.plugins.push(new HtmlWebpackPlugin({
-                            filename: `${pagename}.html`,
-                            template: htmlTemplatePath,
-                            inject: true,
-                            minify: {
-                                removeComments: true,
-                                collapseWhitespace: true,
-                                removeAttributeQuotes: true
-                            },
-                            favicon: utils.assetsPath('img/icons/favicon.ico'),
-                            chunksSortMode: 'dependency'
-                        }));
-                    }
-                }
+                // add skeleton & html webpack plugin
+                mpaConfig.plugins.push(new HtmlWebpackPlugin({
+                    filename: htmlFilename,
+                    template: htmlTemplatePath,
+                    inject: true,
+                    minify: {
+                        removeComments: true,
+                        collapseWhitespace: true,
+                        removeAttributeQuotes: true
+                    },
+                    favicon: utils.assetsPath('img/icons/favicon.ico'),
+                    chunksSortMode: 'dependency'
+                }));
+            }
 
-                // let pageDir = path.join(prerenderDir, pagename);
-                // let entryPath = path.join(pageDir, './entry.js');
-                // await fs.ensureFileSync(entryPath);
-            })
-        );
+            // let pageDir = path.join(prerenderDir, pagename);
+            // let entryPath = path.join(pageDir, './entry.js');
+            // await fs.ensureFileSync(entryPath);
+        });
 
         if (Object.keys(mpaConfig.entry).length) {
 
@@ -155,11 +143,32 @@ class RouteManager {
      *
      */
     async autoCompileRoutes() {
-        console.log('[Lavas] auto compile routes...');
+        const routesConfig = config.router.routes;
 
-        this.routes = utils.generateRouter();
+        console.log('[Lavas] auto compile routes...');
+        this.routes = await utils.generateRouter(path.resolve(__dirname, '../pages'));
 
         this.routes.forEach(route => {
+            // find route in config
+            let routeConfig = routesConfig.find(r => r.name === route.name);
+
+            // mixin with config
+            if (routeConfig) {
+                let {name, pagename, template,
+                    path: routePath, prerender, meta = {},
+                    lazyLoading, chunkname} = routeConfig;
+
+                Object.assign(route, {
+                    pagename,
+                    template,
+                    path: routePath || route.path,
+                    prerender,
+                    meta,
+                    chunkname,
+                    lazyLoading: lazyLoading || !!chunkname
+                });
+            }
+
             // generate hash for each route, "_" will be added in front
             route.hash = crypto.createHash('md5').update(route.name).digest('hex');
 
