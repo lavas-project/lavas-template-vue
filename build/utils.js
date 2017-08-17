@@ -101,12 +101,17 @@ exports.generateRouter = function (baseDir, callback) {
 
 function getDirs(baseDir) {
     return new Promise((resolve, reject) => {
-        glob(path.resolve(baseDir, './**'), (err, dirs) => {
+        glob(path.resolve(baseDir, '**/*.vue'), (err, dirs) => {
             if (err) {
                 reject(err);
             }
             else {
-                resolve(dirs);
+                let set = dirs.reduce((set, dir) => {
+                    set.add(dir);
+                    set.add(path.dirname(dir));
+                    return set;
+                }, new Set());
+                resolve(Array.from(set));
             }
         })
     });
