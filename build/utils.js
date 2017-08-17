@@ -6,7 +6,6 @@
 'use strict';
 
 const path = require('path');
-const fs = require('fs');
 const config = require('./config');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const glob = require('glob');
@@ -113,7 +112,7 @@ function getDirs(baseDir) {
                 }, new Set());
                 resolve(Array.from(set));
             }
-        })
+        });
     });
 }
 
