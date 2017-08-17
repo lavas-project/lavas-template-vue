@@ -1,5 +1,10 @@
 <% routes.forEach(function(route) { %>
-let _<%- route.hash %> = () => import('@/<%- route.component %>');
+    <% if (route.lazyLoading) { %>
+let _<%- route.hash %> = () => import(<% if (route.chunkname) { %>/* webpackChunkName: "<%- route.chunkname %>" */ <% } %>'@/<%- route.component %>');
+    <% } %>
+    <% else { %>
+import _<%- route.hash %> from '@/<%- route.component %>';
+    <% } %>
 <% }); %>
 
 let routes = [

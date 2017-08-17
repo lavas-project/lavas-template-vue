@@ -18,8 +18,9 @@ module.exports = {
         {
             name: 'detail-_id',
             prerender: true,
-            chunkname: '',
             pagename: 'detail',
+            lazyLoading: true,
+            chunkname: '',
             // path: '/detail/rewrite/:id',
             // meta: {},
             template: ''

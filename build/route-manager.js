@@ -73,7 +73,9 @@ class RouteManager {
 
         await Promise.all(
             routes.map(async page => {
-                let {name, pagename, template, path: routePath, prerender, meta} = page;
+                let {name, pagename, template,
+                    path: routePath,
+                    prerender, meta, lazyLoading, chunkname} = page;
 
                 // find route
                 let matchedRoute = this.routes.find(route => route.name === name);
@@ -83,7 +85,9 @@ class RouteManager {
                     Object.assign(matchedRoute, {
                         path: routePath || matchedRoute.path,
                         prerender,
-                        meta
+                        meta,
+                        chunkname,
+                        lazyLoading: lazyLoading || !!chunkname
                     });
                     if (prerender) {
                         let htmlTemplatePath = template
