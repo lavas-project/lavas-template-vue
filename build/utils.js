@@ -9,6 +9,7 @@ const path = require('path');
 const fs = require('fs');
 const config = require('./config');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const glob = require('glob');
 
 exports.assetsPath = function (newPath) {
     return path.posix.join(config.webpack.output.assetsDir, newPath);
@@ -82,88 +83,145 @@ exports.styleLoaders = function (options) {
 /**
  * generate router by the structure of pages/
  *
- * @param {Object=} options options of generate
- * @param {string} options.baseDir root folder, default value is path.resolve(__dirname, '../pages')
- * @return {Array} router tree
+ * @param {string} baseDir root folder path
+ * @param {Function} callback callback params is err and router tree
  */
-exports.generateRouter = function (options) {
-    options = options || {};
-
-    let baseDir = options.baseDir || path.resolve(__dirname, '../pages');
-    let parentFolders = options.folders || [path.basename(baseDir)];
-    let foldersWithoutBase = parentFolders.slice(1);
-    let relativeFolders;
-
-    if (options.rootRouteFolders) {
-        relativeFolders = parentFolders.slice(options.rootRouteFolders.length)
-    }
-    else {
-        relativeFolders = foldersWithoutBase;
-    }
-
-    let parentDir = path.resolve(baseDir, ...foldersWithoutBase);
-
-    return fs.readdirSync(parentDir)
-        .reduce((res, dirname) => {
-            let currentFolders = [...parentFolders, dirname];
-            let currentDir = path.resolve(parentDir, dirname);
-            let filename = path.basename(dirname, '.vue');
-
-            let currentPath;
-
-            if (options.rootRouteFolders) {
-                currentPath = [...relativeFolders, filename];
-            }
-            else {
-                currentPath = ['', ...relativeFolders, filename];
-            }
-
-            currentPath = currentPath
-                .join('/')
-                .replace(/\/?index$/, '');
-
-            if (!options.rootRouteFolders) {
-                currentPath = currentPath || '/';
-            }
-
-            let info = {
-                path: currentPath,
-                component: currentFolders.join('/')
-            };
-
-            let stat = fs.statSync(currentDir);
-            if (stat.isDirectory()) {
-                let vueFile = path.resolve(parentDir, dirname + '.vue');
-                if (fs.existsSync(vueFile)) {
-                    info.children = exports.generateRouter({
-                        baseDir: baseDir,
-                        folders: currentFolders,
-                        rootRouteFolders: currentFolders
-                    });
-                    info.component = info.component + '.vue';
-                }
-                else {
-                    let children = exports.generateRouter({
-                        baseDir: baseDir,
-                        folders: currentFolders,
-                        rootRouteFolders: options.rootRouteFolders
-                    });
-
-                    return res.concat(children);
-                }
-            }
-            else {
-                info.name = [...foldersWithoutBase, filename]
-                    .join('-')
-                    .replace(/-?index$/, '')
-                    || 'index';
-            }
-
-            return res.concat(info);
-        }, [])
-        .filter((route, i, arr) => {
-            return route.children || arr.every(function (item) {
-                return !item.children || item.component !== route.component;
-            });
+exports.generateRouter = function (baseDir, callback) {
+    getDirs(baseDir)
+        .then(dirs => {
+            let tree = mapDirsInfo(dirs, baseDir)
+                .reduce((tree, info) => appendToTree(tree, info.level, info), []);
+            let router = treeToRouter(tree[0].children, {dir: baseDir});
+            callback(0, router);
+        })
+        .catch(err => {
+            callback(err);
         });
 };
+
+function getDirs(baseDir) {
+    return new Promise((resolve, reject) => {
+        glob(path.resolve(baseDir, './**'), (err, dirs) => {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(dirs);
+            }
+        })
+    });
+}
+
+function mapDirsInfo(dirs, baseDir) {
+    let baseFolder = path.basename(baseDir);
+
+    return dirs.map(dir => {
+        let info = {
+            dir: dir,
+            level: generateDirLevel(dir, {baseDir, baseFolder}),
+            type: isFolder(dir, dirs) ? 'folder' : 'file'
+        };
+
+        if (info.type === 'folder' && dirs.indexOf(dir + '.vue') > -1) {
+            info.nested = true;
+        }
+
+        return info;
+    })
+    .filter(({type, dir}) => {
+        if (type === 'folder') {
+            return true;
+        }
+
+        if (dir.slice(-4) === '.vue' && dirs.indexOf(dir.slice(0, -4)) === -1) {
+            return true;
+        }
+
+        return false;
+    })
+    .sort((a, b) => a.level.length - b.level.length);
+}
+
+function generateDirLevel(dir, {baseDir, baseFolder = path.basename(baseDir)}) {
+    return [baseFolder]
+        .concat(dir.slice(baseDir.length).split('/'))
+        .filter(str => str !== '');
+}
+
+function isFolder(dir, dirs) {
+    dir = dir.replace(/\/$/, '') + '/';
+    return dirs.some(fileDir => fileDir.indexOf(dir) === 0);
+}
+
+function appendToTree(tree, levels, info) {
+    let levelLen = levels.length;
+    let node = tree;
+
+    for (let i = 0; i < levelLen; i++) {
+        let nodeLen = node.length;
+        let j;
+
+        for (j = 0; j < nodeLen; j++) {
+            if (node[j].name === levels[i]) {
+                if (i === levelLen - 1) {
+                    node[j].info = info;
+                }
+                else {
+                    node[j].children = node[j].children || [];
+                    node = node[j].children;
+                }
+
+                break;
+            }
+        }
+
+        if (j === nodeLen) {
+            if (i === levelLen - 1) {
+                node.push({
+                    name: levels[i],
+                    info: info
+                });
+            }
+            else {
+                node.push({
+                    name: levels[i],
+                    children: []
+                });
+                node = node[j].children;
+            }
+        }
+    }
+
+    return tree;
+}
+
+function treeToRouter(tree, parent) {
+    return tree.reduce((router, {info, children}) => {
+        if (info.type === 'folder' && !info.nested) {
+            return router.concat(treeToRouter(children, parent));
+        }
+
+        let route = {
+            path: info.dir.slice(parent.dir.length).replace(/(\/?index)?\.vue$/, ''),
+            component: info.level.join('/')
+        };
+
+        if (parent.nested) {
+            route.path = route.path.replace(/^\//, '');
+        }
+        else if (route.path === '') {
+            route.path = '/';
+        }
+
+        if (children) {
+            route.component += '.vue';
+            route.children = treeToRouter(children, info);
+        }
+        else {
+            route.name = info.level.slice(1).join('-').replace(/(-index)?\.vue$/, '');
+        }
+
+        router.push(route);
+        return router;
+    }, []);
+}
