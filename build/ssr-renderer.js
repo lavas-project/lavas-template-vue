@@ -37,8 +37,8 @@ module.exports = {
      */
     initRenderer(app) {
         if (isProd) {
-            bundle = require('../dist/vue-ssr-server-bundle.json');
-            clientManifest = require('../dist/vue-ssr-client-manifest.json');
+            bundle = require(path.join(config.webpack.output.path, './vue-ssr-server-bundle.json'));
+            clientManifest = require(path.join(config.webpack.output.path, './vue-ssr-client-manifest.json'));
             createRenderer();
         }
         else {
@@ -79,6 +79,7 @@ function createRenderer() {
         let first = !renderer;
         renderer = createBundleRenderer(bundle, {
             template,
+            basedir: config.webpack.output.path,
             clientManifest,
             runInNewContext: false
         });

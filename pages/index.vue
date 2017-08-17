@@ -3,7 +3,7 @@
         <h2 class="gray--text">LAVAS</h2>
         <h4 class="gray--text">[ˈlɑ:vəz]</h4>
         <router-link :to="{
-            name: 'detail',
+            name: 'detail-_id',
             params: {
                 id: 1
             }
@@ -17,7 +17,7 @@ function setState(store) {
 }
 
 export default {
-    name: 'home',
+    name: 'index',
     head: {
         title: 'Home',
         titleTemplate: '%s - Lavas',

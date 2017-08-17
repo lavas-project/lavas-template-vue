@@ -24,14 +24,14 @@
         <!--vue-ssr-outlet-->
         <% if (isProd) { %>
         <script>
-            window.onload = function () {
-                var script = document.createElement('script');
-                var firstScript = document.getElementsByTagName('script')[0];
-                script.type = 'text/javascript';
-                script.async = true;
-                script.src = '/dist/sw-register.js?v=' + Date.now();
-                firstScript.parentNode.insertBefore(script, firstScript);
-            };
+            // window.onload = function () {
+            //     var script = document.createElement('script');
+            //     var firstScript = document.getElementsByTagName('script')[0];
+            //     script.type = 'text/javascript';
+            //     script.async = true;
+            //     script.src = '/dist/sw-register.js?v=' + Date.now();
+            //     firstScript.parentNode.insertBefore(script, firstScript);
+            // };
         </script>
         <% } %>
     </body>

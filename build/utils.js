@@ -15,8 +15,7 @@ exports.assetsPath = function (newPath) {
     return path.posix.join(config.webpack.output.assetsDir, newPath);
 };
 
-exports.cssLoaders = function (options) {
-    options = options || {};
+exports.cssLoaders = function (options = {}) {
 
     let cssLoader = {
         loader: 'css-loader',
@@ -48,7 +47,7 @@ exports.cssLoaders = function (options) {
             });
         }
 
-        return ['vue-style-loader'].concat(loaders);
+        return ['vue-style-loader', ...loaders];
     }
 
     // https://vue-loader.vuejs.org/en/configurations/extract-css.html
@@ -86,6 +85,7 @@ exports.styleLoaders = function (options) {
  * @param {string} baseDir root folder path
  * @param {Function} callback callback params is err and router tree
  */
+
 exports.generateRouter = function (baseDir, callback) {
     getDirs(baseDir)
         .then(dirs => {
