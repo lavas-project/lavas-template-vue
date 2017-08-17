@@ -39,7 +39,7 @@ class RouteManager {
     }
 
     async run() {
-        let routes = utils.generateRouter();
+        let routes = await utils.generateRouter(path.resolve(__dirname, '../pages'));
 
         routes.forEach(route => {
             // generate hash for each route, "_" will be added in front
