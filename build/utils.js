@@ -46,7 +46,7 @@ exports.cssLoaders = function (options = {}) {
             });
         }
 
-        return ['vue-style-loader'].concat(loaders);
+        return ['vue-style-loader', ...loaders];
     }
 
     // https://vue-loader.vuejs.org/en/configurations/extract-css.html
@@ -85,8 +85,7 @@ exports.styleLoaders = function (options) {
  * @param {string} options.baseDir root folder, default value is path.resolve(__dirname, '../pages')
  * @return {Array} router tree
  */
-exports.generateRouter = function (options) {
-    options = options || {};
+exports.generateRouter = function (options = {}) {
 
     let baseDir = options.baseDir || path.resolve(__dirname, '../pages');
     let parentFolders = options.folders || [path.basename(baseDir)];
@@ -94,7 +93,7 @@ exports.generateRouter = function (options) {
     let relativeFolders;
 
     if (options.rootRouteFolders) {
-        relativeFolders = parentFolders.slice(options.rootRouteFolders.length)
+        relativeFolders = parentFolders.slice(options.rootRouteFolders.length);
     }
     else {
         relativeFolders = foldersWithoutBase;
@@ -162,9 +161,7 @@ exports.generateRouter = function (options) {
 
             return res.concat(info);
         }, [])
-        .filter((route, i, arr) => {
-            return route.children || arr.every(function (item) {
-                return !item.children || item.component !== route.component;
-            });
-        });
+        .filter((route, i, arr) => route.children || arr.every(function (item) {
+            return !item.children || item.component !== route.component;
+        }));
 };

@@ -13,7 +13,7 @@ const pify = require('pify');
 const readFile = pify(fs.readFile);
 const writeFile = pify(fs.writeFile);
 
-const webpack = require('webpack');
+// const webpack = require('webpack');
 // const mpaConfig = require('./webpack.mpa.conf');
 // const pageConfig = require('../pages/page');
 
