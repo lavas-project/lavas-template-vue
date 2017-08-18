@@ -82,7 +82,7 @@ exports.styleLoaders = function (options) {
  * generate router by the structure of pages/
  *
  * @param {string} baseDir root folder path
- * @param {Function} callback callback params is err and router tree
+ * @return {Promise} resolve generated router, reject error
  */
 exports.generateRouter = function (baseDir) {
     return getDirs(baseDir, '.vue')
