@@ -13,7 +13,14 @@ module.exports = {
         jsSourceMap: true,
         output: {
             assetsDir: 'static',
-            publicPath: '/dist/'
+            publicPath: '/dist/',
+
+            /**
+             * shouldn't use [chunkhash] in dev mode with webpack-dev-middleware
+             *
+             * https://github.com/webpack/webpack/issues/2393
+             */
+            filename: 'js/[name].[hash:8].js'
         }
     }
 

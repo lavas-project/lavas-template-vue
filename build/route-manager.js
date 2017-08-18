@@ -8,6 +8,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const crypto = require('crypto');
 const template = require('lodash.template');
+const lruCache = require('lru-cache');
 const utils = require('./utils');
 const config = require('./config');
 const isProd = process.env.NODE_ENV === 'production';
@@ -30,6 +31,11 @@ class RouteManager {
         }, props);
 
         this.routes = [];
+
+        this.cache = lruCache({
+            max: 1000,
+            maxAge: 1000 * 60 * 15
+        });
     }
 
     /**
@@ -43,6 +49,7 @@ class RouteManager {
             return false;
         }
         let matchedRoute = this.routes.find(route => route.pathRegExp.test(path));
+
         return matchedRoute && matchedRoute.prerender;
     }
 
@@ -55,7 +62,12 @@ class RouteManager {
     async prerender(path) {
         let matchedRoute = this.routes.find(route => route.pathRegExp.test(path));
         if (matchedRoute && matchedRoute.htmlPath) {
-            return await fs.readFile(matchedRoute.htmlPath, 'utf8');
+            let entry = this.cache.get(path);
+            if (!entry) {
+                entry = await fs.readFile(matchedRoute.htmlPath, 'utf8');
+                this.cache.set(path, entry);
+            }
+            return entry;
         }
     }
 
@@ -71,7 +83,12 @@ class RouteManager {
         mpaConfig.context = config.globals.rootDir;
 
         // remove vue-ssr-client plugin
-        mpaConfig.plugins.pop();
+        if (config.ssr.enable) {
+            mpaConfig.plugins.pop();
+        }
+
+        // add skeleton plugin
+        // mpaConfig.plugins.push();
 
         this.routes.map(route => {
             let {pagename, template, prerender} = route;
@@ -81,11 +98,11 @@ class RouteManager {
                     || path.join(__dirname, './templates/index.template.html');
                 let htmlFilename = `${pagename}.html`;
 
-                route.htmlPath = path.join(htmlTemplatePath, htmlFilename);
+                route.htmlPath = path.join(config.webpack.output.path, htmlFilename);
 
-                mpaConfig.entry[pagename] = './core/entry-client.js';
+                mpaConfig.entry[pagename] = ['./core/entry-client.js'];
 
-                // add skeleton & html webpack plugin
+                // add html webpack plugin
                 mpaConfig.plugins.push(new HtmlWebpackPlugin({
                     filename: htmlFilename,
                     template: htmlTemplatePath,
@@ -109,6 +126,7 @@ class RouteManager {
 
             await new Promise((resolve, reject) => {
 
+                // start to compile multi entries
                 webpack(mpaConfig, (err, stats) => {
                     if (err) {
                         console.error(err.stack || err);
@@ -154,17 +172,14 @@ class RouteManager {
 
             // mixin with config
             if (routeConfig) {
-                let {name, pagename, template,
-                    path: routePath, prerender, meta = {},
-                    lazyLoading, chunkname} = routeConfig;
+                let {
+                    path: routePath,
+                    lazyLoading,
+                    chunkname
+                } = routeConfig;
 
-                Object.assign(route, {
-                    pagename,
-                    template,
+                Object.assign(route, routeConfig, {
                     path: routePath || route.path,
-                    prerender,
-                    meta,
-                    chunkname,
                     lazyLoading: lazyLoading || !!chunkname
                 });
             }
@@ -176,12 +191,11 @@ class RouteManager {
             // eg. /detail/:id => /^\/detail\/[^\/]+\/?$/
             route.pathRegExp = new RegExp(`^${route.path.replace(/\/:[^\/]*/g, '/[^\/]+')}\/?$`);
         });
-        let routesTpl = await fs.readFile(routesTemplate, 'utf8');
 
         // write contents into .lavas/routes.js
         await fs.writeFile(
             path.join(this.targetDir, './routes.js'),
-            template(routesTpl)({routes: this.routes}),
+            template(await fs.readFile(routesTemplate, 'utf8'))({routes: this.routes}),
             'utf8'
         );
 

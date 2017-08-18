@@ -10,10 +10,10 @@ module.exports = {
     webpack: {
         cssExtract: true,
         cssSourceMap: false,
-        jsSourceMap: false,
+        jsSourceMap: true,
         output: {
             assetsDir: 'static',
-            publicPath: ''
+            publicPath: '/'
         }
     }
 

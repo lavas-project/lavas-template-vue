@@ -30,8 +30,14 @@ module.exports = {
          *
          * @type {string}
          */
-        assetsDir: 'static'
+        assetsDir: 'static',
 
+        /**
+         * filename format
+         *
+         * @type {string}
+         */
+        filename: 'js/[name].[chunkhash:8].js'
     },
 
     /**

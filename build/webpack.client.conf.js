@@ -21,8 +21,8 @@ module.exports = merge(webpackBaseConfig, {
     },
     output: {
         path: config.webpack.output.path,
-        filename: utils.assetsPath('js/[name].[hash].js'),
-        chunkFilename: utils.assetsPath('js/[name].[chunkhash].js')
+        filename: utils.assetsPath(config.webpack.output.filename),
+        chunkFilename: utils.assetsPath('js/[name].[chunkhash:8].js')
     },
     module: {
         rules: utils.styleLoaders({

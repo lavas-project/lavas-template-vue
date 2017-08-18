@@ -5,7 +5,7 @@
                 Detail {{$route.params.id}}
             </header>
             <router-link :to="{
-                name: 'detail-_id',
+                name: 'detail-id',
                 params: {
                     id: Number($route.params.id) + 1
                 }

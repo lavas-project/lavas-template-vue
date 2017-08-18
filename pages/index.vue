@@ -3,7 +3,7 @@
         <h2 class="gray--text">LAVAS</h2>
         <h4 class="gray--text">[ˈlɑ:vəz]</h4>
         <router-link :to="{
-            name: 'detail-_id',
+            name: 'detail-id',
             params: {
                 id: 1
             }

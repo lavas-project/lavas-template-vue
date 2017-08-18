@@ -19,8 +19,10 @@ const router = new Router();
 (async () => {
     try {
 
+        await routeManager.autoCompileRoutes();
+
         if (isProd) {
-            require('./prerender');
+            await routeManager.prerenderMultiEntries();
         }
 
         // watch pages changing, and regenerate files
