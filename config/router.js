@@ -23,9 +23,9 @@ module.exports = {
             chunkname: '',
             // path: '/detail/rewrite/:id',
             // meta: {},
-            template: ''
+            template: '',
             // entry: '',
-            // skeleton: ''
+            skeleton: '@/components/detail-id.skeleton'
         }
     ]
 

@@ -22,7 +22,7 @@ const router = new Router();
         await routeManager.autoCompileRoutes();
 
         if (isProd) {
-            await routeManager.prerenderMultiEntries();
+            await routeManager.compileMultiEntries();
         }
 
         // watch pages changing, and regenerate files

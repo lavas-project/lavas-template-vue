@@ -14,20 +14,22 @@ const config = require('./config');
 const isProd = process.env.NODE_ENV === 'production';
 
 const routesTemplate = path.join(__dirname, './templates/routes.js');
-// const entryTemplate = path.join(__dirname, '../core/entry-client.js');
+const skeletonEntryTemplate = path.join(__dirname, './templates/entry-skeleton.js');
 
 const webpack = require('webpack');
 const merge = require('webpack-merge');
 const clientConfig = require('./webpack.client.conf');
+const serverConfig = require('./webpack.server.conf');
 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const SkeletonWebpackPlugin = require('vue-skeleton-webpack-plugin');
 
 class RouteManager {
 
     constructor(props = {}) {
         Object.assign(this, {
             targetDir: path.join(__dirname, '../.lavas'),
-            prerenderDirname: 'prerender'
+            skeletonsDirname: 'skeletons'
         }, props);
 
         this.routes = [];
@@ -71,33 +73,71 @@ class RouteManager {
         }
     }
 
-    async prerenderMultiEntries() {
+    /**
+     * create an entry file for a skeleton component
+     *
+     * @param {string} pagename pagename
+     * @param {string} skeletonPath used as import
+     * @return {string} entryPath
+     */
+    async createEntryForSkeleton(pagename, skeletonPath) {
 
-        // let prerenderDir = path.join(this.targetDir, this.prerenderDirname);
-        // await fs.emptyDirSync(prerenderDir);
+        // .lavas/skeletons
+        let skeletonsDir = path.join(this.targetDir, this.skeletonsDirname);
+        await fs.emptyDirSync(skeletonsDir);
 
+        // eg. .lavas/skeletons/detail-entry-skeleton.js
+        let entryPath = path.join(skeletonsDir, `./${pagename}-entry-skeleton.js`);
+
+        await fs.writeFile(
+            entryPath,
+            template(await fs.readFile(skeletonEntryTemplate, 'utf8'))({
+                skeleton: {
+                    path: skeletonPath
+                }
+            }),
+            'utf8'
+        );
+
+        return entryPath;
+    }
+
+    /**
+     * create a webpack config and compile with it
+     *
+     */
+    async compileMultiEntries() {
+
+        // create mpa config based on client config
         let mpaConfig = merge(clientConfig);
+        let skeletonEntries = {};
 
-        // set context and empty entries
+        // set context and clear entries
         mpaConfig.entry = {};
         mpaConfig.context = config.globals.rootDir;
 
         // remove vue-ssr-client plugin
         if (config.ssr.enable) {
+            // TODO: what if vue-ssr-client-plugin is not the last one in plugins array?
             mpaConfig.plugins.pop();
         }
 
-        // add skeleton plugin
-        // mpaConfig.plugins.push();
-
-        this.routes.map(route => {
-            let {pagename, template, prerender} = route;
+        /**
+         * for each route needs prerendering, we will:
+         * 1. add a html-webpack-plugin to output a relative HTML file
+         * 2. create an entry if a skeleton component is provided
+         */
+        await Promise.all(this.routes.map(async route => {
+            let {pagename, template, prerender, skeleton} = route;
 
             if (prerender) {
+
+                // allow user to provide a custom HTML template
                 let htmlTemplatePath = template
                     || path.join(__dirname, './templates/index.template.html');
                 let htmlFilename = `${pagename}.html`;
 
+                // save the path of HTML file which will be used in prerender searching process
                 route.htmlPath = path.join(config.webpack.output.path, htmlFilename);
 
                 mpaConfig.entry[pagename] = ['./core/entry-client.js'];
@@ -115,12 +155,28 @@ class RouteManager {
                     favicon: utils.assetsPath('img/icons/favicon.ico'),
                     chunksSortMode: 'dependency'
                 }));
-            }
 
-            // let pageDir = path.join(prerenderDir, pagename);
-            // let entryPath = path.join(pageDir, './entry.js');
-            // await fs.ensureFileSync(entryPath);
-        });
+                if (skeleton) {
+                    let entryPath = await this.createEntryForSkeleton(pagename, skeleton);
+                    skeletonEntries[pagename] = [entryPath];
+                }
+            }
+        }));
+
+        if (Object.keys(skeletonEntries).length) {
+            let skeletonConfig = merge(serverConfig);
+            // remove vue-ssr-client plugin
+            if (config.ssr.enable) {
+                // TODO: what if vue-ssr-server-plugin is not the last one in plugins array?
+                skeletonConfig.plugins.pop();
+            }
+            skeletonConfig.entry = skeletonEntries;
+
+            // add skeleton plugin
+            mpaConfig.plugins.push(new SkeletonWebpackPlugin({
+                webpackConfig: skeletonConfig
+            }));
+        }
 
         if (Object.keys(mpaConfig.entry).length) {
 
@@ -184,11 +240,17 @@ class RouteManager {
                 });
             }
 
-            // generate hash for each route, "_" will be added in front
+            /**
+             * generate hash for each route which will be used in routes.js template,
+             * an underscore "_" will be added in front of each hash, because JS variables can't
+             * start with numbers
+             */
             route.hash = crypto.createHash('md5').update(route.name).digest('hex');
 
-            // turn route path into regexp
-            // eg. /detail/:id => /^\/detail\/[^\/]+\/?$/
+            /**
+             * turn route path into regexp
+             * eg. /detail/:id => /^\/detail\/[^\/]+\/?$/
+             */
             route.pathRegExp = new RegExp(`^${route.path.replace(/\/:[^\/]*/g, '/[^\/]+')}\/?$`);
         });
 
