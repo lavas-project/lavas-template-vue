@@ -65,12 +65,12 @@ module.exports = {
     },
     plugins: process.env.NODE_ENV === 'production'
         ? [
-            // new webpack.optimize.UglifyJsPlugin({
-            //     compress: {
-            //         warnings: false
-            //     },
-            //     sourceMap: config.webpack.jsSourceMap
-            // }),
+            new webpack.optimize.UglifyJsPlugin({
+                compress: {
+                    warnings: false
+                },
+                sourceMap: config.webpack.jsSourceMap
+            }),
             new ExtractTextPlugin({
                 filename: utils.assetsPath('css/[name].[contenthash].css')
             }),

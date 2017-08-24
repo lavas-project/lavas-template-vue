@@ -255,11 +255,20 @@ class RouteManager {
         });
 
         // write contents into .lavas/routes.js
+        let routesFilePath = path.join(this.targetDir, './routes.js');
+        await fs.ensureFileSync(routesFilePath);
         await fs.writeFile(
-            path.join(this.targetDir, './routes.js'),
+            routesFilePath,
             template(await fs.readFile(routesTemplate, 'utf8'))({routes: this.routes}),
             'utf8'
         );
+
+        /**
+         * hack for watchpack, solve the rebuilding problem in dev mode
+         * https://github.com/webpack/watchpack/issues/25#issuecomment-287789288
+         */
+        let then = Date.now() / 1000 - 10;
+        await fs.utimes(routesFilePath, then, then);
 
         console.log('[Lavas] all routes are already generated.');
     }
