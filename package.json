@@ -19,7 +19,9 @@
     "vue-meta": "^1.0.5",
     "vue-router": "^2.7.0",
     "vue-server-renderer": "^2.3.4",
-    "vuex": "^2.3.1"
+    "vuex": "^2.3.1",
+    "vuetify": "*",
+    "iscroll": "*"
   },
   "devDependencies": {
     "babel-core": "^6.25.0",

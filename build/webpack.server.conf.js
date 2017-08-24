@@ -7,6 +7,8 @@ const webpack = require('webpack');
 const merge = require('webpack-merge');
 const nodeExternals = require('webpack-node-externals');
 const VueSSRServerPlugin = require('vue-server-renderer/server-plugin');
+const config = require('./config');
+const path = require('path');
 
 const webpackBaseConfig = require('./webpack.base.conf');
 
@@ -17,12 +19,16 @@ module.exports = merge(webpackBaseConfig, {
         filename: 'server-bundle.js',
         libraryTarget: 'commonjs2'
     },
-    resolve: {},
+    resolve: {
+        alias: {
+            'iscroll/build/iscroll-lite$': path.resolve(config.globals.rootDir, 'core/fix-ssr.js')
+        }
+    },
     // https://webpack.js.org/configuration/externals/#externals
     // https://github.com/liady/webpack-node-externals
     externals: nodeExternals({
         // do not externalize CSS files in case we need to import it from a dep
-        whitelist: [/\.(css|vue)$/]
+        whitelist: [/\.(css|vue)$/, /iscroll/]
     }),
     plugins: [
         new webpack.DefinePlugin({
