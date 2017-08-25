@@ -58,8 +58,12 @@ exports.cssLoaders = function (options = {}) {
             indentedSyntax: true
         }),
         scss: generateLoaders('sass'),
-        stylus: generateLoaders('stylus'),
-        styl: generateLoaders('stylus')
+        stylus: generateLoaders('stylus', {
+            'import': '~extensions/appShell/styles/variables.styl'
+        }),
+        styl: generateLoaders('stylus', {
+            'import': '~extensions/appShell/styles/variables.styl'
+        })
     };
 };
 

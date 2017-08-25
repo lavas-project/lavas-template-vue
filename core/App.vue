@@ -110,11 +110,10 @@ export default {
 
 <style lang="stylus">
 
-// @import '~extensions/appShell/styles/appShell'
+@import '~extensions/appShell/styles/main'
 
 body
-    // background-color: $material-theme.bg-color
-    background-color: black
+    background-color: $material-theme.bg-color
 
 #app
     position static
@@ -126,18 +125,6 @@ body
 </style>
 
 <style lang="stylus" scoped>
-
-// $material-theme = {
-//     bg-color: #fff,
-//     fg-color: #000,
-//     text-color: #000,
-//     primary-text-percent: .87,
-//     secondary-text-percent: .54,
-//     disabledORhints-text-percent: .38,
-//     divider-percent: .12,
-//     active-icon-percent: .54,
-//     inactive-icon-percent: .38
-// }
 .app-shell
     position absolute
     top 0
@@ -176,8 +163,8 @@ body
             overflow-x hidden
             overflow-y auto
             transition transform 0.4s cubic-bezier(.55, 0, .1, 1)
-            // background: $material-theme.bg-color
-            // color: $material-theme.text-color
+            background: $material-theme.bg-color
+            color: $material-theme.text-color
             -webkit-overflow-scrolling touch
 
             // 隐藏掉scrollbar
