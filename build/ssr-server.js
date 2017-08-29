@@ -67,6 +67,6 @@ const router = new Router();
         });
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
     }
 })();
