@@ -1,5 +1,5 @@
 /**
- * @file ssr
+ * @file development config
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
@@ -7,11 +7,10 @@
 
 module.exports = {
 
-    /**
-     * enable ssr or not
-     *
-     * @type {boolean}
-     */
-    enable: true
+    webpack: {
+        shortcuts: {
+            cssExtract: true
+        }
+    }
 
 };

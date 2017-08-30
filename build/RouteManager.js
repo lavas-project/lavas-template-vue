@@ -1,36 +1,42 @@
 /**
  * @file route manager
- * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
+ * @author panyuqi
  * @desc generate route.js, multi entries in .lavas directory
  */
 
-const fs = require('fs-extra');
-const path = require('path');
-const crypto = require('crypto');
-const template = require('lodash.template');
-const lruCache = require('lru-cache');
-const utils = require('./utils');
-const config = require('./config');
-const isProd = process.env.NODE_ENV === 'production';
+import {
+    utimes,
+    readFile,
+    writeFile,
+    emptyDirSync,
+    ensureFileSync
+} from 'fs-extra';
+import {join} from 'path';
+import {createHash} from 'crypto';
+import template from 'lodash.template';
+import webpack from 'webpack';
+import merge from 'webpack-merge';
+import lruCache from 'lru-cache';
 
-const routesTemplate = path.join(__dirname, './templates/routes.js');
-const skeletonEntryTemplate = path.join(__dirname, './templates/entry-skeleton.js');
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import SkeletonWebpackPlugin from 'vue-skeleton-webpack-plugin';
 
-const webpack = require('webpack');
-const merge = require('webpack-merge');
-const clientConfig = require('./webpack.client.conf');
-const serverConfig = require('./webpack.server.conf');
+import {generateRoutes} from './utils/router';
 
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const SkeletonWebpackPlugin = require('vue-skeleton-webpack-plugin');
+const routesTemplate = join(__dirname, './templates/routes.tpl');
+const skeletonEntryTemplate = join(__dirname, './templates/entry-skeleton.tpl');
 
-class RouteManager {
+export default class RouteManager {
 
-    constructor(props = {}) {
+    constructor(config, env, webpackConfig) {
+        this.config = config;
+        this.env = env;
+        this.webpackConfig = webpackConfig;
+
         Object.assign(this, {
-            targetDir: path.join(__dirname, '../.lavas'),
+            targetDir: join(config.globals.rootDir, './.lavas'),
             skeletonsDirname: 'skeletons'
-        }, props);
+        });
 
         this.routes = [];
 
@@ -47,7 +53,7 @@ class RouteManager {
      * @return {boolean}
      */
     shouldPrerender(path) {
-        if (!isProd) {
+        if (!this.env === 'production') {
             return false;
         }
         let matchedRoute = this.routes.find(route => route.pathRegExp.test(path));
@@ -66,7 +72,7 @@ class RouteManager {
         if (matchedRoute && matchedRoute.htmlPath) {
             let entry = this.cache.get(path);
             if (!entry) {
-                entry = await fs.readFile(matchedRoute.htmlPath, 'utf8');
+                entry = await readFile(matchedRoute.htmlPath, 'utf8');
                 this.cache.set(path, entry);
             }
             return entry;
@@ -83,15 +89,15 @@ class RouteManager {
     async createEntryForSkeleton(pagename, skeletonPath) {
 
         // .lavas/skeletons
-        let skeletonsDir = path.join(this.targetDir, this.skeletonsDirname);
-        await fs.emptyDirSync(skeletonsDir);
+        let skeletonsDir = join(this.targetDir, this.skeletonsDirname);
+        await emptyDirSync(skeletonsDir);
 
         // eg. .lavas/skeletons/detail-entry-skeleton.js
-        let entryPath = path.join(skeletonsDir, `./${pagename}-entry-skeleton.js`);
+        let entryPath = join(skeletonsDir, `./${pagename}-entry-skeleton.js`);
 
-        await fs.writeFile(
+        await writeFile(
             entryPath,
-            template(await fs.readFile(skeletonEntryTemplate, 'utf8'))({
+            template(await readFile(skeletonEntryTemplate, 'utf8'))({
                 skeleton: {
                     path: skeletonPath
                 }
@@ -107,17 +113,19 @@ class RouteManager {
      *
      */
     async compileMultiEntries() {
+        let {shortcuts, base} = this.config.webpack;
+        let {assetsDir, ssr} = shortcuts;
 
         // create mpa config based on client config
-        let mpaConfig = merge(clientConfig);
+        let mpaConfig = merge(this.webpackConfig.client(this.config));
         let skeletonEntries = {};
 
         // set context and clear entries
         mpaConfig.entry = {};
-        mpaConfig.context = config.globals.rootDir;
+        mpaConfig.context = this.config.globals.rootDir;
 
         // remove vue-ssr-client plugin
-        if (config.ssr.enable) {
+        if (ssr) {
             // TODO: what if vue-ssr-client-plugin is not the last one in plugins array?
             mpaConfig.plugins.pop();
         }
@@ -134,11 +142,11 @@ class RouteManager {
 
                 // allow user to provide a custom HTML template
                 let htmlTemplatePath = template
-                    || path.join(__dirname, './templates/index.template.html');
+                    || join(__dirname, './templates/index.template.html');
                 let htmlFilename = `${pagename}.html`;
 
                 // save the path of HTML file which will be used in prerender searching process
-                route.htmlPath = path.join(config.webpack.output.path, htmlFilename);
+                route.htmlPath = join(base.output.path, htmlFilename);
 
                 mpaConfig.entry[pagename] = ['./core/entry-client.js'];
 
@@ -152,7 +160,7 @@ class RouteManager {
                         collapseWhitespace: true,
                         removeAttributeQuotes: true
                     },
-                    favicon: utils.assetsPath('img/icons/favicon.ico'),
+                    favicon: join(assetsDir, 'img/icons/favicon.ico'),
                     chunksSortMode: 'dependency'
                 }));
 
@@ -164,9 +172,9 @@ class RouteManager {
         }));
 
         if (Object.keys(skeletonEntries).length) {
-            let skeletonConfig = merge(serverConfig);
+            let skeletonConfig = merge(this.webpackConfig.server(this.config));
             // remove vue-ssr-client plugin
-            if (config.ssr.enable) {
+            if (ssr) {
                 // TODO: what if vue-ssr-server-plugin is not the last one in plugins array?
                 skeletonConfig.plugins.pop();
             }
@@ -217,10 +225,10 @@ class RouteManager {
      *
      */
     async autoCompileRoutes() {
-        const routesConfig = config.router.routes;
+        const routesConfig = this.config.router && this.config.router.routes || [];
 
         console.log('[Lavas] auto compile routes...');
-        this.routes = await utils.generateRouter(path.resolve(__dirname, '../pages'));
+        this.routes = await generateRoutes(join(this.targetDir, '../pages'));
 
         this.routes.forEach(route => {
             // find route in config
@@ -245,7 +253,7 @@ class RouteManager {
              * an underscore "_" will be added in front of each hash, because JS variables can't
              * start with numbers
              */
-            route.hash = crypto.createHash('md5').update(route.name).digest('hex');
+            route.hash = createHash('md5').update(route.name).digest('hex');
 
             /**
              * turn route path into regexp
@@ -255,11 +263,11 @@ class RouteManager {
         });
 
         // write contents into .lavas/routes.js
-        let routesFilePath = path.join(this.targetDir, './routes.js');
-        await fs.ensureFileSync(routesFilePath);
-        await fs.writeFile(
+        let routesFilePath = join(this.targetDir, './routes.js');
+        await ensureFileSync(routesFilePath);
+        await writeFile(
             routesFilePath,
-            template(await fs.readFile(routesTemplate, 'utf8'))({routes: this.routes}),
+            template(await readFile(routesTemplate, 'utf8'))({routes: this.routes}),
             'utf8'
         );
 
@@ -268,10 +276,8 @@ class RouteManager {
          * https://github.com/webpack/watchpack/issues/25#issuecomment-287789288
          */
         let then = Date.now() / 1000 - 10;
-        await fs.utimes(routesFilePath, then, then);
+        await utimes(routesFilePath, then, then);
 
         console.log('[Lavas] all routes are already generated.');
     }
 }
-
-module.exports = new RouteManager();

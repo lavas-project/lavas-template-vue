@@ -8,12 +8,8 @@
 module.exports = {
 
     webpack: {
-        cssExtract: true,
-        cssSourceMap: false,
-        jsSourceMap: true,
-        output: {
-            assetsDir: 'static',
-            publicPath: '/'
+        shortcuts: {
+            cssExtract: true
         }
     }
 

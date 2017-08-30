@@ -25,7 +25,7 @@ module.exports = {
              *
              * @type {string}
              */
-            publicPath: '/',
+            publicPath: '',
 
             /**
              * filename format

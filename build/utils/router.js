@@ -1,82 +1,9 @@
 /**
- * @file 工具包
- * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
+ * @file utils.router.js
+ * @author lavas
  */
-
-'use strict';
-
-const path = require('path');
-const config = require('./config');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
-const glob = require('glob');
-
-exports.assetsPath = function (newPath) {
-    return path.posix.join(config.webpack.output.assetsDir, newPath);
-};
-
-exports.cssLoaders = function (options = {}) {
-
-    let cssLoader = {
-        loader: 'css-loader',
-        options: {
-            minimize: process.env.NODE_ENV === 'production',
-            sourceMap: options.sourceMap
-        }
-    };
-
-    // generate loader string to be used with extract text plugin
-    function generateLoaders(loader, loaderOptions) {
-        let loaders = [cssLoader];
-
-        if (loader) {
-            loaders.push({
-                loader: loader + '-loader',
-                options: Object.assign({}, loaderOptions, {
-                    sourceMap: options.sourceMap
-                })
-            });
-        }
-
-        // Extract CSS when that option is specified
-        // (which is the case during production build)
-        if (options.extract) {
-            return ExtractTextPlugin.extract({
-                use: loaders,
-                fallback: 'vue-style-loader'
-            });
-        }
-
-        return ['vue-style-loader', ...loaders];
-    }
-
-    // https://vue-loader.vuejs.org/en/configurations/extract-css.html
-    return {
-        css: generateLoaders(),
-        postcss: generateLoaders(),
-        less: generateLoaders('less'),
-        sass: generateLoaders('sass', {
-            indentedSyntax: true
-        }),
-        scss: generateLoaders('sass'),
-        stylus: generateLoaders('stylus'),
-        styl: generateLoaders('stylus')
-    };
-};
-
-// Generate loaders for standalone style files (outside of .vue)
-exports.styleLoaders = function (options) {
-    let output = [];
-    let loaders = exports.cssLoaders(options);
-
-    Object.keys(loaders).forEach(function (extension) {
-        output.push({
-            test: new RegExp('\\.' + extension + '$'),
-            use: loaders[extension]
-        });
-    });
-
-    return output;
-};
+import {resolve, dirname, basename} from 'path';
+import glob from 'glob';
 
 /**
  * generate router by the structure of pages/
@@ -84,35 +11,35 @@ exports.styleLoaders = function (options) {
  * @param {string} baseDir root folder path
  * @return {Promise} resolve generated router, reject error
  */
-exports.generateRouter = function (baseDir) {
+export function generateRoutes(baseDir) {
     return getDirs(baseDir, '.vue')
         .then(dirs => {
             let tree = mapDirsInfo(dirs, baseDir)
                 .reduce((tree, info) => appendToTree(tree, info.level, info), []);
             return treeToRouter(tree[0].children, {dir: baseDir});
         });
-};
+}
 
 function getDirs(baseDir, ext = '') {
-    return new Promise((resolve, reject) => {
-        glob(path.resolve(baseDir, '**/*' + ext), (err, dirs) => {
+    return new Promise((res, reject) => {
+        glob(resolve(baseDir, '**/*' + ext), (err, dirs) => {
             if (err) {
                 reject(err);
             }
             else {
                 let set = dirs.reduce((set, dir) => {
                     set.add(dir);
-                    set.add(path.dirname(dir));
+                    set.add(dirname(dir));
                     return set;
                 }, new Set());
-                resolve(Array.from(set));
+                res(Array.from(set));
             }
         });
     });
 }
 
 function mapDirsInfo(dirs, baseDir) {
-    let baseFolder = path.basename(baseDir);
+    let baseFolder = basename(baseDir);
 
     return dirs.map(dir => {
         let info = {
@@ -141,7 +68,7 @@ function mapDirsInfo(dirs, baseDir) {
     .sort((a, b) => a.level.length - b.level.length);
 }
 
-function generateDirLevel(dir, {baseDir, baseFolder = path.basename(baseDir)}) {
+function generateDirLevel(dir, {baseDir, baseFolder = basename(baseDir)}) {
     return [baseFolder]
         .concat(dir.slice(baseDir.length).split('/'))
         .filter(str => str !== '');

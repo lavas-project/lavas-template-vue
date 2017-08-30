@@ -6,3 +6,8 @@ yarn-debug.log*
 yarn-error.log*
 package-lock.json
 .lavas
+lib
+coverage
+.nyc_output
+test/fixtures/dist/
+test/fixtures/.lavas/
