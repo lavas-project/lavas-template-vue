@@ -64,7 +64,6 @@
     "lru-cache": "^4.1.1",
     "nyc": "^10.3.2",
     "optimize-css-assets-webpack-plugin": "^3.0.0",
-    "pify": "^3.0.0",
     "shelljs": "^0.7.8",
     "stylus": "^0.54.5",
     "stylus-loader": "^3.0.1",

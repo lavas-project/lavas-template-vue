@@ -8,8 +8,8 @@ import {
     utimes,
     readFile,
     writeFile,
-    emptyDirSync,
-    ensureFileSync
+    emptyDir,
+    ensureFile
 } from 'fs-extra';
 import {join} from 'path';
 import {createHash} from 'crypto';
@@ -90,7 +90,7 @@ export default class RouteManager {
 
         // .lavas/skeletons
         let skeletonsDir = join(this.targetDir, this.skeletonsDirname);
-        await emptyDirSync(skeletonsDir);
+        await emptyDir(skeletonsDir);
 
         // eg. .lavas/skeletons/detail-entry-skeleton.js
         let entryPath = join(skeletonsDir, `./${pagename}-entry-skeleton.js`);
@@ -264,7 +264,7 @@ export default class RouteManager {
 
         // write contents into .lavas/routes.js
         let routesFilePath = join(this.targetDir, './routes.js');
-        await ensureFileSync(routesFilePath);
+        await ensureFile(routesFilePath);
         await writeFile(
             routesFilePath,
             template(await readFile(routesTemplate, 'utf8'))({routes: this.routes}),

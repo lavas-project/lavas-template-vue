@@ -4,9 +4,7 @@
  */
 
 import {join} from 'path';
-import {readFile} from 'fs-extra';
-import pify from 'pify';
-import rimraf from 'rimraf';
+import {readFile, emptyDir} from 'fs-extra';
 import webpack from 'webpack';
 import MFS from 'memory-fs';
 import koaWebpack from 'koa-webpack';
@@ -33,7 +31,7 @@ export default class Renderer {
             let outputPath = this.config.webpack.base.output.path;
 
             // clear dist/
-            await pify(rimraf)(outputPath);
+            await emptyDir(outputPath);
 
             // set context in both configs
             clientConfig.context = this.rootDir;
