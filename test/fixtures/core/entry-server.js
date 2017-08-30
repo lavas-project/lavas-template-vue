@@ -32,11 +32,7 @@ export default function (context) {
 
             // no matched routes
             if (!matchedComponents.length) {
-                let err = new Error('Not Found');
-                // simulate nodejs file not found
-                err.code = 'ENOENT';
-                err.status = 404;
-                reject(err);
+                reject({code: 404});
             }
 
             // Call fetchData hooks on components matched by the route.

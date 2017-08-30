@@ -36,7 +36,6 @@ const router = new Router();
         rendererFactory.initRenderer(app);
 
         router.all('*', async ctx => {
-
             if (routeManager.shouldPrerender(ctx.path)) {
                 ctx.body = await routeManager.prerender(ctx.path);
             }
@@ -67,6 +66,6 @@ const router = new Router();
         });
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
     }
 })();

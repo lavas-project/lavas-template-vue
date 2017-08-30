@@ -11,7 +11,8 @@ let routes = [
     {
         path: '<%- route.path %>',
         name: '<%- route.name %>',
-        component: _<%- route.hash %>
+        component: _<%- route.hash %>,
+        meta: <%= JSON.stringify(route.meta || {}) %>
     },
 <% }); %>
 ];
