@@ -4,7 +4,6 @@
  */
 
 const path = require('path');
-const url = require('url');
 const Koa = require('koa');
 const Router = require('koa-router');
 const serve = require('koa-static');
@@ -17,44 +16,55 @@ const isProd = process.env.NODE_ENV === 'production';
 const app = new Koa();
 const router = new Router();
 
+
+const errConfig = config.errorHandler;
+errConfig.statusCode = errConfig.statusCode || [];
+
+const errPaths = new Set([errConfig.target]);
+
+// add all paths to errPaths set
+Object.keys(errConfig.statusCode).forEach(key => {
+    errPaths.add(errConfig.statusCode[key].target);
+});
+
 (async () => {
-    try {
-        await routeManager.autoCompileRoutes();
+    await routeManager.autoCompileRoutes();
 
-        if (isProd) {
-            await routeManager.compileMultiEntries();
-        }
-
-        // watch pages changing, and regenerate files
-        chokidar
-            .watch(path.join(config.globals.srcDir, 'pages'))
-            .on('change', () => routeManager.autoCompileRoutes());
-
-        app.use(serve(config.webpack.output.path));
-
-        // init renderer factory
-        rendererFactory.initRenderer(app);
-
-        // handle all requests using vue renderer
-        router.all('*', handle);
-
-        // handle error
-        app.context.onerror = onerror;
-
-        app.use(router.routes());
-        app.use(router.allowedMethods());
-
-        let port = process.env.PORT || 3000;
-        app.listen(port, () => {
-            console.log('server started at localhost:' + port);
-        });
+    if (isProd) {
+        await routeManager.compileMultiEntries();
     }
-    catch (e) {
-        console.error(e);
-    }
+
+    // watch pages changing, and regenerate files
+    chokidar
+        .watch(path.join(config.globals.srcDir, 'pages'))
+        .on('change', () => routeManager.autoCompileRoutes());
+
+    app.use(serve(config.webpack.output.path));
+
+    // init renderer factory
+    rendererFactory.initRenderer(app);
+
+    // handle all requests using vue renderer
+    router.all('*', handle);
+
+    // handle error
+    app.context.onerror = onerror;
+
+    app.use(router.routes());
+    app.use(router.allowedMethods());
+
+    let port = process.env.PORT || 3000;
+    app.listen(port, () => {
+        console.log('server started at localhost:' + port);
+    });
 })();
 
 
+/**
+ * handle request, use the vue renderer to process requests
+ *
+ * @param {Context} ctx context
+ */
 async function handle(ctx) {
     if (routeManager.shouldPrerender(ctx.path)) {
         ctx.body = await routeManager.prerender(ctx.path);
@@ -73,9 +83,13 @@ async function handle(ctx) {
             });
         });
     }
-
 }
 
+/**
+ * handle the error threw by vue renderer, redirect to corresponding url
+ *
+ * @param {Error} err error
+ */
 function onerror(err) {
     if (null == err) {
         return;
@@ -86,19 +100,14 @@ function onerror(err) {
         return;
     }
 
-    if (this._IN_ERROR_PROCEDURE_) {
+    if (errPaths.has(this.path)) {
         // if already in error procedure, then end this request immediately, avoid infinite loop
         this.res.end();
         return;
     }
 
-    // set true
-    this._IN_ERROR_PROCEDURE_ = true;
-
+    // clear headers
     this.res._headers = {};
-
-    let errConfig = config.errorHandler;
-    errConfig.statusCode = errConfig.statusCode || [];
 
     // get the right target url
     let target = errConfig.target;
@@ -106,18 +115,7 @@ function onerror(err) {
         target = errConfig.statusCode[err.status].target;
     }
 
-    // reassign the value of url and path
-    this.url = target;
-    this.path = url.parse(target).pathname;
-
-    // re-renderer with new pathname
-    handle(this)
-        .then(() => {
-            this.set(err.headers);
-            this.res.end(this.body);
-        })
-        .catch(e => {
-            console.error(e);
-            this.res.end(e.stack);
-        });
+    // redirect to the corresponding url
+    this.redirect(target);
+    this.res.end();
 }
