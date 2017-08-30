@@ -1,0 +1,8 @@
+{
+    "list": [
+        "core/app.recommend.js",
+        "core/App.recommend.vue",
+        "core/store.recommend.js",
+        "config/extensions.recommend.js"
+    ]
+}
