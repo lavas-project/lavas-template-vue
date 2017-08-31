@@ -10,7 +10,7 @@ const VueSSRServerPlugin = require('vue-server-renderer/server-plugin');
 
 const webpackBaseConfig = require('./webpack.base.conf');
 
-module.exports = merge(webpackBaseConfig, {
+const server = merge(webpackBaseConfig, {
     target: 'node',
     entry: './core/entry-server.js',
     output: {
@@ -32,3 +32,17 @@ module.exports = merge(webpackBaseConfig, {
         new VueSSRServerPlugin()
     ]
 });
+
+// run extend function
+if (typeof config.webpack.extend === 'function') {
+    let extendedConfig = config.webpack.extend.call(null, server, {
+        isProd,
+        isClient: false
+    });
+
+    if (extendedConfig) {
+        server = extendedConfig;
+    }
+}
+
+module.exports = server;

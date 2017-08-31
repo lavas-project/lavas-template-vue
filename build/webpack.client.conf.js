@@ -15,7 +15,9 @@ const utils = require('./utils');
 const config = require('./config');
 const webpackBaseConfig = require('./webpack.base.conf');
 
-module.exports = merge(webpackBaseConfig, {
+const isProd = process.env.NODE_ENV === 'production';
+
+const client = merge(webpackBaseConfig, {
     entry: {
         app: ['./core/entry-client.js']
     },
@@ -79,5 +81,20 @@ module.exports = merge(webpackBaseConfig, {
 
 // if ssr enabled, add VueSSRClientPlugin
 if (config.ssr.enable) {
-    module.exports.plugins.push(new VueSSRClientPlugin());
+    client.plugins.push(new VueSSRClientPlugin());
 }
+
+// run extend function
+if (typeof config.webpack.extend === 'function') {
+    let extendedConfig = config.webpack.extend.call(null, client, {
+        isProd,
+        isClient: true
+    });
+
+    if (extendedConfig) {
+        client = extendedConfig;
+    }
+}
+
+console.log(client);
+module.exports = client;

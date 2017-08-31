@@ -15,7 +15,9 @@ const vueLoaderConfig = require('./vue-loader.conf');
 const utils = require('./utils');
 const config = require('./config');
 
-module.exports = {
+const isProd = process.env.NODE_ENV === 'production';
+
+const base = {
     output: {
         path: config.webpack.output.path,
         publicPath: config.webpack.output.publicPath
@@ -62,22 +64,36 @@ module.exports = {
             }
         ]
     },
-    plugins: process.env.NODE_ENV === 'production'
-        ? [
-            new webpack.optimize.UglifyJsPlugin({
-                compress: {
-                    warnings: false
-                },
-                sourceMap: config.webpack.jsSourceMap
-            }),
-            new ExtractTextPlugin({
-                filename: utils.assetsPath('css/[name].[contenthash].css')
-            }),
-            new OptimizeCSSPlugin({
-                cssProcessorOptions: {
-                    safe: true
-                }
-            })
-        ]
-        : [new FriendlyErrorsPlugin()]
+    plugins: []
 };
+
+if (isProd) {
+    // add production plugins
+    base.plugins = [
+        ...base.plugins,
+        new webpack.optimize.UglifyJsPlugin({
+            compress: {
+                warnings: false
+            },
+            sourceMap: config.webpack.jsSourceMap
+        }),
+        new OptimizeCSSPlugin({
+            cssProcessorOptions: {
+                safe: true
+            }
+        })
+    ];
+}
+else {
+    base.plugins.push(new FriendlyErrorsPlugin());
+}
+
+if (config.webpack.cssExtract) {
+    base.plugins.push(new ExtractTextPlugin({
+        filename: utils.assetsPath('css/[name].[contenthash].css')
+    }));
+}
+
+base.resolve.alias = Object.assign(base.resolve.alias, config.webpack.alias);
+
+module.exports = base;

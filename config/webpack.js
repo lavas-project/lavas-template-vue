@@ -41,6 +41,34 @@ module.exports = {
     },
 
     /**
+     * alias for webpack
+     *
+     * @type {Object.<string, string>}
+     */
+    alias: {},
+
+    /**
+     * extend webpack config
+     *
+     * @type {Function|null}
+     */
+    extend: null,
+
+    /**
+     * webpack loaders
+     *
+     * @type {Array.<Object>}
+     */
+    loaders: [],
+
+    /**
+     * webpack plugins
+     *
+     * @type {Array.<*>}
+     */
+    plugins: [],
+
+    /**
      * if extract css files
      *
      * @type {boolean}
