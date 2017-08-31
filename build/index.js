@@ -38,7 +38,8 @@ export default class LavasCore {
         let configDir = join(this.cwd, 'config');
         let files = glob.sync(
             '**/*.js', {
-                cwd: configDir
+                cwd: configDir,
+                ignore: '*.recommend.js'
             }
         );
 
@@ -80,6 +81,19 @@ export default class LavasCore {
 
         let clientConfig = this.webpackConfig.client(this.config);
         let serverConfig = this.webpackConfig.server(this.config);
+
+        // execute extensions
+        this.config.extensions.forEach(({name, init}) => {
+            console.log(`[Lavas] ${name} extension is running...`);
+
+            if (init && typeof init === 'function') {
+                init.call(null, {
+                    client: clientConfig,
+                    server: serverConfig
+                });
+            }
+        });
+
         await this.renderer.init(clientConfig, serverConfig);
 
         // compile multi entries in production mode

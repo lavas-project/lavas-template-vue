@@ -10,7 +10,7 @@
 
 import Vue from 'vue';
 import Vuex from 'vuex';
-import {createAppShellState} from 'extensions/appshell/store/module';
+import {createAppShellState} from '@/extensions/appshell/store/module';
 
 Vue.use(Vuex);
 

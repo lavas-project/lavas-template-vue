@@ -11,27 +11,33 @@ var globalConfig = require('./globals');
 
 module.exports = [
     {
-        name: 'appshell',
-        init: function (webpack) {
+        name: 'appShell',
+        init: function (webpackConfig) {
             try {
+                let {client, server} = webpackConfig;
+
                 // 修改base，添加stylus global import
-                var vueLoaders = webpack.base.module.rules[0].use[0].options.loaders
-                vueLoaders.stylus[2].options.import = '~extensions/appshell/stylus/variables.styl';
-                vueLoaders.styl[2].options.import = '~extensions/appshell/stylus/variables.styl';
+                [client, server].forEach(function (config) {
+                    let vueLoaders = config.module.rules[0].use[0].options.loaders;
+
+                    let variablesFilePath = '~@/extensions/appShell/styles/variables.styl';
+                    vueLoaders.stylus[2].options.import = variablesFilePath;
+                    vueLoaders.styl[2].options.import = variablesFilePath;
+                });
 
                 // 修改server，为iscroll的服务端增加备用
-                if (!webpack.server.resolve) {
-                    webpack.server.resolve = {
+                if (!server.resolve) {
+                    server.resolve = {
                         alias: {}
                     }
                 }
-                else if (!webpack.server.resolve.alias) {
-                    webpack.server.resolve.alias = {};
+                else if (!server.resolve.alias) {
+                    server.resolve.alias = {};
                 }
 
-                webpack.server.resolve.alias['iscroll/build/iscroll-lite$']
+                server.resolve.alias['iscroll/build/iscroll-lite$']
                     = path.resolve(globalConfig.rootDir, 'core/fix-ssr.js');
-                webpack.server.externals = nodeExternals({
+                server.externals = nodeExternals({
                     whitelist: [/\.(css|vue)$/, /iscroll/]
                 });
             }
