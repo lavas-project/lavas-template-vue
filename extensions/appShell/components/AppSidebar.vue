@@ -64,7 +64,7 @@ export default {
         Sidebar
     },
     computed: {
-        ...mapState('appShell/appSidebar', [
+        ...mapState('appshell/appSidebar', [
             'show',
             'title',
             'user',

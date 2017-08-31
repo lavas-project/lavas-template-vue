@@ -7,14 +7,14 @@
 
 import Vue from 'vue';
 import Vuex from 'vuex';
-import {createAppShellState} from 'extensions/appShell/store/module';
+import {createAppShellState} from 'extensions/appshell/store/module';
 
 Vue.use(Vuex);
 
 export function createStore() {
     return new Vuex.Store({
         modules: {
-            appShell: createAppShellState()
+            appshell: createAppShellState()
         }
     });
 }

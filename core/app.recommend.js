@@ -1,6 +1,6 @@
 /**
  * @file entry
- * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
+ * @author wangyisheng(wangyisheng@baidu.com)
  */
 
 import Vue from 'vue';

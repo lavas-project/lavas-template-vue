@@ -50,7 +50,7 @@ import EventBus from '@/core/event-bus';
 export default {
     name: 'appHeader',
     computed: {
-        ...mapState('appShell/appHeader', [
+        ...mapState('appshell/appHeader', [
             'show',
             'showMenu',
             'showBack',
@@ -59,7 +59,7 @@ export default {
             'title',
             'actions'
         ]),
-        ...mapState('appShell', [
+        ...mapState('appshell', [
             'isPageSwitching'
         ])
     },
