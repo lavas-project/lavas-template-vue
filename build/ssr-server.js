@@ -55,7 +55,7 @@ Object.keys(errConfig.statusCode).forEach(key => {
 
     let port = process.env.PORT || 3000;
     app.listen(port, () => {
-        console.log('server started at localhost:' + port);
+        console.log('[Lavas] server started at localhost:' + port);
     });
 })();
 
@@ -104,6 +104,10 @@ function onerror(err) {
         // if already in error procedure, then end this request immediately, avoid infinite loop
         this.res.end();
         return;
+    }
+
+    if (err.status !== 404) {
+        console.error(err);
     }
 
     // clear headers
