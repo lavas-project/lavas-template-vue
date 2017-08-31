@@ -1,6 +1,6 @@
 /**
  * @file app shell store
- * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
+ * @author wangyisheng(wangyisheng@baidu.com)
  */
 
 import * as types from './mutation-types';

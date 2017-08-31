@@ -30,7 +30,7 @@ import EventBus from '@/core/event-bus';
 export default {
     name: 'app-bottom-navigator',
     computed: {
-        ...mapState('appShell/appBottomNavigator', [
+        ...mapState('appshell/appBottomNavigator', [
             'show',
             'navs'
         ])
