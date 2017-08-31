@@ -9,6 +9,7 @@ const nodeExternals = require('webpack-node-externals');
 const VueSSRServerPlugin = require('vue-server-renderer/server-plugin');
 
 const webpackBaseConfig = require('./webpack.base.conf');
+const config = require('./config');
 
 const server = merge(webpackBaseConfig, {
     target: 'node',
@@ -22,7 +23,7 @@ const server = merge(webpackBaseConfig, {
     // https://github.com/liady/webpack-node-externals
     externals: nodeExternals({
         // do not externalize CSS files in case we need to import it from a dep
-        whitelist: [/\.(css|vue)$/]
+        whitelist: [/\.(css|vue)$/, ...config.webpack.nodeExternalsWhilelist]
     }),
     plugins: [
         new webpack.DefinePlugin({

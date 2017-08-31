@@ -10,6 +10,7 @@ const webpack = require('webpack');
 const merge = require('webpack-merge');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const VueSSRClientPlugin = require('vue-server-renderer/client-plugin');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 const utils = require('./utils');
 const config = require('./config');
@@ -82,6 +83,11 @@ const client = merge(webpackBaseConfig, {
 // if ssr enabled, add VueSSRClientPlugin
 if (config.ssr.enable) {
     client.plugins.push(new VueSSRClientPlugin());
+}
+
+// webpack bundle analyzer plugin
+if (config.webpack.bundleAnalyzerReport) {
+    client.plugins.push(new BundleAnalyzerPlugin(Object.assign({}, config.webpack.bundleAnalyzerReport)));
 }
 
 // run extend function

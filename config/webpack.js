@@ -69,6 +69,23 @@ module.exports = {
     plugins: [],
 
     /**
+     * node externals whitelist, only work in webpack.server.conf.js，default /\.(css|vue)$/
+     *     https://webpack.js.org/configuration/externals/#externals
+     *     https://github.com/liady/webpack-node-externals
+     *
+     * @type {Array.<RegExp|string>}
+     */
+    nodeExternalsWhilelist: [],
+
+    /**
+     * if need analyzer, https://github.com/th0r/webpack-bundle-analyzer
+     * default false, if this variable is an Object, then analyzer will be opened
+     *
+     * @type {boolean|Object}
+     */
+    bundleAnalyzerReport: false,
+
+    /**
      * if extract css files
      *
      * @type {boolean}
