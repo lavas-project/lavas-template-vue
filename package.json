@@ -9,7 +9,8 @@
     "start": "npm run build:core && cross-env NODE_ENV=production node server.js",
     "lint": "fecs ./ --rule --type 'vue,js,css'",
     "build:core": "babel build --out-dir lib --copy-files",
-    "test": "npm run build:core && ./node_modules/.bin/nyc ava"
+    "test": "npm run build:core && ./node_modules/.bin/nyc ava",
+    "build:server": "webpack"
   },
   "ava": {
     "concurrency": 1,
