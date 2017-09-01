@@ -79,20 +79,17 @@ export default class LavasCore {
     async build() {
         await this.routeManager.autoCompileRoutes();
 
-        let clientConfig = this.webpackConfig.client(this.config);
-        let serverConfig = this.webpackConfig.server(this.config);
-
         // execute extensions
         this.config.extensions.forEach(({name, init}) => {
             console.log(`[Lavas] ${name} extension is running...`);
 
             if (init && typeof init === 'function') {
-                init.call(null, {
-                    client: clientConfig,
-                    server: serverConfig
-                });
+                this.webpackConfig.hooks.push(init);
             }
         });
+
+        let clientConfig = this.webpackConfig.client(this.config);
+        let serverConfig = this.webpackConfig.server(this.config);
 
         await this.renderer.init(clientConfig, serverConfig);
 
@@ -109,9 +106,10 @@ export default class LavasCore {
     }
 
     async koaMiddleware(ctx, next) {
-
-        if (this.routeManager.shouldPrerender(ctx.path)) {
-            ctx.body = await this.routeManager.prerender(ctx.path);
+        let matchedRoute = this.routeManager.findMatchedRoute(ctx.path);
+        if (this.env === 'production'
+            && matchedRoute && matchedRoute.prerender) {
+            ctx.body = await this.routeManager.prerender(matchedRoute);
         }
         else {
             let renderer = await this.renderer.getRenderer();

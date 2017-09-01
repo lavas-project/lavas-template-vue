@@ -21,10 +21,17 @@ export default class WebpackConfig {
     constructor(config = {}, env) {
         this.config = config;
         this.env = env;
+        this.hooks = [];
     }
 
     assetsPath(newPath) {
         return posix.join(this.config.webpack.shortcuts.assetsDir, newPath);
+    }
+
+    executeHooks(params) {
+        this.hooks.forEach(hook => {
+            hook.call(null, params, this.env);
+        });
     }
 
     base(config) {
@@ -182,6 +189,10 @@ export default class WebpackConfig {
             build.call(this, clientConfig, {type: 'client'});
         }
 
+        this.executeHooks({
+            client: clientConfig
+        });
+
         return clientConfig;
     }
 
@@ -215,6 +226,10 @@ export default class WebpackConfig {
         if (typeof build === 'function') {
             build.call(this, serverConfig, {type: 'server'});
         }
+
+        this.executeHooks({
+            server: serverConfig
+        });
 
         return serverConfig;
     }

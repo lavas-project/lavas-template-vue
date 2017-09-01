@@ -26,6 +26,8 @@ import {generateRoutes} from './utils/router';
 const routesTemplate = join(__dirname, './templates/routes.tpl');
 const skeletonEntryTemplate = join(__dirname, './templates/entry-skeleton.tpl');
 
+import {inspect} from 'util';
+
 export default class RouteManager {
 
     constructor(config, env, webpackConfig) {
@@ -40,40 +42,45 @@ export default class RouteManager {
 
         this.routes = [];
 
-        this.cache = lruCache({
+        this.flatRoutes = new Set();
+
+        this.prerenderCache = lruCache({
             max: 1000,
             maxAge: 1000 * 60 * 15
         });
     }
 
     /**
-     * should current request path be prerendered ?
+     * find matched route
      *
      * @param {string} path route path
-     * @return {boolean}
+     * @param {Array} routes routes
+     * @return {Object} matchedRoute
      */
-    shouldPrerender(path) {
-        if (!this.env === 'production') {
-            return false;
+    findMatchedRoute(path, routes = this.routes) {
+        let matchedRoute = routes.find(route => route.pathRegExp.test(path));
+        if (matchedRoute && matchedRoute.children) {
+            let matched = route.pathRegExp.match(path);
+            if (matched && matched[0]) {
+                matchedRoute = findMatchedRoute(
+                    path.substring(matched[0].length), matchedRoute.children);
+            }
         }
-        let matchedRoute = this.routes.find(route => route.pathRegExp.test(path));
-
-        return matchedRoute && matchedRoute.prerender;
+        return matchedRoute;
     }
 
     /**
-     * find html according to current route path
+     * find html according to current route
      *
-     * @param {string} path route path
+     * @param {Object} route route
      * @return {Promise}
      */
-    async prerender(path) {
-        let matchedRoute = this.routes.find(route => route.pathRegExp.test(path));
-        if (matchedRoute && matchedRoute.htmlPath) {
-            let entry = this.cache.get(path);
+    async prerender(route) {
+        if (route && route.htmlPath) {
+            let entry = this.prerenderCache.get(route.name);
             if (!entry) {
-                entry = await readFile(matchedRoute.htmlPath, 'utf8');
-                this.cache.set(path, entry);
+                entry = await readFile(route.htmlPath, 'utf8');
+                this.prerenderCache.set(route.name, entry);
             }
             return entry;
         }
@@ -188,6 +195,8 @@ export default class RouteManager {
 
         if (Object.keys(mpaConfig.entry).length) {
 
+            inspect(mpaConfig, null, false);
+
             await new Promise((resolve, reject) => {
 
                 // start to compile multi entries
@@ -221,16 +230,17 @@ export default class RouteManager {
     }
 
     /**
-     * output routes.js into .lavas according to /pages
+     * merge routes with config recursively
      *
+     * @params {Array} routes
+     * @params {Array} routesConfig
      */
-    async autoCompileRoutes() {
-        const routesConfig = this.config.router && this.config.router.routes || [];
+    mergeWithConfig(routes, routesConfig = []) {
+        routes.forEach(route => {
 
-        console.log('[Lavas] auto compile routes...');
-        this.routes = await generateRoutes(join(this.targetDir, '../pages'));
+            // add to set
+            this.flatRoutes.add(route);
 
-        this.routes.forEach(route => {
             // find route in config
             let routeConfig = routesConfig.find(r => r.name === route.name);
 
@@ -248,26 +258,74 @@ export default class RouteManager {
                 });
             }
 
-            /**
-             * generate hash for each route which will be used in routes.js template,
-             * an underscore "_" will be added in front of each hash, because JS variables can't
-             * start with numbers
-             */
-            route.hash = createHash('md5').update(route.name).digest('hex');
+            if (route.name) {
+                /**
+                 * generate hash for each route which will be used in routes.js template,
+                 * an underscore "_" will be added in front of each hash, because JS variables can't
+                 * start with numbers
+                 */
+                route.hash = createHash('md5').update(route.name).digest('hex');
+            }
 
             /**
-             * turn route path into regexp
+             * turn route fullpath into regexp
              * eg. /detail/:id => /^\/detail\/[^\/]+\/?$/
              */
-            route.pathRegExp = new RegExp(`^${route.path.replace(/\/:[^\/]*/g, '/[^\/]+')}\/?$`);
+            route.pathRegExp = new RegExp(`^${route.path.replace(/\/:[^\/]*/g, '/[^\/]+')}\/?`);
+
+            if (route.children && route.children.length) {
+                this.mergeWithConfig(route.children, routeConfig && routeConfig.children);
+            }
         });
+    }
+
+    /**
+     * generate routes content
+     *
+     * @params {Array} routes
+     * @return {string} content
+     */
+    generateRoutesContent(routes) {
+        return routes.reduce((prev, cur) => {
+            let childrenContent = '';
+            if (cur.children) {
+                childrenContent = `children: [
+                    ${this.generateRoutesContent(cur.children)}
+                ]`;
+            }
+            return prev + `{
+                path: '${cur.path}',
+                name: '${cur.name}',
+                component: _${cur.hash},
+                meta: ${JSON.stringify(cur.meta || {})},
+                ${childrenContent}
+            },`
+        }, '');
+    }
+
+    /**
+     * output routes.js into .lavas according to /pages
+     *
+     */
+    async autoCompileRoutes() {
+        const routesConfig = this.config.router && this.config.router.routes || [];
+
+        console.log('[Lavas] auto compile routes...');
+        this.routes = await generateRoutes(join(this.targetDir, '../pages'));
+
+        this.mergeWithConfig(this.routes, routesConfig);
+
+        let routesContent = this.generateRoutesContent(this.routes);
 
         // write contents into .lavas/routes.js
         let routesFilePath = join(this.targetDir, './routes.js');
         await ensureFile(routesFilePath);
         await writeFile(
             routesFilePath,
-            template(await readFile(routesTemplate, 'utf8'))({routes: this.routes}),
+            template(await readFile(routesTemplate, 'utf8'))({
+                routes: this.flatRoutes,
+                routesContent
+            }),
             'utf8'
         );
 

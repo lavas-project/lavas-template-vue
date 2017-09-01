@@ -142,11 +142,9 @@ function treeToRouter(tree, parent) {
             route.component += '.vue';
             route.children = treeToRouter(children, info);
         }
-        else {
-            route.name = info.level.slice(1).join('-')
-                .replace(/_/g, '')
-                .replace(/(-index)?\.vue$/, '');
-        }
+        route.name = info.level.slice(1).join('-')
+            .replace(/_/g, '')
+            .replace(/(-index)?\.vue$/, '');
 
         router.push(route);
         return router;
