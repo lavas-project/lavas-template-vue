@@ -24,13 +24,11 @@ export default class LavasCore {
 
         ConfigValidator.validate(this.config);
 
+        this.renderer = new Renderer(this);
+
         this.webpackConfig = new WebpackConfig(this.config, this.env);
 
         this.routeManager = new RouteManager(this.config, this.env, this.webpackConfig);
-
-        this.renderer = new Renderer(this);
-
-        this.setupMiddlewares();
     }
 
     async loadConfig() {
@@ -77,30 +75,37 @@ export default class LavasCore {
     }
 
     async build() {
-        await this.routeManager.autoCompileRoutes();
+        await this.routeManager.buildRoutes();
 
-        // execute extensions
+        // add extension's hooks
         this.config.extensions.forEach(({name, init}) => {
             console.log(`[Lavas] ${name} extension is running...`);
-
-            if (init && typeof init === 'function') {
-                this.webpackConfig.hooks.push(init);
-            }
+            this.webpackConfig.addHooks(init);
         });
 
         let clientConfig = this.webpackConfig.client(this.config);
         let serverConfig = this.webpackConfig.server(this.config);
 
-        await this.renderer.init(clientConfig, serverConfig);
+        await this.renderer.build(clientConfig, serverConfig);
 
-        // compile multi entries in production mode
         if (this.env === 'production') {
-            await this.routeManager.compileMultiEntries();
+            // compile multi entries in production mode
+            await this.routeManager.buildMultiEntries();
         }
+    }
+
+    async run() {
+        if (this.env === 'production') {
+            await this.routeManager.createFromRoutesFile();
+            await this.renderer.createAfterBuild();
+        }
+
+        this.setupMiddlewares();
     }
 
     setupMiddlewares() {
         if (this.app) {
+            // add static middleware
             this.app.use(serve(this.config.webpack.base.output.path));
         }
     }

@@ -26,8 +26,6 @@ import {generateRoutes} from './utils/router';
 const routesTemplate = join(__dirname, './templates/routes.tpl');
 const skeletonEntryTemplate = join(__dirname, './templates/entry-skeleton.tpl');
 
-import {inspect} from 'util';
-
 export default class RouteManager {
 
     constructor(config, env, webpackConfig) {
@@ -119,7 +117,7 @@ export default class RouteManager {
      * create a webpack config and compile with it
      *
      */
-    async compileMultiEntries() {
+    async buildMultiEntries() {
         let {shortcuts, base} = this.config.webpack;
         let {assetsDir, ssr} = shortcuts;
 
@@ -194,8 +192,6 @@ export default class RouteManager {
         }
 
         if (Object.keys(mpaConfig.entry).length) {
-
-            inspect(mpaConfig, null, false);
 
             await new Promise((resolve, reject) => {
 
@@ -304,17 +300,25 @@ export default class RouteManager {
     }
 
     /**
-     * output routes.js into .lavas according to /pages
+     * write dist/routes.json which will be used in prod mode
      *
      */
-    async autoCompileRoutes() {
-        const routesConfig = this.config.router && this.config.router.routes || [];
+    async writeRoutesFile() {
+        // write contents into dist/routes.json
+        let routesFilePath = join(this.config.webpack.base.output.path, './routes.json');
+        await ensureFile(routesFilePath);
+        await writeFile(
+            routesFilePath,
+            JSON.stringify(this.routes),
+            'utf8'
+        );
+    }
 
-        console.log('[Lavas] auto compile routes...');
-        this.routes = await generateRoutes(join(this.targetDir, '../pages'));
-
-        this.mergeWithConfig(this.routes, routesConfig);
-
+    /**
+     * write .lavas/routes.js
+     *
+     */
+    async writeRoutesSourceFile() {
         let routesContent = this.generateRoutesContent(this.routes);
 
         // write contents into .lavas/routes.js
@@ -335,7 +339,37 @@ export default class RouteManager {
          */
         let then = Date.now() / 1000 - 10;
         await utimes(routesFilePath, then, then);
+    }
+
+    /**
+     * output routes.js into .lavas according to /pages
+     *
+     */
+    async buildRoutes() {
+        const routesConfig = this.config.router && this.config.router.routes || [];
+
+        console.log('[Lavas] auto compile routes...');
+
+        this.routes = await generateRoutes(join(this.targetDir, '../pages'));
+
+        this.mergeWithConfig(this.routes, routesConfig);
+
+        this.writeRoutesSourceFile();
+
+        if (this.env === 'production') {
+            this.writeRoutesFile();
+        }
 
         console.log('[Lavas] all routes are already generated.');
+    }
+
+    /**
+     * create routes based on routes.json
+     *
+     */
+    async createFromRoutesFile() {
+        let routesFilePath = join(this.config.webpack.base.output.path, './routes.json');
+        this.routes = JSON.parse(await readFile(routesFilePath, 'utf8'));
+        this.mergeWithConfig(this.routes);
     }
 }

@@ -21,19 +21,58 @@ export default class WebpackConfig {
     constructor(config = {}, env) {
         this.config = config;
         this.env = env;
-        this.hooks = [];
+        this.hooks = {};
     }
 
-    assetsPath(newPath) {
-        return posix.join(this.config.webpack.shortcuts.assetsDir, newPath);
+    /**
+     * generate a relative path based on config
+     * eg. static/js/[name].[hash].js
+     *
+     * @param {string} sourcePath source path
+     * @return {string} relative path
+     */
+    assetsPath(sourcePath) {
+        return posix.join(this.config.webpack.shortcuts.assetsDir, sourcePath);
     }
 
-    executeHooks(params) {
-        this.hooks.forEach(hook => {
-            hook.call(null, params, this.env);
+    /**
+     * add hooks to proper queue
+     *
+     * @param {Object} hooks hook object contains base, client and server function
+     */
+    addHooks(hooks) {
+
+        Object.keys(hooks).forEach(hookKey => {
+            let hook = hooks[hookKey];
+            if (!this.hooks[hookKey]) {
+                this.hooks[hookKey] = [];
+            }
+            if (hook && typeof hook === 'function') {
+                this.hooks[hookKey].push(hook);
+            }
         });
     }
 
+    /**
+     * serially execute added hooks
+     *
+     * @param {string} type base|server|client
+     * @param {Object} config config
+     */
+    executeHooks(type, config) {
+        if (this.hooks[type]) {
+            this.hooks[type].forEach(hook => {
+                hook.call(null, config);
+            });
+        }
+    }
+
+    /**
+     * generate webpack base config based on lavas config
+     *
+     * @param {Object} config lavas config
+     * @return {Object} webpack base config
+     */
     base(config) {
         let isProd = this.env === 'production';
         let {globals, webpack: webpackConfig, babel} = config;
@@ -113,9 +152,17 @@ export default class WebpackConfig {
             build.call(this, baseConfig, {type: 'base'});
         }
 
+        this.executeHooks('base', baseConfig);
+
         return baseConfig;
     }
 
+    /**
+     * generate client base config based on lavas config
+     *
+     * @param {Object} config lavas config
+     * @return {Object} client base config
+     */
     client(config) {
         let webpackConfig = config.webpack;
         let {client, shortcuts, mergeStrategy = {}, build} = webpackConfig;
@@ -189,13 +236,17 @@ export default class WebpackConfig {
             build.call(this, clientConfig, {type: 'client'});
         }
 
-        this.executeHooks({
-            client: clientConfig
-        });
+        this.executeHooks('client', clientConfig);
 
         return clientConfig;
     }
 
+    /**
+     * generate webpack server config based on lavas config
+     *
+     * @param {Object} config lavas config
+     * @return {Object} webpack server config
+     */
     server(config) {
         let webpackConfig = config.webpack;
         let {server, mergeStrategy = {}, build} = webpackConfig;
@@ -227,9 +278,7 @@ export default class WebpackConfig {
             build.call(this, serverConfig, {type: 'server'});
         }
 
-        this.executeHooks({
-            server: serverConfig
-        });
+        this.executeHooks('server', serverConfig);
 
         return serverConfig;
     }

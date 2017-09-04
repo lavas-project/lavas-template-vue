@@ -6,10 +6,11 @@
   "private": true,
   "scripts": {
     "dev": "npm run build:core && cross-env NODE_ENV=development node server.js",
-    "start": "npm run build:core && cross-env NODE_ENV=production node server.js",
+    "build": "npm run build:core && cross-env NODE_ENV=production node build.js",
+    "start": "cross-env NODE_ENV=production node server.js",
+    "test": "npm run build:core && ./node_modules/.bin/nyc ava",
     "lint": "fecs ./ --rule --type 'vue,js,css'",
     "build:core": "babel build --out-dir lib --copy-files",
-    "test": "npm run build:core && ./node_modules/.bin/nyc ava",
     "build:server": "webpack"
   },
   "ava": {

@@ -23,53 +23,59 @@ export default class Renderer {
         this.readyPromise = new Promise(r => this.resolve = r);
     }
 
-    async init(clientConfig, serverConfig) {
+    async createAfterBuild() {
+        let outputPath = this.config.webpack.base.output.path;
+        this.serverBundle = await import(join(outputPath, './vue-ssr-server-bundle.json'));
+        this.clientManifest = await import(join(outputPath, './vue-ssr-client-manifest.json'));
+        await this.createRenderer();
+    }
+
+    async buildProduction(clientConfig, serverConfig) {
+        let outputPath = this.config.webpack.base.output.path;
+
+        // clear dist/
+        await emptyDir(outputPath);
+
+        // set context in both configs
+        clientConfig.context = this.rootDir;
+        serverConfig.context = this.rootDir;
+
+        // start to build client & server configs
+        await new Promise((resolve, reject) => {
+
+            webpack([clientConfig, serverConfig], (err, stats) => {
+                if (err) {
+                    console.error(err.stack || err);
+                    if (err.details) {
+                        console.error(err.details);
+                    }
+                    reject(err);
+                    return;
+                }
+
+                const info = stats.toJson();
+
+                if (stats.hasErrors()) {
+                    console.error(info.errors);
+                    reject(info.errors);
+                    return;
+                }
+
+                if (stats.hasWarnings()) {
+                    console.warn(info.warnings);
+                }
+
+                console.log('[Lavas] production build completed.');
+                resolve();
+            });
+        });
+    }
+
+    async build(clientConfig, serverConfig) {
         this.clientConfig = clientConfig;
         this.serverConfig = serverConfig;
         if (this.env === 'production') {
-
-            let outputPath = this.config.webpack.base.output.path;
-
-            // clear dist/
-            await emptyDir(outputPath);
-
-            // set context in both configs
-            clientConfig.context = this.rootDir;
-            serverConfig.context = this.rootDir;
-
-            // start to build client & server configs
-            await new Promise((resolve, reject) => {
-
-                webpack([clientConfig, serverConfig], (err, stats) => {
-                    if (err) {
-                        console.error(err.stack || err);
-                        if (err.details) {
-                            console.error(err.details);
-                        }
-                        reject(err);
-                        return;
-                    }
-
-                    const info = stats.toJson();
-
-                    if (stats.hasErrors()) {
-                        console.error(info.errors);
-                        reject(info.errors);
-                        return;
-                    }
-
-                    if (stats.hasWarnings()) {
-                        console.warn(info.warnings);
-                    }
-
-                    console.log('[Lavas] production build completed.');
-                    resolve();
-                });
-            });
-
-            this.serverBundle = await import(join(outputPath, './vue-ssr-server-bundle.json'));
-            this.clientManifest = await import(join(outputPath, './vue-ssr-client-manifest.json'));
-            await this.createRenderer();
+            this.buildProduction(clientConfig, serverConfig);
         }
         else {
             // get client manifest
