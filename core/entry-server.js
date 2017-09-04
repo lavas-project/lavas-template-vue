@@ -4,6 +4,9 @@
  */
 
 import {createApp} from './app';
+import middleware from './middleware';
+import middConf from '@/config/middleware';
+import {middlewareSeries, getContext} from './utils';
 const isDev = process.env.NODE_ENV !== 'production';
 
 // This exported function will be called by `bundleRenderer`.
@@ -18,7 +21,13 @@ export default function (context) {
         let url = context.url;
         let fullPath = router.resolve(url).route.fullPath;
 
+        context.store = store;
+
+        context.route = router.currentRoute;
+
         context.meta = app.$meta();
+        console.log(context);
+
 
         if (fullPath !== url) {
             reject({url: fullPath});
@@ -26,8 +35,9 @@ export default function (context) {
 
         // set router's location
         router.push(url);
+
         // wait until router has resolved possible async hooks
-        router.onReady(() => {
+        router.onReady(async () => {
             let matchedComponents = router.getMatchedComponents();
 
             // no matched routes
@@ -38,6 +48,9 @@ export default function (context) {
                 err.status = 404;
                 reject(err);
             }
+
+            // middleware
+            middlewareProcess(matchedComponents);
 
             // Call fetchData hooks on components matched by the route.
             // A preFetch hook dispatches a store action and returns a Promise,
@@ -61,5 +74,37 @@ export default function (context) {
                 resolve(app);
             }).catch(reject);
         }, reject);
+
+        async function middlewareProcess(matchedComponents) {
+            let Components = matchedComponents;
+
+            // Update context
+            const ctx = getContext(context, app);
+
+            let unknownMiddleware = false;
+
+            // serverMidd + clientMidd + components Midd
+            let midd = middConf.serverMidd.concat(middConf.clientMidd);
+            Components.forEach(Component => {
+                if (Component.middleware) {
+                    midd = midd.concat(Component.middleware);
+                }
+            });
+
+            midd = midd.map(name => {
+                if (typeof middleware[name] !== 'function') {
+                    unknownMiddleware = true;
+                    // 错误处理
+                }
+                return middleware[name];
+            });
+
+            if (!unknownMiddleware) {
+                await middlewareSeries(midd, ctx);
+            }
+
+        }
+
+
     });
 }
