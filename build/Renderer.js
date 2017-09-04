@@ -4,7 +4,7 @@
  */
 
 import {join} from 'path';
-import {readFile, emptyDir} from 'fs-extra';
+import {readFile} from 'fs-extra';
 import webpack from 'webpack';
 import MFS from 'memory-fs';
 import koaWebpack from 'koa-webpack';
@@ -31,11 +31,6 @@ export default class Renderer {
     }
 
     async buildProduction(clientConfig, serverConfig) {
-        let outputPath = this.config.webpack.base.output.path;
-
-        // clear dist/
-        await emptyDir(outputPath);
-
         // set context in both configs
         clientConfig.context = this.rootDir;
         serverConfig.context = this.rootDir;

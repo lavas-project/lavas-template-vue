@@ -232,6 +232,7 @@ export default class RouteManager {
      * @params {Array} routesConfig
      */
     mergeWithConfig(routes, routesConfig = []) {
+
         routes.forEach(route => {
 
             // add to set
@@ -354,10 +355,10 @@ export default class RouteManager {
 
         this.mergeWithConfig(this.routes, routesConfig);
 
-        this.writeRoutesSourceFile();
+        await this.writeRoutesSourceFile();
 
         if (this.env === 'production') {
-            this.writeRoutesFile();
+            await this.writeRoutesFile();
         }
 
         console.log('[Lavas] all routes are already generated.');

@@ -99,6 +99,11 @@ test.serial('it should use koa middleware in production mode correctly', async t
         .get('/static/manifest.json');
     t.is(200, res.status);
     t.is(res.text, await readFile(join(copyDir, 'manifest.json'), 'utf8'));
+
+    // return 404 when try to routes.json|vue-ssr-client-manifest.json
+    res = await superkoa(app)
+        .get('/routes.json');
+    t.is(404, res.status);
 });
 
 test.serial('it should prerender and generate skeleton correctly', async t => {
