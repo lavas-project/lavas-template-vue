@@ -1,7 +1,3 @@
-/**
- * @file utils.router.js
- * @author lavas
- */
 import {resolve, dirname, basename} from 'path';
 import glob from 'glob';
 
@@ -11,7 +7,8 @@ import glob from 'glob';
  * @param {string} baseDir root folder path
  * @return {Promise} resolve generated router, reject error
  */
-export function generateRoutes(baseDir) {
+
+export function generateRoutes (baseDir) {
     return getDirs(baseDir, '.vue')
         .then(dirs => {
             let tree = mapDirsInfo(dirs, baseDir)
@@ -145,11 +142,9 @@ function treeToRouter(tree, parent) {
             route.component += '.vue';
             route.children = treeToRouter(children, info);
         }
-        else {
-            route.name = info.level.slice(1).join('-')
-                .replace(/_/g, '')
-                .replace(/(-index)?\.vue$/, '');
-        }
+        route.name = info.level.slice(1).join('-')
+            .replace(/_/g, '')
+            .replace(/(-index)?\.vue$/, '');
 
         router.push(route);
         return router;

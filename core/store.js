@@ -10,6 +10,7 @@
 
 import Vue from 'vue';
 import Vuex from 'vuex';
+import {createAppShellState} from '@/extensions/appshell/store/module';
 
 Vue.use(Vuex);
 
@@ -57,7 +58,10 @@ if (typeof storeData !== 'function') {
 export const createStore = storeData instanceof Function
     ? storeData
     : () => new Vuex.Store(Object.assign({}, storeData, {
-        state: storeData.state instanceof Function ? storeData.state() : {}
+        state: storeData.state instanceof Function ? storeData.state() : {},
+        modules: {
+            appshell: createAppShellState()
+        }
     }));
 
 /**

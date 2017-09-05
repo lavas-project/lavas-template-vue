@@ -1,6 +1,6 @@
 /**
  * @file entry
- * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
+ * @author wangyisheng(wangyisheng@baidu.com)
  */
 
 import Vue from 'vue';
@@ -8,14 +8,19 @@ import Meta from 'vue-meta';
 import {createRouter} from './router';
 import {createStore} from './store';
 import App from './App.vue';
+
+/* ======== lavas extensions start ======== */
+// 增加引用Vuetify
 import Vuetify from 'vuetify';
 
 Vue.use(Vuetify);
+/* ======== lavas extensions end ======== */
+
 Vue.use(Meta, {
-    keyName: 'head', // vue-meta 的参数名称
-    attribute: 'data-vue-meta', // 由 vue-meta 渲染的元素会添加一个属性 <title data-vue-meta=""></title>
-    ssrAttribute: 'data-vue-meta-server-rendered', // 由服务器端渲染的 vue-meta 元素的自定义属性名称
-    tagIDKeyName: 'vmid' // vue-meta 用于确定是否覆盖或附加标签的属性名称
+    keyName: 'head',
+    attribute: 'data-vue-meta',
+    ssrAttribute: 'data-vue-meta-server-rendered',
+    tagIDKeyName: 'vmid'
 });
 Vue.config.productionTip = false;
 

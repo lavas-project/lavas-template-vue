@@ -22,12 +22,58 @@ export default class WebpackConfig {
     constructor(config = {}, env) {
         this.config = config;
         this.env = env;
+        this.hooks = {};
     }
 
-    assetsPath(newPath) {
-        return posix.join(this.config.webpack.shortcuts.assetsDir, newPath);
+    /**
+     * generate a relative path based on config
+     * eg. static/js/[name].[hash].js
+     *
+     * @param {string} sourcePath source path
+     * @return {string} relative path
+     */
+    assetsPath(sourcePath) {
+        return posix.join(this.config.webpack.shortcuts.assetsDir, sourcePath);
     }
 
+    /**
+     * add hooks to proper queue
+     *
+     * @param {Object} hooks hook object contains base, client and server function
+     */
+    addHooks(hooks) {
+
+        Object.keys(hooks).forEach(hookKey => {
+            let hook = hooks[hookKey];
+            if (!this.hooks[hookKey]) {
+                this.hooks[hookKey] = [];
+            }
+            if (hook && typeof hook === 'function') {
+                this.hooks[hookKey].push(hook);
+            }
+        });
+    }
+
+    /**
+     * serially execute added hooks
+     *
+     * @param {string} type base|server|client
+     * @param {Object} config config
+     */
+    executeHooks(type, config) {
+        if (this.hooks[type]) {
+            this.hooks[type].forEach(hook => {
+                hook.call(null, config);
+            });
+        }
+    }
+
+    /**
+     * generate webpack base config based on lavas config
+     *
+     * @param {Object} config lavas config
+     * @return {Object} webpack base config
+     */
     base(config) {
         let isProd = this.env === 'production';
         let {globals, webpack: webpackConfig, babel} = config;
@@ -85,12 +131,12 @@ export default class WebpackConfig {
             },
             plugins: isProd
                 ? [
-                    new webpack.optimize.UglifyJsPlugin({
-                        compress: {
-                            warnings: false
-                        },
-                        sourceMap: jsSourceMap
-                    }),
+                    // new webpack.optimize.UglifyJsPlugin({
+                    //     compress: {
+                    //         warnings: false
+                    //     },
+                    //     sourceMap: jsSourceMap
+                    // }),
                     new ExtractTextPlugin({
                         filename: this.assetsPath('css/[name].[contenthash].css')
                     }),
@@ -110,9 +156,17 @@ export default class WebpackConfig {
             });
         }
 
+        this.executeHooks('base', baseConfig);
+
         return baseConfig;
     }
 
+    /**
+     * generate client base config based on lavas config
+     *
+     * @param {Object} config lavas config
+     * @return {Object} client base config
+     */
     client(config) {
         let webpackConfig = config.webpack;
         let {client, shortcuts, mergeStrategy = {}, extend} = webpackConfig;
@@ -159,7 +213,12 @@ export default class WebpackConfig {
                         let targets = ['vue', 'vue-router', 'vuex', 'vue-meta'];
                         return context
                             && context.indexOf('node_modules') >= 0
-                            && targets.find(t => new RegExp('/' + t + '/', 'i').test(context));
+                            && targets.find(t => {
+                                let npmRegExp = new RegExp(`/${t}/`, 'i');
+                                // compatible with cnpm, eg./_vue@2.4.2@vue/
+                                let cnpmRegExp = new RegExp(`/_${t}@\\d\\.\\d\\.\\d@${t}/`, 'i');
+                                return npmRegExp.test(context) || cnpmRegExp.test(context);
+                            });
                     }
                 }),
 
@@ -195,9 +254,17 @@ export default class WebpackConfig {
             });
         }
 
+        this.executeHooks('client', clientConfig);
+
         return clientConfig;
     }
 
+    /**
+     * generate webpack server config based on lavas config
+     *
+     * @param {Object} config lavas config
+     * @return {Object} webpack server config
+     */
     server(config) {
         let webpackConfig = config.webpack;
         let {server, mergeStrategy = {}, extend} = webpackConfig;
@@ -231,6 +298,8 @@ export default class WebpackConfig {
                 env: this.env
             });
         }
+
+        this.executeHooks('server', serverConfig);
 
         return serverConfig;
     }

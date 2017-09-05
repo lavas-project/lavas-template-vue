@@ -3,8 +3,6 @@
  * @author panyuqi (pyqiverson@gmail.com)
  */
 
-/* eslint-disable fecs-use-standard-promise */
-
 import {join} from 'path';
 import glob from 'glob';
 import test from 'ava';
@@ -57,7 +55,7 @@ test.serial('it should split into 4 bundles and extract css in production mode',
     let jsBundles = ['app', 'manifest', 'vendor', 'vue'];
 
     // split into 4 JS bundles
-    t.true(jsBundles.every(bundle => jsFiles.some(js => js.startsWith(bundle))));
+    t.true(jsBundles.every(bundle => jsFiles.some(js => js.startsWith(`${bundle}`))));
 
     let cssFiles = glob.sync(
         '**/*.css', {
@@ -91,6 +89,6 @@ test.serial('it should prerender detail.html in production mode', async t => {
 
     await core.build();
 
-    // detail.html
+    // output detail.html
     t.true(existsSync(join(outputPath, 'detail.html')));
 });

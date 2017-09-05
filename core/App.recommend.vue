@@ -1,3 +1,4 @@
+<!-- ======== lavas extensions start ======== -->
 <template>
     <div id="app">
         <div class="app-shell app-shell-bottom-navigation">
@@ -51,9 +52,9 @@
 
 <script>
 import {mapState, mapActions} from 'vuex';
-import AppHeader from '@/extensions/appshell/components/AppHeader';
-import AppSidebar from '@/extensions/appshell/components/AppSidebar';
-import AppBottomNavigator from '@/extensions/appshell/components/AppBottomNavigator';
+import AppHeader from 'extensions/appshell/components/AppHeader';
+import AppSidebar from 'extensions/appshell/components/AppSidebar';
+import AppBottomNavigator from 'extensions/appshell/components/AppBottomNavigator';
 
 export default {
     name: 'app',
@@ -110,7 +111,7 @@ export default {
 
 <style lang="stylus">
 
-@import '~@/extensions/appshell/styles/main'
+@import '~extensions/appshell/styles/main'
 
 body
     background-color: $material-theme.bg-color
@@ -190,3 +191,4 @@ body
             &.slide-left-leave-active
                 transform translate(-100%, 0)
 </style>
+<!-- ======== lavas extensions start ======== -->

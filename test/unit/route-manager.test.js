@@ -22,7 +22,7 @@ test.beforeEach('init', async t => {
  *
  */
 test.serial('it should generate routes.js in .lavas directory', async t => {
-    await core.routeManager.autoCompileRoutes();
+    await core.routeManager.buildRoutes();
 
     let content = await readFile(join(__dirname, '../fixtures/.lavas/routes.js'), 'utf8');
 
@@ -33,6 +33,7 @@ test.serial('it should generate routes.js in .lavas directory', async t => {
 });
 
 test.serial('it should modify route objects based on router config', async t => {
+
     Object.assign(core.config.router, {
         routes: [
             {
@@ -52,7 +53,7 @@ test.serial('it should modify route objects based on router config', async t => 
         ]
     });
 
-    await core.routeManager.autoCompileRoutes();
+    await core.routeManager.buildRoutes();
 
     let content = await readFile(join(__dirname, '../fixtures/.lavas/routes.js'), 'utf8');
 
@@ -64,4 +65,26 @@ test.serial('it should modify route objects based on router config', async t => 
 
     // support meta
     t.true(content.indexOf('meta: {"keepAlive":true}') > -1);
+});
+
+function emptyRegExp(routes) {
+    routes.forEach(route => {
+        route.pathRegExp = {};
+        if (route.children && route.children.length) {
+            emptyRegExp(route.children);
+        }
+    });
+}
+
+test.serial('it should generate routes.json in dist directory in prod mode', async t => {
+    await core.routeManager.buildRoutes();
+
+    let routes = core.routeManager.routes;
+
+    // regexp can't be serialized
+    emptyRegExp(routes);
+
+    let savedRoutes = JSON.parse(await readFile(join(__dirname, '../fixtures/dist/routes.json'), 'utf8'));
+
+    t.deepEqual(routes, savedRoutes)
 });
