@@ -17,7 +17,7 @@
     "concurrency": 1,
     "failFast": true,
     "files": [
-      "test/unit/renderer.test.js"
+      "test/unit/middleware.test.js"
     ],
     "require": [
       "babel-register"

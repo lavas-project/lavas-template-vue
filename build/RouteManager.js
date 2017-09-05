@@ -25,6 +25,7 @@ import {generateRoutes} from './utils/router';
 
 const routesTemplate = join(__dirname, './templates/routes.tpl');
 const skeletonEntryTemplate = join(__dirname, './templates/entry-skeleton.tpl');
+const ROUTES_FILE = 'routes.json';
 
 export default class RouteManager {
 
@@ -46,6 +47,8 @@ export default class RouteManager {
             max: 1000,
             maxAge: 1000 * 60 * 15
         });
+
+        this.privateFiles = [];
     }
 
     /**
@@ -306,7 +309,8 @@ export default class RouteManager {
      */
     async writeRoutesFile() {
         // write contents into dist/routes.json
-        let routesFilePath = join(this.config.webpack.base.output.path, './routes.json');
+        let routesFilePath = join(this.config.webpack.base.output.path, ROUTES_FILE);
+        this.privateFiles.push(ROUTES_FILE);
         await ensureFile(routesFilePath);
         await writeFile(
             routesFilePath,
@@ -357,10 +361,6 @@ export default class RouteManager {
 
         await this.writeRoutesSourceFile();
 
-        if (this.env === 'production') {
-            await this.writeRoutesFile();
-        }
-
         console.log('[Lavas] all routes are already generated.');
     }
 
@@ -368,7 +368,7 @@ export default class RouteManager {
      * create routes based on routes.json
      *
      */
-    async createFromRoutesFile() {
+    async createWithRoutesFile() {
         let routesFilePath = join(this.config.webpack.base.output.path, './routes.json');
         this.routes = JSON.parse(await readFile(routesFilePath, 'utf8'));
         this.mergeWithConfig(this.routes);

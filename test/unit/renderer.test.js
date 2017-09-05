@@ -3,8 +3,6 @@
  * @author panyuqi (pyqiverson@gmail.com)
  */
 
-/* eslint-disable fecs-use-standard-promise */
-
 import {join} from 'path';
 import glob from 'glob';
 import test from 'ava';
@@ -37,64 +35,60 @@ test.serial('it should copy all the files in static directory in production mode
         }
     );
 
-    console.log(staticFiles, staticFilesAfterBuild)
-
     // every files in static directory should be copied
     t.true(staticFiles.every(file => staticFilesAfterBuild.indexOf(file) > -1));
 });
-//
-// test.serial('it should split into 4 bundles and extract css in production mode', async t => {
-//     let webpackConfig = core.config.webpack;
-//     let outputPath = webpackConfig.base.output.path;
-//     let {assetsDir, copyDir} = webpackConfig.shortcuts;
-//
-//     await core.build();
-//
-//     let jsFiles = glob.sync(
-//         '**/*.js', {
-//             cwd: join(outputPath, assetsDir, 'js')
-//         }
-//     );
-//
-//     console.log(jsFiles)
-//
-//     let jsBundles = ['app', 'manifest', 'vendor', 'vue'];
-//
-//     // split into 4 JS bundles
-//     t.true(jsBundles.every(bundle => jsFiles.some(js => js.startsWith(`js/${bundle}`))));
-//
-//     let cssFiles = glob.sync(
-//         '**/*.css', {
-//             cwd: join(outputPath, assetsDir, 'css')
-//         }
-//     );
-//
-//     // extract app.hash.css
-//     t.true(cssFiles.some(css => /^app.*\.css$/.test(css)));
-// });
-//
-// test.serial('it should prerender detail.html in production mode', async t => {
-//     let webpackConfig = core.config.webpack;
-//     let outputPath = webpackConfig.base.output.path;
-//
-//     Object.assign(core.config.router, {
-//         routes: [
-//             {
-//                 name: 'detail-id',
-//                 prerender: true,
-//                 pagename: 'detail',
-//                 lazyLoading: true,
-//                 chunkname: 'detail-chunk',
-//                 path: '/detail/rewrite/:id',
-//                 meta: {
-//                     keepAlive: true
-//                 }
-//             }
-//         ]
-//     });
-//
-//     await core.build();
-//
-//     // detail.html
-//     t.true(existsSync(join(outputPath, 'detail.html')));
-// });
+
+test.serial('it should split into 4 bundles and extract css in production mode', async t => {
+    let webpackConfig = core.config.webpack;
+    let outputPath = webpackConfig.base.output.path;
+    let {assetsDir, copyDir} = webpackConfig.shortcuts;
+
+    await core.build();
+
+    let jsFiles = glob.sync(
+        '**/*.js', {
+            cwd: join(outputPath, assetsDir, 'js')
+        }
+    );
+
+    let jsBundles = ['app', 'manifest', 'vendor', 'vue'];
+
+    // split into 4 JS bundles
+    t.true(jsBundles.every(bundle => jsFiles.some(js => js.startsWith(`${bundle}`))));
+
+    let cssFiles = glob.sync(
+        '**/*.css', {
+            cwd: join(outputPath, assetsDir, 'css')
+        }
+    );
+
+    // extract app.hash.css
+    t.true(cssFiles.some(css => /^app.*\.css$/.test(css)));
+});
+
+test.serial('it should prerender detail.html in production mode', async t => {
+    let webpackConfig = core.config.webpack;
+    let outputPath = webpackConfig.base.output.path;
+
+    Object.assign(core.config.router, {
+        routes: [
+            {
+                name: 'detail-id',
+                prerender: true,
+                pagename: 'detail',
+                lazyLoading: true,
+                chunkname: 'detail-chunk',
+                path: '/detail/rewrite/:id',
+                meta: {
+                    keepAlive: true
+                }
+            }
+        ]
+    });
+
+    await core.build();
+
+    // output detail.html
+    t.true(existsSync(join(outputPath, 'detail.html')));
+});

@@ -130,12 +130,12 @@ export default class WebpackConfig {
             },
             plugins: isProd
                 ? [
-                    new webpack.optimize.UglifyJsPlugin({
-                        compress: {
-                            warnings: false
-                        },
-                        sourceMap: jsSourceMap
-                    }),
+                    // new webpack.optimize.UglifyJsPlugin({
+                    //     compress: {
+                    //         warnings: false
+                    //     },
+                    //     sourceMap: jsSourceMap
+                    // }),
                     new ExtractTextPlugin({
                         filename: this.assetsPath('css/[name].[contenthash].css')
                     }),
@@ -208,7 +208,12 @@ export default class WebpackConfig {
                         let targets = ['vue', 'vue-router', 'vuex', 'vue-meta'];
                         return context
                             && context.indexOf('node_modules') >= 0
-                            && targets.find(t => new RegExp('/' + t + '/', 'i').test(context));
+                            && targets.find(t => {
+                                let npmRegExp = new RegExp(`/${t}/`, 'i');
+                                // compatible with cnpm, eg./_vue@2.4.2@vue/
+                                let cnpmRegExp = new RegExp(`/_${t}@\\d\\.\\d\\.\\d@${t}/`, 'i');
+                                return npmRegExp.test(context) || cnpmRegExp.test(context);
+                            });
                     }
                 }),
 
