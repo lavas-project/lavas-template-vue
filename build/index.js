@@ -10,6 +10,7 @@ import ConfigValidator from './ConfigValidator';
 import serve from 'koa-static';
 import {emptyDir} from 'fs-extra';
 import privateFile from './middlewares/privateFile';
+import etpl from 'etpl';
 
 export default class LavasCore {
     constructor(cwd = process.cwd(), app) {
@@ -138,6 +139,7 @@ export default class LavasCore {
     async koaMiddleware(ctx, next) {
         // find matched route object for current path
         let matchedRoute = this.routeManager.findMatchedRoute(ctx.path);
+        let config = this.config;
         // use prerenderred html only in prod mode
         if (this.isProd
             && matchedRoute && matchedRoute.prerender) {
@@ -154,6 +156,11 @@ export default class LavasCore {
                     if (err) {
                         return reject(err);
                     }
+                    etpl.config({
+                        commandOpen: '<!----',
+                        commandClose: '---->'
+                    });
+                    html = etpl.compile(html)(config);
                     resolve(html);
                 });
             });

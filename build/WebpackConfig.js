@@ -15,6 +15,7 @@ import CopyWebpackPlugin from 'copy-webpack-plugin';
 import VueSSRClientPlugin from 'vue-server-renderer/client-plugin';
 import VueSSRServerPlugin from 'vue-server-renderer/server-plugin';
 import BundleAnalyzerPlugin from 'webpack-bundle-analyzer';
+import ManifestJsonWebpackPlugin from './buildinPlugins/manifest-json-webpack-plugin';
 
 import {vueLoaders, styleLoaders} from './utils/loader';
 
@@ -234,7 +235,11 @@ export default class WebpackConfig {
                     from: copyDir,
                     to: assetsDir,
                     ignore: ['.*']
-                }])
+                }]),
+
+                new ManifestJsonWebpackPlugin({
+                    config: this.config
+                })
             ]
         }, client);
 
