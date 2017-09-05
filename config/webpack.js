@@ -94,7 +94,21 @@ module.exports = {
          *
          * @type {boolean}
          */
-        ssr: true
-    }
+        ssr: true,
 
+        /**
+         * if need analyzer, https://github.com/th0r/webpack-bundle-analyzer
+         * default false, if this variable is an Object, then analyzer will be opened
+         *
+         * @type {boolean|Object}
+         */
+        bundleAnalyzerReport: false
+    },
+
+    /**
+     * extend webpack config
+     *
+     * @type {Function|null}
+     */
+    extend: null
 };

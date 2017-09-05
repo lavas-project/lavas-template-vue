@@ -70,10 +70,10 @@ test('it should use "replace" strategy to merge webpack config', async t => {
     t.is(baseConfig.plugins[0], 'CustomPlugin');
 });
 
-test('it should use a build function to modify webpack base config directly', async t => {
+test('it should use a extend function to modify webpack base config directly', async t => {
     let config = merge(core.config, {
         webpack: {
-            build(webpackConfig, {type}) {
+            extend(webpackConfig, {type}) {
                 if (type === 'base') {
                     webpackConfig.plugins.push('NewCustomPlugin');
                 }
@@ -85,10 +85,10 @@ test('it should use a build function to modify webpack base config directly', as
     t.is(baseConfig.plugins[1], 'NewCustomPlugin');
 });
 
-test('it should use a build function to modify webpack client config directly', async t => {
+test('it should use a extend function to modify webpack client config directly', async t => {
     let config = merge(core.config, {
         webpack: {
-            build(webpackConfig, {type}) {
+            extend(webpackConfig, {type}) {
                 if (type === 'client') {
                     webpackConfig.plugins.push('NewClientCustomPlugin');
                 }
@@ -101,10 +101,10 @@ test('it should use a build function to modify webpack client config directly', 
     t.is(clientConfig.plugins[clientConfig.plugins.length - 1], 'NewClientCustomPlugin');
 });
 
-test('it should use a build function to modify webpack server config directly', async t => {
+test('it should use a extend function to modify webpack server config directly', async t => {
     let config = merge(core.config, {
         webpack: {
-            build(webpackConfig, {type}) {
+            extend(webpackConfig, {type}) {
                 if (type === 'server') {
                     webpackConfig.plugins.push('NewServerCustomPlugin');
                 }

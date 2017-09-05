@@ -14,6 +14,7 @@ import OptimizeCSSPlugin from 'optimize-css-assets-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import VueSSRClientPlugin from 'vue-server-renderer/client-plugin';
 import VueSSRServerPlugin from 'vue-server-renderer/server-plugin';
+import BundleAnalyzerPlugin from 'webpack-bundle-analyzer';
 
 import {vueLoaders, styleLoaders} from './utils/loader';
 
@@ -30,7 +31,7 @@ export default class WebpackConfig {
     base(config) {
         let isProd = this.env === 'production';
         let {globals, webpack: webpackConfig, babel} = config;
-        let {base, shortcuts, mergeStrategy = {}, build} = webpackConfig;
+        let {base, shortcuts, mergeStrategy = {}, extend} = webpackConfig;
         let {cssSourceMap, cssMinimize, cssExtract, jsSourceMap} = shortcuts;
 
         let baseConfig = merge.strategy(mergeStrategy)({
@@ -102,8 +103,11 @@ export default class WebpackConfig {
                 : [new FriendlyErrorsPlugin()]
         }, base);
 
-        if (typeof build === 'function') {
-            build.call(this, baseConfig, {type: 'base'});
+        if (typeof extend === 'function') {
+            extend.call(this, baseConfig, {
+                type: 'base',
+                env: this.env
+            });
         }
 
         return baseConfig;
@@ -111,8 +115,9 @@ export default class WebpackConfig {
 
     client(config) {
         let webpackConfig = config.webpack;
-        let {client, shortcuts, mergeStrategy = {}, build} = webpackConfig;
-        let {ssr, cssSourceMap, cssMinimize, cssExtract, jsSourceMap, assetsDir, copyDir} = shortcuts;
+        let {client, shortcuts, mergeStrategy = {}, extend} = webpackConfig;
+        let {ssr, cssSourceMap, cssMinimize,cssExtract,
+            jsSourceMap, assetsDir, copyDir, bundleAnalyzerReport} = shortcuts;
 
         let baseConfig = this.base(config);
         let clientConfig = merge.strategy(mergeStrategy)(baseConfig, {
@@ -178,8 +183,16 @@ export default class WebpackConfig {
             clientConfig.plugins.push(new VueSSRClientPlugin());
         }
 
-        if (typeof build === 'function') {
-            build.call(this, clientConfig, {type: 'client'});
+        if (bundleAnalyzerReport) {
+            clientConfig.plugins.push(
+                new BundleAnalyzerPlugin(Object.assign({}, bundleAnalyzerReport)));
+        }
+
+        if (typeof extend === 'function') {
+            extend.call(this, clientConfig, {
+                type: 'client',
+                env: this.env
+            });
         }
 
         return clientConfig;
@@ -187,7 +200,7 @@ export default class WebpackConfig {
 
     server(config) {
         let webpackConfig = config.webpack;
-        let {server, mergeStrategy = {}, build} = webpackConfig;
+        let {server, mergeStrategy = {}, extend} = webpackConfig;
 
         let baseConfig = this.base(config);
         let serverConfig = merge.strategy(mergeStrategy)(baseConfig, {
@@ -212,8 +225,11 @@ export default class WebpackConfig {
             ]
         }, server);
 
-        if (typeof build === 'function') {
-            build.call(this, serverConfig, {type: 'server'});
+        if (typeof extend === 'function') {
+            extend.call(this, serverConfig, {
+                type: 'server',
+                env: this.env
+            });
         }
 
         return serverConfig;
