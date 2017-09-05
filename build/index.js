@@ -71,6 +71,58 @@ export default class LavasCore {
         }
 
         this.setupMiddlewares();
+        this.setupErrorHandler();
+    }
+
+    setupErrorHandler() {
+        const errConfig = this.config.errorHandler;
+
+        errConfig.statusCode = errConfig.statusCode || [];
+
+        const errPaths = new Set([errConfig.target]);
+
+        // add all paths to errPaths set
+        Object.keys(errConfig.statusCode).forEach(key => {
+            errPaths.add(errConfig.statusCode[key].target);
+        });
+
+        this.app.context.onerror = onerror;
+
+        function onerror(err) {
+
+            if (null == err) {
+                return;
+            }
+
+            if (this.headerSent || !this.writable) {
+                err.headerSent = true;
+                return;
+            }
+
+            if (errPaths.has(this.path)) {
+                // if already in error procedure, then end this request immediately, avoid infinite loop
+                this.res.end();
+                return;
+            }
+
+            if (err.status !== 404) {
+                console.error(err);
+            }
+
+            // clear headers
+            this.res._headers = {};
+
+            // get the right target url
+            let target = errConfig.target;
+            if (errConfig.statusCode[err.status]) {
+                target = errConfig.statusCode[err.status].target;
+            }
+
+            // redirect to the corresponding url
+            // this.status = err.status;
+            this.redirect(target);
+            this.res.end();
+        }
     }
 
     setupMiddlewares() {
@@ -78,8 +130,8 @@ export default class LavasCore {
             // add static middleware
             this.app.use(serve(this.config.webpack.base.output.path));
             // protected some static files such as routes.json, bundle.json
-            this.app.use(privateFile([...this.routeManager.privateFiles,
-                ...this.renderer.privateFiles]));
+            // this.app.use(privateFile([...this.routeManager.privateFiles,
+            //     ...this.renderer.privateFiles]));
         }
     }
 
