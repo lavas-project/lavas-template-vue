@@ -10,7 +10,6 @@ import ConfigValidator from './ConfigValidator';
 import serve from 'koa-static';
 import {emptyDir} from 'fs-extra';
 import privateFile from './middlewares/privateFile';
-import etpl from 'etpl';
 
 export default class LavasCore {
     constructor(cwd = process.cwd(), app) {
@@ -152,15 +151,11 @@ export default class LavasCore {
 
             let renderer = await this.renderer.getRenderer();
             ctx.body = await new Promise((resolve, reject) => {
+                ctx.config = config;
                 renderer.renderToString(ctx, (err, html) => {
                     if (err) {
                         return reject(err);
                     }
-                    etpl.config({
-                        commandOpen: '<!----',
-                        commandClose: '---->'
-                    });
-                    html = etpl.compile(html)(config);
                     resolve(html);
                 });
             });
