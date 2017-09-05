@@ -14,6 +14,9 @@ module.exports = [
         name: 'appshell',
         init: {
             base: function (webpackConfig) {
+                // 设置alias
+                webpackConfig.resolve.alias['extensions'] = globalConfig.extensionsDir;
+
                 // 找到stylus-loader并且添加options.import
                 let setImport = (styleLoaders, path) => {
                     let find = styleLoaders.find(
@@ -25,7 +28,7 @@ module.exports = [
                 };
 
                 let vueLoaders = webpackConfig.module.rules[0].use[0].options.loaders;
-                let variablesFilePath = '~@/extensions/appShell/styles/variables.styl';
+                let variablesFilePath = '~extensions/appShell/styles/variables.styl';
 
                 setImport(vueLoaders.stylus, variablesFilePath);
                 setImport(vueLoaders.styl, variablesFilePath);
