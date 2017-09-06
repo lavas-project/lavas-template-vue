@@ -20,8 +20,9 @@ let port = process.env.PORT || 3000;
         if (env === 'development') {
             await core.build();
         }
-
-        await core.run();
+        else if (env === 'production') {
+            await core.runAfterBuild();
+        }
 
         app.use(core.koaMiddleware());
 

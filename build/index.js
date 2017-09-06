@@ -9,9 +9,10 @@ import ConfigReader from './ConfigReader';
 import ConfigValidator from './ConfigValidator';
 import serve from 'koa-static';
 import {emptyDir} from 'fs-extra';
-import privateFileMiddlewareFactory from './middlewares/privateFile';
-import ssrMiddlewareFactory from './middlewares/ssr';
-import errorMiddlewareFactory from './middlewares/error';
+import decorateContextFactory from './middlewares/decorateContext';
+import privateFileFactory from './middlewares/privateFile';
+import ssrFactory from './middlewares/ssr';
+import errorFactory from './middlewares/error';
 
 import Koa from 'koa';
 import compose from 'koa-compose';
@@ -67,18 +68,17 @@ export default class LavasCore {
         }
     }
 
-    async run() {
-        if (this.isProd) {
-            // create with routes.json
-            await this.routeManager.createWithRoutesFile();
-            // create with bundle & manifest
-            await this.renderer.createWithBundle();
-        }
+    async runAfterBuild() {
+        // create with routes.json
+        await this.routeManager.createWithRoutesFile();
+        // create with bundle & manifest
+        await this.renderer.createWithBundle();
     }
 
     /**
+     * compose all the middlewares
      *
-     * @return {}
+     * @return {Function} koa middleware
      */
     koaMiddleware() {
         if (this.isProd) {
@@ -87,14 +87,14 @@ export default class LavasCore {
         }
 
         return compose([
-            errorMiddlewareFactory(this),
-            privateFileMiddlewareFactory(this),
+            errorFactory(this),
+            decorateContextFactory(this),
+            privateFileFactory(this),
             ...this.app.middleware,
-            ssrMiddlewareFactory(this)
+            ssrFactory(this)
         ]);
     }
 
     expressMiddleware() {
-
     }
 }

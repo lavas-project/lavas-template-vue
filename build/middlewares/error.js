@@ -25,20 +25,18 @@ export default function (core) {
         try {
             await next();
         } catch (err) {
-            console.log('[Lavas] error middleware catch error: ', err);
+            // console.log('[Lavas] error middleware catch error: ', err);
 
             if (err == null) {
                 return;
             }
 
             if (ctx.headerSent || !ctx.writable) {
-                console.log('sent: ' + ctx.path)
                 err.headerSent = true;
                 return;
             }
 
             if (errPaths.has(ctx.path)) {
-                console.log('pat: ' + ctx.path)
                 // if already in error procedure, then end this request immediately, avoid infinite loop
                 ctx.res.end();
                 return;

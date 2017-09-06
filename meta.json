@@ -9,7 +9,16 @@
         "packageJsonAuthor": "*__ author __*<*__ email __*>"
     },
     "renderIgnores": [],
-    "exportsIgnores": [],
+    "exportsIgnores": [
+        "build",
+        "_old",
+        "webpack.config.js",
+        "build.js",
+        "extensions",
+        "package.json",
+        "test"
+    ],
+    "core": "vue",
     "schema": {
         "dirPath": {
             "type": "string",
