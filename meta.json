@@ -11,9 +11,7 @@
     "renderIgnores": [],
     "exportsIgnores": [
         "build",
-        "core",
         "_old",
-        "server.js",
         "webpack.config.js",
         "build.js",
         "extensions",
