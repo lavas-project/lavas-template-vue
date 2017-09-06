@@ -9,12 +9,18 @@ import ConfigReader from './ConfigReader';
 import ConfigValidator from './ConfigValidator';
 import serve from 'koa-static';
 import {emptyDir} from 'fs-extra';
-import privateFile from './middlewares/privateFile';
+import decorateContextFactory from './middlewares/decorateContext';
+import privateFileFactory from './middlewares/privateFile';
+import ssrFactory from './middlewares/ssr';
+import errorFactory from './middlewares/error';
+
+import Koa from 'koa';
+import compose from 'koa-compose';
 
 export default class LavasCore {
-    constructor(cwd = process.cwd(), app) {
+    constructor(cwd = process.cwd()) {
         this.cwd = cwd;
-        this.app = app;
+        this.app = new Koa();
     }
 
     async init(env = 'development') {
@@ -62,103 +68,33 @@ export default class LavasCore {
         }
     }
 
-    async run() {
+    async runAfterBuild() {
+        // create with routes.json
+        await this.routeManager.createWithRoutesFile();
+        // create with bundle & manifest
+        await this.renderer.createWithBundle();
+    }
+
+    /**
+     * compose all the middlewares
+     *
+     * @return {Function} koa middleware
+     */
+    koaMiddleware() {
         if (this.isProd) {
-            // create with routes.json
-            await this.routeManager.createWithRoutesFile();
-            // create with bundle & manifest
-            await this.renderer.createWithBundle();
-        }
-
-        this.setupMiddlewares();
-        this.setupErrorHandler();
-    }
-
-    setupErrorHandler() {
-        const errConfig = this.config.errorHandler;
-
-        errConfig.statusCode = errConfig.statusCode || [];
-
-        const errPaths = new Set([errConfig.target]);
-
-        // add all paths to errPaths set
-        Object.keys(errConfig.statusCode).forEach(key => {
-            errPaths.add(errConfig.statusCode[key].target);
-        });
-
-        this.app.context.onerror = onerror;
-
-        function onerror(err) {
-
-            if (null == err) {
-                return;
-            }
-
-            if (this.headerSent || !this.writable) {
-                err.headerSent = true;
-                return;
-            }
-
-            if (errPaths.has(this.path)) {
-                // if already in error procedure, then end this request immediately, avoid infinite loop
-                this.res.end();
-                return;
-            }
-
-            if (err.status !== 404) {
-                console.error(err);
-            }
-
-            // clear headers
-            this.res._headers = {};
-
-            // get the right target url
-            let target = errConfig.target;
-            if (errConfig.statusCode[err.status]) {
-                target = errConfig.statusCode[err.status].target;
-            }
-
-            // redirect to the corresponding url
-            // this.status = err.status;
-            this.redirect(target);
-            this.res.end();
-        }
-    }
-
-    setupMiddlewares() {
-        if (this.app) {
             // add static middleware
             this.app.use(serve(this.config.webpack.base.output.path));
-            // protected some static files such as routes.json, bundle.json
-            // this.app.use(privateFile([...this.routeManager.privateFiles,
-            //     ...this.renderer.privateFiles]));
         }
+
+        return compose([
+            errorFactory(this),
+            decorateContextFactory(this),
+            privateFileFactory(this),
+            ...this.app.middleware,
+            ssrFactory(this)
+        ]);
     }
 
-    async koaMiddleware(ctx, next) {
-        // find matched route object for current path
-        let matchedRoute = this.routeManager.findMatchedRoute(ctx.path);
-        let config = this.config;
-        // use prerenderred html only in prod mode
-        if (this.isProd
-            && matchedRoute && matchedRoute.prerender) {
-            console.log(`[Lavas] prerender ${ctx.path}`);
-
-            ctx.body = await this.routeManager.prerender(matchedRoute);
-        }
-        else {
-            console.log(`[Lavas] ssr ${ctx.path}`);
-
-            let renderer = await this.renderer.getRenderer();
-            ctx.body = await new Promise((resolve, reject) => {
-                ctx.config = config;
-                renderer.renderToString(ctx, (err, html) => {
-                    if (err) {
-                        return reject(err);
-                    }
-                    resolve(html);
-                });
-            });
-        }
+    expressMiddleware() {
     }
 }

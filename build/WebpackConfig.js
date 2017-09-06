@@ -238,7 +238,7 @@ export default class WebpackConfig {
                 }]),
 
                 new ManifestJsonWebpackPlugin({
-                    config: this.config
+                    config: this.config.manifest
                 })
             ]
         }, client);
