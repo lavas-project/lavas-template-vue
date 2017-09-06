@@ -65,14 +65,11 @@ export default class LavasCore {
             await this.routeManager.buildMultiEntries();
             // store routes info in routes.json for later use
             await this.routeManager.writeRoutesFile();
+            // create with routes.json
+            await this.routeManager.createWithRoutesFile();
+            // create with bundle & manifest
+            await this.renderer.createWithBundle();
         }
-    }
-
-    async runAfterBuild() {
-        // create with routes.json
-        await this.routeManager.createWithRoutesFile();
-        // create with bundle & manifest
-        await this.renderer.createWithBundle();
     }
 
     /**
