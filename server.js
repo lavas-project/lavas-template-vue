@@ -13,7 +13,7 @@ let port = process.env.PORT || 3000;
 
 (async () => {
     try {
-        let core = new LavasCore(__dirname, app);
+        let core = new LavasCore(__dirname);
 
         await core.init(env);
 
@@ -23,7 +23,7 @@ let port = process.env.PORT || 3000;
 
         await core.run();
 
-        app.use(core.koaMiddleware.bind(core));
+        app.use(core.koaMiddleware());
 
         app.listen(port, () => {
             console.log('server started at localhost:' + port);
