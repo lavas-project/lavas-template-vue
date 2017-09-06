@@ -17,8 +17,10 @@
         "webpack.config.js",
         "build.js",
         "extensions",
-        "middlewares"
+        "package.json",
+        "test"
     ],
+    "core": "vue",
     "schema": {
         "dirPath": {
             "type": "string",
