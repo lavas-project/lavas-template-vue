@@ -9,9 +9,7 @@ const LavasCore = require('./lib');
     try {
         let core = new LavasCore(__dirname);
 
-        await core.init('production');
-
-        await core.build();
+        await core.build('production');
 
     }
     catch (e) {

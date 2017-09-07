@@ -11,16 +11,41 @@
     "renderIgnores": [],
     "exportsIgnores": [
         "build",
-        "core",
         "_old",
-        "server.js",
         "webpack.config.js",
         "build.js",
         "extensions",
         "package.json",
         "test"
     ],
-    "core": "vue",
+    "exportsPackageJson": {
+        "name": "*__name__*",
+        "version": "1.0.0",
+        "description": "*__desc__*",
+        "author": "*__author__*<*__email__*>",
+        "scripts": {
+            "dev": "cross-env NODE_ENV=development lavas dev",
+            "lint": "fecs ./ --rule --type 'vue,js,css'",
+            "build": "lavas build"
+        },
+        "lavas": true,
+        "keywords": [
+            "pwa",
+            "vue",
+            "lavas"
+        ],
+        "license": "MIT",
+        "dependencies": {
+            "koa": "^2.3.0"
+        },
+        "devDependencies": {
+            "cross-env": "^5.0.5",
+            "fecs": "^1.4.0",
+            "lavas-cli": "^2.0.0",
+            "lavas-core-vue": "latest"
+        }
+    },
+    "core": "lavas-core-vue",
     "schema": {
         "dirPath": {
             "type": "string",

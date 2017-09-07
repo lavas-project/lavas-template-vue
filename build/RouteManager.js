@@ -169,7 +169,8 @@ export default class RouteManager {
                         removeAttributeQuotes: true
                     },
                     favicon: join(assetsDir, 'img/icons/favicon.ico'),
-                    chunksSortMode: 'dependency'
+                    chunksSortMode: 'dependency',
+                    config: this.config
                 }));
 
                 if (skeleton) {
