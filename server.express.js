@@ -14,8 +14,6 @@ let port = process.env.PORT || 3000;
     try {
         let core = new LavasCore(__dirname);
 
-        await core.init(env);
-
         if (env === 'development') {
             await core.build();
         }

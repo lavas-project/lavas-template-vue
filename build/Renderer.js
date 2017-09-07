@@ -7,7 +7,8 @@ import {join} from 'path';
 import {readFile} from 'fs-extra';
 import webpack from 'webpack';
 import MFS from 'memory-fs';
-import koaWebpack from 'koa-webpack';
+import webpackDevMiddleware from 'webpack-dev-middleware';
+import webpackHotMiddleware from 'webpack-hot-middleware';
 import {createBundleRenderer} from 'vue-server-renderer';
 
 const CLIENT_MANIFEST = 'vue-ssr-client-manifest.json';
@@ -109,18 +110,20 @@ export default class Renderer {
         // init client compiler
         let clientCompiler = webpack(clientConfig);
 
-        // use koa webpack middleware which already includes dev&hot middleware
-        let koaWebpackMiddleware = koaWebpack({
-            compiler: clientCompiler,
-            dev: {
-                publicPath: this.config.webpack.base.output.publicPath,
-                noInfo: true
-            },
-            hot: {
-                heartbeat: 5000
-            }
+        // dev middleware
+        let devMiddleware = webpackDevMiddleware(clientCompiler, {
+            publicPath: this.config.webpack.base.output.publicPath,
+            noInfo: true
         });
-        this.app.use(koaWebpackMiddleware);
+
+        this.app.use(devMiddleware);
+
+        // hot middleware
+        let hotMiddleware = webpackHotMiddleware(clientCompiler, {
+            heartbeat: 5000
+        });
+
+        this.app.use(hotMiddleware);
 
         clientCompiler.plugin('done', stats => {
             stats = stats.toJson();
@@ -136,7 +139,7 @@ export default class Renderer {
                 return;
             }
 
-            let rawContent = koaWebpackMiddleware.dev.fileSystem
+            let rawContent = devMiddleware.fileSystem
                 .readFileSync(join(clientConfig.output.path, CLIENT_MANIFEST), 'utf-8');
 
             this.clientManifest = JSON.parse(rawContent);

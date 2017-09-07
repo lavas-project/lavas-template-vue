@@ -9,16 +9,17 @@ import WebpackConfig from './WebpackConfig';
 import ConfigReader from './ConfigReader';
 import ConfigValidator from './ConfigValidator';
 
-import decorateContextFactory from './middlewares/decorateContext';
 import privateFileFactory from './middlewares/privateFile';
 import ssrFactory from './middlewares/ssr';
-import errorFactory from './middlewares/error';
+// import errorFactory from './middlewares/error';
 
 import ora from 'ora';
 
-import Koa from 'koa';
-import compose from 'koa-compose';
-import serve from 'koa-static';
+import connect from 'connect';
+import {compose} from 'compose-middleware';
+import composeKoa from 'koa-compose';
+import c2k from 'koa-connect';
+import serve from 'serve-static';
 
 import {emptyDir, copy} from 'fs-extra';
 import {join} from 'path';
@@ -47,7 +48,7 @@ export default class LavasCore {
 
         if (!this.isProd) {
             // in production mode we don't need to run server
-            this.app = new Koa();
+            this.app = connect();
         }
         await this.initBeforeBuild();
 
@@ -89,7 +90,7 @@ export default class LavasCore {
     }
 
     async runAfterBuild() {
-        this.app = new Koa();
+        this.app = connect();
 
         this.config = await ConfigReader.readJson(this.cwd);
 
@@ -114,19 +115,39 @@ export default class LavasCore {
             this.app.use(serve(this.config.webpack.base.output.path));
         }
 
+        // transform express/connect style middleware to koa style
+        let transformedMiddlewares = this.app.stack.map(m => c2k(m.handle));
+
+        return composeKoa([
+            async function (ctx, next) {
+                // koa defaults to 404 when it sees that status is unset
+                ctx.status = 200;
+                await next();
+            },
+            c2k(privateFileFactory(this)),
+            ...transformedMiddlewares,
+            c2k(ssrFactory(this))
+        ]);
+    }
+
+    expressMiddleware() {
+        if (this.isProd) {
+            // add static middleware
+            this.app.use(serve(this.config.webpack.base.output.path));
+        }
+
+        // use middlewares directly
+        let middlewares = this.app.stack.map(m => m.handle);
+
         return compose([
-            errorFactory(this),
-            decorateContextFactory(this),
             privateFileFactory(this),
-            ...this.app.middleware,
+            ...middlewares,
             ssrFactory(this)
         ]);
     }
 
     /**
      * copy server relatived files into dist when build
-     *
-     * @return {[type]} [description]
      */
     async copyServerModuleToDist() {
         let libDir = join(this.cwd, './lib');
@@ -142,21 +163,4 @@ export default class LavasCore {
             copy(nodeModulesDir, distNodeModulesDr)
         ]);
     }
-
-    // expressMiddleware() {
-    //     let koamid = async (ctx, next) => {
-    //         console.log(ctx.path);
-    //         await next();
-    //     };
-    //
-    //     return (req, res, next) => {
-    //         // this.koaMiddleware()({
-    //         //     req,
-    //         //     res
-    //         // }, next)
-    //
-    //         next();
-    //     };
-    // }
-
 }
