@@ -34,13 +34,14 @@
             "lavas"
         ],
         "license": "MIT",
+        "dependencies": {},
         "devDependencies": {
             "cross-env": "^5.0.5",
             "lavas-cli": "^2.0.0",
             "lavas-core-vue": "latest"
         }
     },
-    "core": "vue",
+    "core": "lavas-core-vue",
     "schema": {
         "dirPath": {
             "type": "string",
