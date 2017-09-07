@@ -27,6 +27,8 @@
     "fastclick": "^1.0.6",
     "iscroll": "*",
     "normalize.css": "^7.0.0",
+    "sw-precache-webpack-plugin": "^0.11.4",
+    "sw-register-webpack-plugin": "^1.0.11",
     "url-loader": "^0.5.9",
     "vue": "^2.4.2",
     "vue-meta": "^1.0.5",

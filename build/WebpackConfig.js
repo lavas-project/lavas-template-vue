@@ -5,7 +5,9 @@
 
 import webpack from 'webpack';
 import merge from 'webpack-merge';
-import {posix, join} from 'path';
+import {posix, join, resolve} from 'path';
+import fs from 'fs-extra';
+import template from 'lodash.template';
 
 import nodeExternals from 'webpack-node-externals';
 import ExtractTextPlugin from 'extract-text-webpack-plugin';
@@ -16,6 +18,8 @@ import VueSSRClientPlugin from 'vue-server-renderer/client-plugin';
 import VueSSRServerPlugin from 'vue-server-renderer/server-plugin';
 import BundleAnalyzerPlugin from 'webpack-bundle-analyzer';
 import ManifestJsonWebpackPlugin from './buildinPlugins/manifest-json-webpack-plugin';
+import SWPrecacheWebPlugin from 'sw-precache-webpack-plugin';
+import SWRegisterWebpackPlugin from 'sw-register-webpack-plugin';
 
 import {vueLoaders, styleLoaders} from './utils/loader';
 
@@ -77,9 +81,22 @@ export default class WebpackConfig {
      */
     base(config) {
         let isProd = this.env === 'production';
-        let {globals, webpack: webpackConfig, babel} = config;
+        let {globals, webpack: webpackConfig, babel, serviceWorker: swPrecacheConfig, routes} = config;
         let {base, shortcuts, mergeStrategy = {}, extend} = webpackConfig;
         let {cssSourceMap, cssMinimize, cssExtract, jsSourceMap} = shortcuts;
+
+        // add 'routes' to service-worker.js.tmpl
+        let swTemplateContent = template(fs.readFileSync(resolve(__dirname, 'templates/service-worker.js.tmpl')), {
+            evaluate: /{{([\s\S]+?)}}/g,
+            interpolate: /{{=([\s\S]+?)}}/g,
+            escape: /{{-([\s\S]+?)}}/g
+        })({
+            routes: JSON.stringify(routes)
+        });
+        let swTemplateFilePath = resolve(__dirname, 'templates/service-worker-real.js.tmpl');
+        fs.writeFileSync(swTemplateFilePath, swTemplateContent);
+        // add templateFilePath to swPrecacheConfig
+        swPrecacheConfig.templateFilePath = swTemplateFilePath;
 
         let baseConfig = merge.strategy(mergeStrategy)({
             resolve: {
@@ -145,6 +162,10 @@ export default class WebpackConfig {
                         cssProcessorOptions: {
                             safe: true
                         }
+                    }),
+                    new SWPrecacheWebPlugin(swPrecacheConfig),
+                    new SWRegisterWebpackPlugin({
+                        filePath: resolve(__dirname, 'templates/sw-register.js')
                     })
                 ]
                 : [new FriendlyErrorsPlugin()]
