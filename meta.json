@@ -25,6 +25,7 @@
         "author": "*__author__*<*__email__*>",
         "scripts": {
             "dev": "cross-env NODE_ENV=development lavas dev",
+            "lint": "fecs ./ --rule --type 'vue,js,css'",
             "build": "lavas build"
         },
         "lavas": true,
