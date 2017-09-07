@@ -12,9 +12,7 @@
     "exportsIgnores": [
         "build",
         "_old",
-        "webpack.config.js",
         "build.js",
-        "extensions",
         "package.json",
         "test"
     ],
