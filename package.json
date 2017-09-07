@@ -5,11 +5,11 @@
   "author": "*__author__* <*__email__*>",
   "private": true,
   "scripts": {
-    "dev": "npm run build:core && cross-env NODE_ENV=development node server.js",
+    "dev": "npm run build:core && cross-env NODE_ENV=development node server.dev.js",
     "build": "npm run build:core && cross-env NODE_ENV=production node build.js",
     "start": "cross-env NODE_ENV=production node server.js",
     "start:express": "cross-env NODE_ENV=production node server.express.js",
-    "dev:core": "cross-env NODE_ENV=development node server.core.js",
+    "dev:core": "cross-env NODE_ENV=development node server.js",
     "test": "npm run build:core && ./node_modules/.bin/nyc ava",
     "lint": "fecs ./ --rule --type 'vue,js,css'",
     "build:core": "babel build --out-dir lib --copy-files",

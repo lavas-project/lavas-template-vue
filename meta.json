@@ -12,10 +12,12 @@
     "exportsIgnores": [
         "build",
         "_old",
-        "webpack.config.js",
         "build.js",
-        "extensions",
         "package.json",
+        "server.dev.js",
+        "server.express.js",
+        "webpack.config.js",
+        ".gitignore",
         "test"
     ],
     "exportsPackageJson": {
@@ -36,13 +38,15 @@
         ],
         "license": "MIT",
         "dependencies": {
-            "koa": "^2.3.0"
+            "iscroll": "^5.2.0",
+            "koa": "^2.3.0",
+            "normalize.css": "^7.0.0",
+            "vuetify": "^0.15.2"
         },
         "devDependencies": {
             "cross-env": "^5.0.5",
             "fecs": "^1.4.0",
-            "lavas-cli": "^2.0.0",
-            "lavas-core-vue": "latest"
+            "lavas-core": "latest"
         }
     },
     "core": "lavas-core-vue",
