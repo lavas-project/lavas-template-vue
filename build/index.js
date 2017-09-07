@@ -2,7 +2,6 @@
  * @file index.js
  * @author lavas
  */
-import {emptyDir} from 'fs-extra';
 import RouteManager from './RouteManager';
 import Renderer from './Renderer';
 import WebpackConfig from './WebpackConfig';
