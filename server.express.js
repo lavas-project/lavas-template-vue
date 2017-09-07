@@ -4,9 +4,8 @@
  */
 
 const LavasCore = require('./lib');
-const Koa = require('koa');
-
-const app = new Koa();
+const express = require('express');
+const app = express();
 
 let env = process.env.NODE_ENV;
 let port = process.env.PORT || 3000;
@@ -15,14 +14,16 @@ let port = process.env.PORT || 3000;
     try {
         let core = new LavasCore(__dirname);
 
+        await core.init(env);
+
         if (env === 'development') {
-            await core.build(env);
+            await core.build();
         }
         else if (env === 'production') {
-            await core.runAfterBuild(env);
+            await core.runAfterBuild();
         }
 
-        app.use(core.koaMiddleware());
+        app.use(core.expressMiddleware());
 
         app.listen(port, () => {
             console.log('server started at localhost:' + port);
