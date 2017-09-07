@@ -2,7 +2,6 @@
  * @file index.js
  * @author lavas
  */
-import {emptyDir} from 'fs-extra';
 import RouteManager from './RouteManager';
 import Renderer from './Renderer';
 import WebpackConfig from './WebpackConfig';
@@ -23,7 +22,6 @@ import serve from 'serve-static';
 
 import {emptyDir, copy} from 'fs-extra';
 import {join} from 'path';
-import privateFile from './middlewares/privateFile';
 
 export default class LavasCore {
     constructor(cwd = process.cwd()) {
