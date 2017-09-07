@@ -61,7 +61,7 @@ export default class Config {
     }
 
     async readConfigFile() {
-        return await import(join(this.cwd, 'dist', CONFIG_FILE));
+        return await import(join(this.cwd, CONFIG_FILE));
     }
 
     async writeConfigFile(config) {

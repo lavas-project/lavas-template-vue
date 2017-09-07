@@ -9,16 +9,17 @@ import WebpackConfig from './WebpackConfig';
 import ConfigReader from './ConfigReader';
 import ConfigValidator from './ConfigValidator';
 
-import decorateContextFactory from './middlewares/decorateContext';
 import privateFileFactory from './middlewares/privateFile';
 import ssrFactory from './middlewares/ssr';
-import errorFactory from './middlewares/error';
+// import errorFactory from './middlewares/error';
 
 import ora from 'ora';
 
-import Koa from 'koa';
-import compose from 'koa-compose';
-import serve from 'koa-static';
+import connect from 'connect';
+import {compose} from 'compose-middleware';
+import composeKoa from 'koa-compose';
+import c2k from 'koa-connect';
+import serve from 'serve-static';
 
 export default class LavasCore {
     constructor(cwd = process.cwd()) {
@@ -40,7 +41,7 @@ export default class LavasCore {
          * 2. validate the config
          * 3. create a webpack config for later use
          *
-         * run after build:
+         * but for online server after build, we just:
          * 1. read config.json directly
          */
         if (isInBuild) {
@@ -57,7 +58,7 @@ export default class LavasCore {
 
         // in prod build process we don't need to run a server
         if (!isInBuild || !this.isProd) {
-            this.app = new Koa();
+            this.app = connect();
         }
 
         // init renderer & routeManager
@@ -135,28 +136,29 @@ export default class LavasCore {
             this.app.use(serve(this.config.webpack.base.output.path));
         }
 
-        return compose([
-            errorFactory(this),
-            decorateContextFactory(this),
-            privateFileFactory(this),
-            ...this.app.middleware,
-            ssrFactory(this)
+        // transform express/connect style middleware to koa style
+        let transformedMiddlewares = this.app.stack.map(m => c2k(m.handle));
+
+        return composeKoa([
+            c2k(privateFileFactory(this)),
+            ...transformedMiddlewares,
+            c2k(ssrFactory(this))
         ]);
     }
 
-    // expressMiddleware() {
-    //     let koamid = async (ctx, next) => {
-    //         console.log(ctx.path);
-    //         await next();
-    //     };
-    //
-    //     return (req, res, next) => {
-    //         // this.koaMiddleware()({
-    //         //     req,
-    //         //     res
-    //         // }, next)
-    //
-    //         next();
-    //     };
-    // }
+    expressMiddleware() {
+        if (this.isProd) {
+            // add static middleware
+            this.app.use(serve(this.config.webpack.base.output.path));
+        }
+
+        // use middlewares directly
+        let middlewares = this.app.stack.map(m => m.handle);
+
+        return compose([
+            privateFileFactory(this),
+            ...middlewares,
+            ssrFactory(this)
+        ]);
+    }
 }

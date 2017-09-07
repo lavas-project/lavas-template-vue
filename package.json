@@ -5,10 +5,10 @@
   "author": "*__author__* <*__email__*>",
   "private": true,
   "scripts": {
-    "dev": "npm run build:core && cross-env NODE_ENV=development node server.js",
+    "dev": "npm run build:core && cross-env NODE_ENV=development node server.dev.js",
     "build": "npm run build:core && cross-env NODE_ENV=production node build.js",
     "start": "cross-env NODE_ENV=production node server.js",
-    "start:express": "cross-env NODE_ENV=production node server.express.js",
+    "dev:express": "npm run build:core && cross-env NODE_ENV=development node server.express.js",
     "dev:core": "cross-env NODE_ENV=development node server.core.js",
     "test": "npm run build:core && ./node_modules/.bin/nyc ava",
     "lint": "fecs ./ --rule --type 'vue,js,css'",
@@ -26,8 +26,10 @@
     ]
   },
   "dependencies": {
+    "express": "^4.15.4",
     "iscroll": "*",
-    "lavas-core": "^1.0.5",
+    "koa": "^2.3.0",
+    "lavas-core": "^1.0.9",
     "normalize.css": "^7.0.0",
     "vuetify": "^0.15.2"
   },
