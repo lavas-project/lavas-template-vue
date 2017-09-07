@@ -2,31 +2,30 @@
  * @file index.js
  * @author lavas
  */
+import {emptyDir} from 'fs-extra';
 import RouteManager from './RouteManager';
 import Renderer from './Renderer';
 import WebpackConfig from './WebpackConfig';
 import ConfigReader from './ConfigReader';
 import ConfigValidator from './ConfigValidator';
-import serve from 'koa-static';
-import {emptyDir} from 'fs-extra';
+
 import decorateContextFactory from './middlewares/decorateContext';
 import privateFileFactory from './middlewares/privateFile';
 import ssrFactory from './middlewares/ssr';
 import errorFactory from './middlewares/error';
 
+import ora from 'ora';
+
 import Koa from 'koa';
 import compose from 'koa-compose';
+import serve from 'koa-static';
 
 export default class LavasCore {
     constructor(cwd = process.cwd()) {
         this.cwd = cwd;
-        this.app = new Koa();
     }
 
-    async init(env = 'development') {
-        this.env = env || process.env.NODE_ENV;
-        this.isProd = this.env === 'production';
-
+    async initBeforeBuild() {
         this.config = await ConfigReader.read(this.cwd, this.env);
 
         ConfigValidator.validate(this.config);
@@ -38,7 +37,19 @@ export default class LavasCore {
         this.routeManager = new RouteManager(this.config, this.env, this.webpackConfig);
     }
 
-    async build() {
+    async build(env = 'development') {
+        this.env = env || process.env.NODE_ENV;
+        this.isProd = this.env === 'production';
+
+        if (!this.isProd) {
+            // in production mode we don't need to run server
+            this.app = new Koa();
+        }
+        await this.initBeforeBuild();
+
+        let spinner = ora();
+        spinner.start();
+
         // clear dist/
         await emptyDir(this.config.webpack.base.output.path);
 
@@ -61,14 +72,26 @@ export default class LavasCore {
         await this.renderer.build(clientConfig, serverConfig);
 
         if (this.isProd) {
+            // store config which will be used in online server
+            // await ConfigReader.write
             // compile multi entries only in production mode
             await this.routeManager.buildMultiEntries();
             // store routes info in routes.json for later use
             await this.routeManager.writeRoutesFile();
         }
+
+        spinner.succeed();
     }
 
     async runAfterBuild() {
+        this.app = new Koa();
+
+        this.config = await ConfigReader.readJson(this.cwd);
+
+        this.renderer = new Renderer(this);
+
+        this.routeManager = new RouteManager(this.config, this.env);
+
         // create with routes.json
         await this.routeManager.createWithRoutesFile();
         // create with bundle & manifest
@@ -95,6 +118,19 @@ export default class LavasCore {
         ]);
     }
 
-    expressMiddleware() {
-    }
+    // expressMiddleware() {
+    //     let koamid = async (ctx, next) => {
+    //         console.log(ctx.path);
+    //         await next();
+    //     };
+    //
+    //     return (req, res, next) => {
+    //         // this.koaMiddleware()({
+    //         //     req,
+    //         //     res
+    //         // }, next)
+    //
+    //         next();
+    //     };
+    // }
 }

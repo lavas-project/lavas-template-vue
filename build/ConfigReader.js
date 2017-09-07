@@ -45,4 +45,8 @@ export default class ConfigReader {
 
         return config;
     }
+
+    static async readJson(cwd) {
+        return await import(join(cwd, 'meta.json'));
+    }
 }
