@@ -176,7 +176,7 @@ export default class LavasCore {
     async copyServerModuleToDist() {
         let libDir = join(this.cwd, './lib');
         let distLibDir = join(this.cwd, './dist/lib');
-        let serverDir = join(this.cwd, './server.js');
+        let serverDir = join(this.cwd, './server.dev.js');
         let distServerDir = join(this.cwd, './dist/server.js');
         let nodeModulesDir = join(this.cwd, 'node_modules');
         let distNodeModulesDir = join(this.cwd, './dist/node_modules');
