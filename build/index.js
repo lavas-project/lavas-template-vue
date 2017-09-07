@@ -154,12 +154,15 @@ export default class LavasCore {
         let serverDir = join(this.cwd, './server.js');
         let distServerDir = join(this.cwd, './dist/server.js');
         let nodeModulesDir = join(this.cwd, 'node_modules');
-        let distNodeModulesDr = join(this.cwd, './dist/node_modules');
+        let distNodeModulesDir = join(this.cwd, './dist/node_modules');
+        let jsonDir = join(this.cwd, 'package.json');
+        let distJsonDir = join(this.cwd, './dist/package.json');
 
         await Promise.all([
             copy(libDir, distLibDir),
             copy(serverDir, distServerDir),
-            copy(nodeModulesDir, distNodeModulesDr)
+            copy(nodeModulesDir, distNodeModulesDir),
+            copy(jsonDir, distJsonDir)
         ]);
     }
 }
