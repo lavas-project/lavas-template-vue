@@ -8,7 +8,8 @@ import WebpackConfig from './WebpackConfig';
 import ConfigReader from './ConfigReader';
 import ConfigValidator from './ConfigValidator';
 import serve from 'koa-static';
-import {emptyDir} from 'fs-extra';
+import {emptyDir, copy} from 'fs-extra';
+import {join} from 'path';
 import privateFile from './middlewares/privateFile';
 
 export default class LavasCore {
@@ -59,6 +60,7 @@ export default class LavasCore {
             await this.routeManager.buildMultiEntries();
             // store routes info in routes.json for later use
             await this.routeManager.writeRoutesFile();
+            await this.copyServerModuleToDist();
         }
     }
 
@@ -160,5 +162,20 @@ export default class LavasCore {
                 });
             });
         }
+    }
+
+    async copyServerModuleToDist() {
+        let libDir = join(this.cwd, './lib');
+        let distLibDir = join(this.cwd, './dist/lib');
+        let serverDir = join(this.cwd, './server.js');
+        let distServerDir = join(this.cwd, './dist/server.js');
+        let nodeModulesDir = join(this.cwd, 'node_modules');
+        let distNodeModulesDr = join(this.cwd, './dist/node_modules');
+
+        await Promise.all([
+            copy(libDir, distLibDir),
+            copy(serverDir, distServerDir),
+            copy(nodeModulesDir, distNodeModulesDr)
+        ]);
     }
 }
