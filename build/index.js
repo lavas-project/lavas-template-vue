@@ -2,7 +2,6 @@
  * @file index.js
  * @author lavas
  */
-import {emptyDir} from 'fs-extra';
 import RouteManager from './RouteManager';
 import Renderer from './Renderer';
 import WebpackConfig from './WebpackConfig';
@@ -23,7 +22,6 @@ import serve from 'serve-static';
 
 import {emptyDir, copy} from 'fs-extra';
 import {join} from 'path';
-import privateFile from './middlewares/privateFile';
 
 export default class LavasCore {
     constructor(cwd = process.cwd()) {
@@ -179,7 +177,7 @@ export default class LavasCore {
     async copyServerModuleToDist() {
         let libDir = join(this.cwd, './lib');
         let distLibDir = join(this.cwd, './dist/lib');
-        let serverDir = join(this.cwd, './server.js');
+        let serverDir = join(this.cwd, './server.dev.js');
         let distServerDir = join(this.cwd, './dist/server.js');
         let nodeModulesDir = join(this.cwd, 'node_modules');
         let distNodeModulesDr = join(this.cwd, './dist/node_modules');

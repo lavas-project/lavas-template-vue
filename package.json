@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "npm run build:core && cross-env NODE_ENV=development node server.dev.js",
     "build": "npm run build:core && cross-env NODE_ENV=production node build.js",
-    "start": "cross-env NODE_ENV=production node server.js",
+    "start": "cross-env NODE_ENV=production node dist/server.js",
     "dev:express": "npm run build:core && cross-env NODE_ENV=development node server.express.js",
     "dev:core": "cross-env NODE_ENV=development node server.core.js",
     "test": "npm run build:core && ./node_modules/.bin/nyc ava",
