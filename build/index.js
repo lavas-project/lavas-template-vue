@@ -25,27 +25,55 @@ export default class LavasCore {
         this.cwd = cwd;
     }
 
-    async initBeforeBuild() {
-        this.config = await ConfigReader.read(this.cwd, this.env);
-
-        ConfigValidator.validate(this.config);
-
-        this.renderer = new Renderer(this);
-
-        this.webpackConfig = new WebpackConfig(this.config, this.env);
-
-        this.routeManager = new RouteManager(this.config, this.env, this.webpackConfig);
-    }
-
-    async build(env = 'development') {
-        this.env = env || process.env.NODE_ENV;
+    /**
+     * invoked by build & runAfterBuild, do something different in each senario
+     *
+     * @param {boolean} isInBuild is in build process
+     */
+    async _init(isInBuild) {
         this.isProd = this.env === 'production';
+        this.configReader = new ConfigReader(this.cwd, this.env);
 
-        if (!this.isProd) {
-            // in production mode we don't need to run server
+        /**
+         * in a build process, we need to:
+         * 1. read config by scan a directory
+         * 2. validate the config
+         * 3. create a webpack config for later use
+         *
+         * run after build:
+         * 1. read config.json directly
+         */
+        if (isInBuild) {
+            // scan directory
+            this.config = await this.configReader.read();
+            // validate props in config
+            ConfigValidator.validate(this.config);
+            this.webpackConfig = new WebpackConfig(this.config, this.env);
+        }
+        else {
+            // read config from config.json
+            this.config = await this.configReader.readConfigFile(this.cwd);
+        }
+
+        // in prod build process we don't need to run a server
+        if (!isInBuild || !this.isProd) {
             this.app = new Koa();
         }
-        await this.initBeforeBuild();
+
+        // init renderer & routeManager
+        this.renderer = new Renderer(this);
+        this.routeManager = new RouteManager(this);
+    }
+
+    /**
+     * build in dev & prod mode
+     *
+     * @param {string} env NODE_ENV
+     */
+    async build(env = 'development') {
+        this.env = env || process.env.NODE_ENV;
+
+        await this._init(true);
 
         let spinner = ora();
         spinner.start();
@@ -73,29 +101,23 @@ export default class LavasCore {
 
         if (this.isProd) {
             // store config which will be used in online server
-            // await ConfigReader.write
+            await this.configReader.writeConfigFile(this.config);
             // compile multi entries only in production mode
             await this.routeManager.buildMultiEntries();
             // store routes info in routes.json for later use
             await this.routeManager.writeRoutesFile();
-            // create with routes.json
-            await this.routeManager.createWithRoutesFile();
-            // create with bundle & manifest
-            await this.renderer.createWithBundle();
         }
 
         spinner.succeed();
     }
 
+    /**
+     * must run after build in prod mode
+     *
+     */
     async runAfterBuild() {
-        this.app = new Koa();
-
-        this.config = await ConfigReader.readJson(this.cwd);
-
-        this.renderer = new Renderer(this);
-
-        this.routeManager = new RouteManager(this.config, this.env);
-
+        this.env = 'production';
+        await this._init();
         // create with routes.json
         await this.routeManager.createWithRoutesFile();
         // create with bundle & manifest

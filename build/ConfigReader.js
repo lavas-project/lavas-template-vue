@@ -1,11 +1,25 @@
+/**
+ * @file ConfigReader
+ * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
+ */
+
+import {ensureFile, writeFile} from 'fs-extra';
 import {join} from 'path';
 import glob from 'glob';
 import _ from 'lodash';
 
-export default class ConfigReader {
-    static async read(cwd, env) {
+const CONFIG_FILE = 'config.json';
+
+export default class Config {
+    constructor(cwd, env) {
+        this.cwd = cwd;
+        this.env = env;
+        this.privateFiles = [];
+    }
+
+    async read() {
         const config = {};
-        let configDir = join(cwd, 'config');
+        let configDir = join(this.cwd, 'config');
         let files = glob.sync(
             '**/*.js', {
                 cwd: configDir,
@@ -39,14 +53,25 @@ export default class ConfigReader {
         let temp = config.env || {};
 
         // merge config according env
-        if (temp[env]) {
-            _.merge(config, temp[env]);
+        if (temp[this.env]) {
+            _.merge(config, temp[this.env]);
         }
 
         return config;
     }
 
-    static async readJson(cwd) {
-        return await import(join(cwd, 'meta.json'));
+    async readConfigFile() {
+        return await import(join(this.cwd, 'dist', CONFIG_FILE));
+    }
+
+    async writeConfigFile(config) {
+        let configFilePath = join(config.webpack.base.output.path, CONFIG_FILE);
+        this.privateFiles.push(CONFIG_FILE);
+        await ensureFile(configFilePath);
+        await writeFile(
+            configFilePath,
+            JSON.stringify(config),
+            'utf8'
+        );
     }
 }

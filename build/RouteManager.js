@@ -29,13 +29,13 @@ const ROUTES_FILE = 'routes.json';
 
 export default class RouteManager {
 
-    constructor(config, env, webpackConfig) {
-        this.config = config;
-        this.env = env;
-        this.webpackConfig = webpackConfig;
+    constructor(core) {
+        this.config = core.config;
+        this.env = core.env;
+        this.webpackConfig = core.webpackConfig;
 
         Object.assign(this, {
-            targetDir: join(config.globals.rootDir, './.lavas'),
+            targetDir: join(this.config.globals.rootDir, './.lavas'),
             skeletonsDirname: 'skeletons'
         });
 
