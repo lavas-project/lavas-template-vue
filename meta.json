@@ -25,6 +25,7 @@
         "author": "*__author__*<*__email__*>",
         "scripts": {
             "dev": "cross-env NODE_ENV=development lavas dev",
+            "lint": "fecs ./ --rule --type 'vue,js,css'",
             "build": "lavas build"
         },
         "lavas": true,
@@ -34,9 +35,12 @@
             "lavas"
         ],
         "license": "MIT",
-        "dependencies": {},
+        "dependencies": {
+            "koa": "^2.3.0"
+        },
         "devDependencies": {
             "cross-env": "^5.0.5",
+            "fecs": "^1.4.0",
             "lavas-cli": "^2.0.0",
             "lavas-core-vue": "latest"
         }
