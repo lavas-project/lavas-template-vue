@@ -5,7 +5,7 @@
   "author": "*__author__* <*__email__*>",
   "private": true,
   "scripts": {
-    "dev": "npm run build:core && cross-env NODE_ENV=development node server.js",
+    "dev": "npm run build:core && cross-env NODE_ENV=development node server.dev.js",
     "build": "npm run build:core && cross-env NODE_ENV=production node build.js",
     "start": "cross-env NODE_ENV=production node server.js",
     "dev:express": "npm run build:core && cross-env NODE_ENV=development node server.express.js",
