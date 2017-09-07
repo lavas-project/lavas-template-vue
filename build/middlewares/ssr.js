@@ -10,28 +10,33 @@
  * @return {Function} koa middleware
  */
 export default function (core) {
-    return async function (ctx, next) {
-        // find matched route object for current path
-        let matchedRoute = core.routeManager.findMatchedRoute(ctx.path);
-        // use prerenderred html only in prod mode
+    return async function (req, res, next) {
+        // find matchessd route object for current path
+        let matchedRoute = core.routeManager.findMatchedRoute(req.url);
+        let html;
+
         if (core.isProd
             && matchedRoute && matchedRoute.prerender) {
-            console.log(`[Lavas] prerender path: ${ctx.path}`);
-
-            ctx.body = await core.routeManager.prerender(matchedRoute);
+            console.log(`[Lavas] prerender ${req.url}`);
+            html = await core.routeManager.prerender(matchedRoute);
+            res.end(html);
         }
         else {
-            console.log(`[Lavas] ssr path: ${ctx.path}`);
+            console.log(`[Lavas] ssr ${req.url}`);
 
             let renderer = await core.renderer.getRenderer();
+            let ctx = {
+                title: 'Lavas', // default title
+                url: req.url,
+                config: core.config
+            };
+            // render to string
+            renderer.renderToString(ctx, (err, html) => {
+                if (err) {
+                    return next(err);
+                }
 
-            ctx.body = await new Promise((resolve, reject) => {
-                renderer.renderToString(ctx, (err, html) => {
-                    if (err) {
-                        return reject(err);
-                    }
-                    resolve(html);
-                });
+                res.end(html);
             });
         }
     };
