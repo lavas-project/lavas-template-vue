@@ -2,37 +2,87 @@
  * @file index.js
  * @author lavas
  */
+import {emptyDir} from 'fs-extra';
 import RouteManager from './RouteManager';
 import Renderer from './Renderer';
 import WebpackConfig from './WebpackConfig';
 import ConfigReader from './ConfigReader';
 import ConfigValidator from './ConfigValidator';
-import serve from 'koa-static';
-import {emptyDir} from 'fs-extra';
+
+import privateFileFactory from './middlewares/privateFile';
+import ssrFactory from './middlewares/ssr';
+// import errorFactory from './middlewares/error';
+
+import ora from 'ora';
+
+import connect from 'connect';
+import {compose} from 'compose-middleware';
+import composeKoa from 'koa-compose';
+import c2k from 'koa-connect';
+import serve from 'serve-static';
+
+import {emptyDir, copy} from 'fs-extra';
+import {join} from 'path';
 import privateFile from './middlewares/privateFile';
 
 export default class LavasCore {
-    constructor(cwd = process.cwd(), app) {
+    constructor(cwd = process.cwd()) {
         this.cwd = cwd;
-        this.app = app;
     }
 
-    async init(env = 'development') {
-        this.env = env || process.env.NODE_ENV;
+    /**
+     * invoked by build & runAfterBuild, do something different in each senario
+     *
+     * @param {boolean} isInBuild is in build process
+     */
+    async _init(isInBuild) {
         this.isProd = this.env === 'production';
+        this.configReader = new ConfigReader(this.cwd, this.env);
 
-        this.config = await ConfigReader.read(this.cwd, this.env);
+        /**
+         * in a build process, we need to:
+         * 1. read config by scan a directory
+         * 2. validate the config
+         * 3. create a webpack config for later use
+         *
+         * but for online server after build, we just:
+         * 1. read config.json directly
+         */
+        if (isInBuild) {
+            // scan directory
+            this.config = await this.configReader.read();
+            // validate props in config
+            ConfigValidator.validate(this.config);
+            this.webpackConfig = new WebpackConfig(this.config, this.env);
+        }
+        else {
+            // read config from config.json
+            this.config = await this.configReader.readConfigFile(this.cwd);
+        }
 
-        ConfigValidator.validate(this.config);
+        // in prod build process we don't need to run a server
+        if (!isInBuild || !this.isProd) {
+            this.app = connect();
+        }
 
+        // init renderer & routeManager
         this.renderer = new Renderer(this);
-
-        this.webpackConfig = new WebpackConfig(this.config, this.env);
-
-        this.routeManager = new RouteManager(this.config, this.env, this.webpackConfig);
+        this.routeManager = new RouteManager(this);
     }
 
-    async build() {
+    /**
+     * build in dev & prod mode
+     *
+     * @param {string} env NODE_ENV
+     */
+    async build(env = 'development') {
+        this.env = env || process.env.NODE_ENV;
+
+        await this._init(true);
+
+        let spinner = ora();
+        spinner.start();
+
         // clear dist/
         await emptyDir(this.config.webpack.base.output.path);
 
@@ -56,110 +106,88 @@ export default class LavasCore {
         await this.renderer.build(clientConfig, serverConfig);
 
         if (this.isProd) {
+            // store config which will be used in online server
+            await this.configReader.writeConfigFile(this.config);
             // compile multi entries only in production mode
             await this.routeManager.buildMultiEntries();
             // store routes info in routes.json for later use
             await this.routeManager.writeRoutesFile();
+            await this.copyServerModuleToDist();
         }
+
+        spinner.succeed();
     }
 
-    async run() {
+    /**
+     * must run after build in prod mode
+     *
+     */
+    async runAfterBuild() {
+        this.env = 'production';
+        await this._init();
+        // create with routes.json
+        await this.routeManager.createWithRoutesFile();
+        // create with bundle & manifest
+        await this.renderer.createWithBundle();
+    }
+
+    /**
+     * compose all the middlewares
+     *
+     * @return {Function} koa middleware
+     */
+    koaMiddleware() {
         if (this.isProd) {
-            // create with routes.json
-            await this.routeManager.createWithRoutesFile();
-            // create with bundle & manifest
-            await this.renderer.createWithBundle();
-        }
-
-        this.setupMiddlewares();
-        this.setupErrorHandler();
-    }
-
-    setupErrorHandler() {
-        const errConfig = this.config.errorHandler;
-
-        errConfig.statusCode = errConfig.statusCode || [];
-
-        const errPaths = new Set([errConfig.target]);
-
-        // add all paths to errPaths set
-        Object.keys(errConfig.statusCode).forEach(key => {
-            errPaths.add(errConfig.statusCode[key].target);
-        });
-
-        this.app.context.onerror = onerror;
-
-        function onerror(err) {
-
-            if (null == err) {
-                return;
-            }
-
-            if (this.headerSent || !this.writable) {
-                err.headerSent = true;
-                return;
-            }
-
-            if (errPaths.has(this.path)) {
-                // if already in error procedure, then end this request immediately, avoid infinite loop
-                this.res.end();
-                return;
-            }
-
-            if (err.status !== 404) {
-                console.error(err);
-            }
-
-            // clear headers
-            this.res._headers = {};
-
-            // get the right target url
-            let target = errConfig.target;
-            if (errConfig.statusCode[err.status]) {
-                target = errConfig.statusCode[err.status].target;
-            }
-
-            // redirect to the corresponding url
-            // this.status = err.status;
-            this.redirect(target);
-            this.res.end();
-        }
-    }
-
-    setupMiddlewares() {
-        if (this.app) {
             // add static middleware
             this.app.use(serve(this.config.webpack.base.output.path));
-            // protected some static files such as routes.json, bundle.json
-            // this.app.use(privateFile([...this.routeManager.privateFiles,
-            //     ...this.renderer.privateFiles]));
         }
+
+        // transform express/connect style middleware to koa style
+        let transformedMiddlewares = this.app.stack.map(m => c2k(m.handle));
+
+        return composeKoa([
+            async function (ctx, next) {
+                // koa defaults to 404 when it sees that status is unset
+                ctx.status = 200;
+                await next();
+            },
+            c2k(privateFileFactory(this)),
+            ...transformedMiddlewares,
+            c2k(ssrFactory(this))
+        ]);
     }
 
-    async koaMiddleware(ctx, next) {
-        // find matched route object for current path
-        let matchedRoute = this.routeManager.findMatchedRoute(ctx.path);
-        let config = this.config;
-        // use prerenderred html only in prod mode
-        if (this.isProd
-            && matchedRoute && matchedRoute.prerender) {
-            console.log(`[Lavas] prerender ${ctx.path}`);
-
-            ctx.body = await this.routeManager.prerender(matchedRoute);
+    expressMiddleware() {
+        if (this.isProd) {
+            // add static middleware
+            this.app.use(serve(this.config.webpack.base.output.path));
         }
-        else {
-            console.log(`[Lavas] ssr ${ctx.path}`);
 
-            let renderer = await this.renderer.getRenderer();
-            ctx.body = await new Promise((resolve, reject) => {
-                ctx.config = config;
-                renderer.renderToString(ctx, (err, html) => {
-                    if (err) {
-                        return reject(err);
-                    }
-                    resolve(html);
-                });
-            });
-        }
+        // use middlewares directly
+        let middlewares = this.app.stack.map(m => m.handle);
+
+        return compose([
+            privateFileFactory(this),
+            ...middlewares,
+            ssrFactory(this)
+        ]);
+    }
+
+    /**
+     * copy server relatived files into dist when build
+     */
+    async copyServerModuleToDist() {
+        let libDir = join(this.cwd, './lib');
+        let distLibDir = join(this.cwd, './dist/lib');
+        let serverDir = join(this.cwd, './server.js');
+        let distServerDir = join(this.cwd, './dist/server.js');
+        let nodeModulesDir = join(this.cwd, 'node_modules');
+        let distNodeModulesDr = join(this.cwd, './dist/node_modules');
+
+        await Promise.all([
+            copy(libDir, distLibDir),
+            copy(serverDir, distServerDir),
+            copy(nodeModulesDir, distNodeModulesDr)
+        ]);
     }
 }

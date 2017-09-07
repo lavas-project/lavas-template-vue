@@ -1,9 +1,29 @@
-export default function (files) {
-    return async function (ctx, next) {
-        console.log(ctx.path)
-        if (files.find(file => ctx.path.indexOf(file) > -1)) {
-            ctx.throw(404);
+/**
+ * @file privateFileMiddlewareFactory.js
+ * @author lavas
+ */
+
+/**
+ * generate private file middleware
+ * which prevents user from getting in touch with some private files
+ *
+ * @param {Object} core lavas core
+ * @return {Function} koa middleware
+ */
+export default function (core) {
+    // static files such as routes.json, vue-server-bundle.json
+    let privateFiles = [
+        ...core.routeManager.privateFiles,
+        ...core.renderer.privateFiles,
+        ...core.configReader.privateFiles
+    ];
+
+    return async function (req, res, next) {
+        if (privateFiles.find(file => req.url.indexOf(file) > -1)) {
+            await Promise.reject({status: 404});
         }
-        await next();
+        else {
+            await next();
+        }
     };
 }

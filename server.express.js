@@ -3,9 +3,9 @@
  * @author lavas
  */
 
-const LavasCore = require('lavas-core');
-const Koa = require('koa');
-const app = new Koa();
+const LavasCore = require('./lib');
+const express = require('express');
+const app = express();
 
 let env = process.env.NODE_ENV;
 let port = process.env.PORT || 3000;
@@ -21,7 +21,7 @@ let port = process.env.PORT || 3000;
             await core.runAfterBuild();
         }
 
-        app.use(core.koaMiddleware());
+        app.use(core.expressMiddleware());
 
         app.listen(port, () => {
             console.log('server started at localhost:' + port);

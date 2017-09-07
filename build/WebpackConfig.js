@@ -149,12 +149,12 @@ export default class WebpackConfig {
             },
             plugins: isProd
                 ? [
-                    // new webpack.optimize.UglifyJsPlugin({
-                    //     compress: {
-                    //         warnings: false
-                    //     },
-                    //     sourceMap: jsSourceMap
-                    // }),
+                    new webpack.optimize.UglifyJsPlugin({
+                        compress: {
+                            warnings: false
+                        },
+                        sourceMap: jsSourceMap
+                    }),
                     new ExtractTextPlugin({
                         filename: this.assetsPath('css/[name].[contenthash].css')
                     }),
@@ -259,7 +259,7 @@ export default class WebpackConfig {
                 }]),
 
                 new ManifestJsonWebpackPlugin({
-                    config: this.config
+                    config: this.config.manifest
                 })
             ]
         }, client);
