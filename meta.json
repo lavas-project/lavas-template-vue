@@ -34,7 +34,9 @@
             "lavas"
         ],
         "license": "MIT",
-        "dependencies": {},
+        "dependencies": {
+            "koa": "^2.3.0"
+        },
         "devDependencies": {
             "cross-env": "^5.0.5",
             "lavas-cli": "^2.0.0",
