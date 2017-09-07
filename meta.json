@@ -22,7 +22,7 @@
         "name": "*__name__*",
         "version": "1.0.0",
         "description": "*__desc__*",
-        "author": "*__name__*<*__email__*>",
+        "author": "*__author__*<*__email__*>",
         "scripts": {
             "dev": "cross-env NODE_ENV=development lavas dev",
             "build": "lavas build"
