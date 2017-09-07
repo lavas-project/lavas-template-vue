@@ -15,7 +15,6 @@ export default function (core) {
     let privateFiles = [...core.routeManager.privateFiles, ...core.renderer.privateFiles];
 
     return async function (req, res, next) {
-        res.statusCode = 200;
         if (privateFiles.find(file => req.url.indexOf(file) > -1)) {
             await Promise.reject({status: 404});
         }

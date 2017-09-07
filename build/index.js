@@ -114,6 +114,11 @@ export default class LavasCore {
         let transformedMiddlewares = this.app.stack.map(m => c2k(m.handle));
 
         return composeKoa([
+            async function (ctx, next) {
+                // koa defaults to 404 when it sees that status is unset
+                ctx.status = 200;
+                await next();
+            },
             c2k(privateFileFactory(this)),
             ...transformedMiddlewares,
             c2k(ssrFactory(this))
