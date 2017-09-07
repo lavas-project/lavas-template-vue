@@ -29,13 +29,14 @@ const ROUTES_FILE = 'routes.json';
 
 export default class RouteManager {
 
-    constructor(config, env, webpackConfig) {
-        this.config = config;
-        this.env = env;
-        this.webpackConfig = webpackConfig;
+    constructor(core) {
+        this.config = core.config;
+        this.env = core.env;
+        this.cwd = core.cwd;
+        this.webpackConfig = core.webpackConfig;
 
         Object.assign(this, {
-            targetDir: join(config.globals.rootDir, './.lavas'),
+            targetDir: join(this.config.globals.rootDir, './.lavas'),
             skeletonsDirname: 'skeletons'
         });
 
@@ -370,7 +371,7 @@ export default class RouteManager {
      *
      */
     async createWithRoutesFile() {
-        let routesFilePath = join(this.config.webpack.base.output.path, './routes.json');
+        let routesFilePath = join(this.cwd, ROUTES_FILE);
         this.routes = JSON.parse(await readFile(routesFilePath, 'utf8'));
         this.mergeWithConfig(this.routes);
     }

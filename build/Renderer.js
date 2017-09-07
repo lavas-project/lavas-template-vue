@@ -19,6 +19,7 @@ export default class Renderer {
         this.env = core.env;
         this.config = core.config;
         this.rootDir = this.config.globals.rootDir;
+        this.cwd = core.cwd;
         this.app = core.app;
         this.renderer = null;
         this.serverBundle = null;
@@ -29,9 +30,8 @@ export default class Renderer {
     }
 
     async createWithBundle() {
-        let outputPath = this.config.webpack.base.output.path;
-        this.serverBundle = await import(join(outputPath, SERVER_BUNDLE));
-        this.clientManifest = await import(join(outputPath, CLIENT_MANIFEST));
+        this.serverBundle = await import(join(this.cwd, SERVER_BUNDLE));
+        this.clientManifest = await import(join(this.cwd, CLIENT_MANIFEST));
         await this.createRenderer();
     }
 
