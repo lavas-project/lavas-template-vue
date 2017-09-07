@@ -21,6 +21,10 @@ import composeKoa from 'koa-compose';
 import c2k from 'koa-connect';
 import serve from 'serve-static';
 
+import {emptyDir, copy} from 'fs-extra';
+import {join} from 'path';
+import privateFile from './middlewares/privateFile';
+
 export default class LavasCore {
     constructor(cwd = process.cwd()) {
         this.cwd = cwd;
@@ -107,6 +111,7 @@ export default class LavasCore {
             await this.routeManager.buildMultiEntries();
             // store routes info in routes.json for later use
             await this.routeManager.writeRoutesFile();
+            await this.copyServerModuleToDist();
         }
 
         spinner.succeed();
@@ -140,6 +145,11 @@ export default class LavasCore {
         let transformedMiddlewares = this.app.stack.map(m => c2k(m.handle));
 
         return composeKoa([
+            async function (ctx, next) {
+                // koa defaults to 404 when it sees that status is unset
+                ctx.status = 200;
+                await next();
+            },
             c2k(privateFileFactory(this)),
             ...transformedMiddlewares,
             c2k(ssrFactory(this))
@@ -159,6 +169,24 @@ export default class LavasCore {
             privateFileFactory(this),
             ...middlewares,
             ssrFactory(this)
+        ]);
+    }
+
+    /**
+     * copy server relatived files into dist when build
+     */
+    async copyServerModuleToDist() {
+        let libDir = join(this.cwd, './lib');
+        let distLibDir = join(this.cwd, './dist/lib');
+        let serverDir = join(this.cwd, './server.js');
+        let distServerDir = join(this.cwd, './dist/server.js');
+        let nodeModulesDir = join(this.cwd, 'node_modules');
+        let distNodeModulesDr = join(this.cwd, './dist/node_modules');
+
+        await Promise.all([
+            copy(libDir, distLibDir),
+            copy(serverDir, distServerDir),
+            copy(nodeModulesDir, distNodeModulesDr)
         ]);
     }
 }

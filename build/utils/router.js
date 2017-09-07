@@ -24,11 +24,7 @@ function getDirs(baseDir, ext = '') {
                 reject(err);
             }
             else {
-                let set = dirs.reduce((set, dir) => {
-                    set.add(dir);
-                    set.add(dirname(dir));
-                    return set;
-                }, new Set());
+                let set = dirs.reduce((set, dir) => set.add(dir).add(dirname(dir)), new Set());
                 res(Array.from(set));
             }
         });

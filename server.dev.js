@@ -5,7 +5,6 @@
 
 const LavasCore = require('./lib');
 const Koa = require('koa');
-
 const app = new Koa();
 
 let env = process.env.NODE_ENV;
@@ -16,10 +15,10 @@ let port = process.env.PORT || 3000;
         let core = new LavasCore(__dirname);
 
         if (env === 'development') {
-            await core.build(env);
+            await core.build();
         }
         else if (env === 'production') {
-            await core.runAfterBuild(env);
+            await core.runAfterBuild();
         }
 
         app.use(core.koaMiddleware());
