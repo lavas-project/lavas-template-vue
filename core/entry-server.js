@@ -26,7 +26,6 @@ export default function (context) {
         context.route = router.currentRoute;
 
         context.meta = app.$meta();
-        console.log(context);
 
 
         if (fullPath !== url) {
