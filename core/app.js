@@ -8,7 +8,9 @@ import Meta from 'vue-meta';
 import {createRouter} from './router';
 import {createStore} from './store';
 import App from './App.vue';
+import Vuetify from 'vuetify';
 
+Vue.use(Vuetify);
 Vue.use(Meta, {
     keyName: 'head', // vue-meta 的参数名称
     attribute: 'data-vue-meta', // 由 vue-meta 渲染的元素会添加一个属性 <title data-vue-meta=""></title>

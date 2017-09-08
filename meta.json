@@ -9,7 +9,47 @@
         "packageJsonAuthor": "*__ author __*<*__ email __*>"
     },
     "renderIgnores": [],
-    "exportsIgnores": [],
+    "exportsIgnores": [
+        "build",
+        "_old",
+        "build.js",
+        "package.json",
+        "server.dev.js",
+        "server.express.js",
+        "webpack.config.js",
+        ".gitignore",
+        "test"
+    ],
+    "exportsPackageJson": {
+        "name": "*__name__*",
+        "version": "1.0.0",
+        "description": "*__desc__*",
+        "author": "*__author__*<*__email__*>",
+        "scripts": {
+            "dev": "cross-env NODE_ENV=development lavas dev",
+            "lint": "fecs ./ --rule --type 'vue,js,css'",
+            "build": "lavas build"
+        },
+        "lavas": true,
+        "keywords": [
+            "pwa",
+            "vue",
+            "lavas"
+        ],
+        "license": "MIT",
+        "dependencies": {
+            "iscroll": "^5.2.0",
+            "koa": "^2.3.0",
+            "normalize.css": "^7.0.0",
+            "vuetify": "^0.15.2"
+        },
+        "devDependencies": {
+            "cross-env": "^5.0.5",
+            "fecs": "^1.4.0",
+            "lavas-core": "latest"
+        }
+    },
+    "core": "lavas-core-vue",
     "schema": {
         "dirPath": {
             "type": "string",
