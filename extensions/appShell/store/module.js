@@ -224,11 +224,6 @@ export function createAppShellState() {
                                     image: 'https://github.com/google/material-design-icons/blob/master/social/2x_web/ic_mood_bad_black_48dp.png?raw=true',
                                     alt: 'mood-bad',
                                     route: '/detail/2'
-                                },
-                                {
-                                    text: 'Detail Page 3',
-                                    svg: 'svg-sentiment-very-satisfied',
-                                    route: '/detail/3'
                                 }
                             ]
                         }
@@ -307,13 +302,13 @@ export function createAppShellState() {
                             name: 'user',
 
                             // 显示的 icon
-                            icon: 'person',
+                            icon: 'assignment',
 
                             // 显示的文字
-                            text: '个人中心',
+                            text: '详细内容',
 
                             // 路由信息
-                            route: '/user'
+                            route: '/detail/1'
                         }
                     ]
                 },

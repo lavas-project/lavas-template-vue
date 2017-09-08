@@ -14,8 +14,7 @@
                         @click.native="handleNavClick(nav.route, nav.name)"
                         flat primary>
                         <span>{{ nav.text }}</span>
-                        <icon v-if="nav.svg" :name="nav.svg" class="app-header-icon"></icon>
-                        <v-icon v-else-if="nav.icon" class="app-header-icon">{{ nav.icon }}</v-icon>
+                        <v-icon v-if="nav.icon" class="app-header-icon">{{ nav.icon }}</v-icon>
                     </v-btn>
                 </v-bottom-nav>
             </slot>
