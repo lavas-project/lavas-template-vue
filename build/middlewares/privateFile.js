@@ -16,7 +16,7 @@ export default function (core) {
 
     return async function (req, res, next) {
         if (privateFiles.find(file => req.url.indexOf(file) > -1)) {
-            await Promise.reject({status: 404});
+            await next({status: 404});
         }
         else {
             await next();

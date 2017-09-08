@@ -11,7 +11,8 @@ import ConfigValidator from './ConfigValidator';
 
 import privateFileFactory from './middlewares/privateFile';
 import ssrFactory from './middlewares/ssr';
-// import errorFactory from './middlewares/error';
+import koaErrorFactory from './middlewares/koaError';
+import expressErrorFactory from './middlewares/expressError';
 
 import ora from 'ora';
 
@@ -114,6 +115,7 @@ export default class LavasCore {
         let transformedMiddlewares = this.app.stack.map(m => c2k(m.handle));
 
         return composeKoa([
+            koaErrorFactory(this),
             async function (ctx, next) {
                 // koa defaults to 404 when it sees that status is unset
                 ctx.status = 200;
@@ -137,7 +139,8 @@ export default class LavasCore {
         return compose([
             privateFileFactory(this),
             ...middlewares,
-            ssrFactory(this)
+            ssrFactory(this),
+            expressErrorFactory(this)
         ]);
     }
 }
