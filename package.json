@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "npm run build:core && cross-env NODE_ENV=development node server.dev.js",
     "build": "npm run build:core && cross-env NODE_ENV=production node build.js",
-    "start": "cross-env NODE_ENV=production node server.js",
+    "start": "cross-env NODE_ENV=production node dist/server.js",
     "dev:express": "npm run build:core && cross-env NODE_ENV=development node server.express.js",
     "dev:core": "cross-env NODE_ENV=development node server.core.js",
     "test": "npm run build:core && ./node_modules/.bin/nyc ava",
@@ -29,22 +29,18 @@
     "express": "^4.15.4",
     "iscroll": "*",
     "koa": "^2.3.0",
-    "lavas-core": "^1.0.5",
+    "lavas-core": "^1.0.9",
     "normalize.css": "^7.0.0",
-    "vuetify": "^0.15.2"
+    "vuetify": "^0.12.7",
+    "webpack-hot-middleware": "^2.19.1"
   },
   "devDependencies": {
     "ava": "^0.18.2",
     "babel-cli": "^6.24.0",
     "babel-register": "^6.23.0",
-    "compose-middleware": "^3.0.0",
-    "connect": "^3.6.3",
     "cross-env": "^5.0.5",
     "fecs": "^1.4.0",
-    "koa-compose": "^4.0.0",
-    "koa-connect": "^2.0.0",
     "nyc": "^10.3.2",
-    "serve-static": "^1.12.4",
     "superkoa": "^1.0.3"
   },
   "engines": {
