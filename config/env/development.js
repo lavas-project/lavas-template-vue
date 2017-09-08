@@ -14,7 +14,7 @@ module.exports = {
             }
         },
         shortcuts: {
-            cssExtract: false
+            cssExtract: true
         }
     }
 

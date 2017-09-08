@@ -139,9 +139,6 @@ export default class WebpackConfig {
                         },
                         sourceMap: jsSourceMap
                     }),
-                    new ExtractTextPlugin({
-                        filename: this.assetsPath('css/[name].[contenthash].css')
-                    }),
                     new OptimizeCSSPlugin({
                         cssProcessorOptions: {
                             safe: true
@@ -150,6 +147,14 @@ export default class WebpackConfig {
                 ]
                 : [new FriendlyErrorsPlugin()]
         }, base);
+
+        if (cssExtract) {
+            baseConfig.plugins.unshift(
+                new ExtractTextPlugin({
+                    filename: this.assetsPath('css/[name].[contenthash].css')
+                })
+            );
+        }
 
         if (typeof extend === 'function') {
             extend.call(this, baseConfig, {
@@ -172,7 +177,7 @@ export default class WebpackConfig {
     client(config) {
         let webpackConfig = config.webpack;
         let {client, shortcuts, mergeStrategy = {}, extend} = webpackConfig;
-        let {ssr, cssSourceMap, cssMinimize,cssExtract,
+        let {ssr, cssSourceMap, cssMinimize, cssExtract,
             jsSourceMap, assetsDir, copyDir, bundleAnalyzerReport} = shortcuts;
 
         let baseConfig = this.base(config);

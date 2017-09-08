@@ -79,7 +79,7 @@ export default class LavasCore {
         await this._init(true);
 
         let spinner = ora();
-        spinner.start(`[Lavas] ${this.env} build is started...`);
+        spinner.start();
 
         // clear dist/
         await emptyDir(this.config.webpack.base.output.path);
@@ -190,12 +190,15 @@ export default class LavasCore {
         let serverDir = join(this.cwd, './server.dev.js');
         let distServerDir = join(distPath, 'server.js');
         let nodeModulesDir = join(this.cwd, 'node_modules');
-        let distNodeModulesDr = join(distPath, 'node_modules');
+        let distNodeModulesDir = join(distPath, 'node_modules');
+        let jsonDir = join(this.cwd, 'package.json');
+        let distJsonDir = join(distPath, 'package.json');
 
         await Promise.all([
             copy(libDir, distLibDir),
             copy(serverDir, distServerDir),
-            copy(nodeModulesDir, distNodeModulesDr)
+            copy(nodeModulesDir, distNodeModulesDir),
+            copy(jsonDir, distJsonDir)
         ]);
     }
 }
