@@ -31,8 +31,7 @@
     "iscroll": "*",
     "koa": "^2.3.0",
     "lavas-core": "^1.0.10",
-    "normalize.css": "^7.0.0",
-    "vuetify": "^0.12.7"
+    "normalize.css": "^7.0.0"
   },
   "devDependencies": {
     "ava": "^0.18.2",
