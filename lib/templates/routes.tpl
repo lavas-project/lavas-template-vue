@@ -7,14 +7,7 @@ import _<%- route.hash %> from '@/<%- route.component %>';
 <% }); %>
 
 let routes = [
-<% routes.forEach(function(route) { %>
-    {
-        path: '<%- route.path %>',
-        name: '<%- route.name %>',
-        component: _<%- route.hash %>,
-        meta: <%= JSON.stringify(route.meta || {}) %>
-    },
-<% }); %>
+    <%= routesContent %>
 ];
 
 export {routes};
