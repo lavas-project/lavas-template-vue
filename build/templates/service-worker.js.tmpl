@@ -8,7 +8,7 @@ var routes = [];
 // 把routes.path转化为正则
 // 如 /detail/:id => /^\/detail\/[^\/]+\/?$/
 for (var i = 0; i < rawRoutes.length; i++) {
-    if (rawRoutes.pagename) {
+    if (rawRoutes[i].pagename) {
         rawRoutes[i].pathRegExp =
             new RegExp('^' + rawRoutes[i].path.replace(/\/:[^\/]*/g, '/[^\/]+') + '\/?');
         routes.push(rawRoutes[i]);
