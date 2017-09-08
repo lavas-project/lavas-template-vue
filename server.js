@@ -7,7 +7,7 @@ const LavasCore = require('lavas-core');
 const Koa = require('koa');
 const app = new Koa();
 
-let env = process.env.NODE_ENV;
+let env = process.env.NODE_ENV || 'production';
 let port = process.env.PORT || 3000;
 
 (async () => {

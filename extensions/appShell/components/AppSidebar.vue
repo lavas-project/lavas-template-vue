@@ -7,15 +7,13 @@
             <div v-if="title" class="app-sidebar-title" @click.stop="closeAndGo('/')">
                 <span class="app-sidebar-title-left-icon">
                     <img v-if="title.imageLeft" :src="title.imageLeft" :alt="title.altLeft"></img>
-                    <icon v-else-if="title.svgLeft" :name="title.svgLeft"></icon>
-                    <v-icon light v-else-if="title.iconLeft">{{ title.iconLeft }}</v-icon>
+                    <v-icon light v-if="title.iconLeft">{{ title.iconLeft }}</v-icon>
                 </span>
                 <span>{{ title.text }}</span>
                 <slot name="logo" class="app-sidebar-title-right-logo">
                     <span class="app-sidebar-title-right-logo">
                         <img v-if="title.imageRight" :src="title.imageRight" :alt="title.altRight"></img>
-                        <icon v-else-if="title.svgRight" :name="title.svgRight"></icon>
-                        <v-icon v-else-if="title.iconRight">{{ title.iconRight }}</v-icon>
+                        <v-icon v-if="title.iconRight">{{ title.iconRight }}</v-icon>
                     </span>
                 </slot>
             </div>
@@ -40,9 +38,8 @@
                         <div v-if="block.sublistTitle" class="sub-list-title">{{ block.sublistTitle }}</div>
                         <ul v-if="block.list">
                             <li v-for="item in block.list" :key="item.text" @click.stop="closeAndGo(item.route)">
-                                <span v-if="item.icon || item.image || item.svg " class="app-sidebar-block-left-icon">
+                                <span v-if="item.icon || item.image" class="app-sidebar-block-left-icon">
                                     <img v-if="item.image" :src="item.image" :alt="item.alt"></img>
-                                    <icon v-else-if="item.svg" :name="item.svg"></icon>
                                     <v-icon v-else-if="item.icon">{{ item.icon }}</v-icon>
                                 </span>
                                 <span v-if="item.text" class="app-sidebar-block-text">{{ item.text }}</span>
@@ -126,14 +123,6 @@ a
             vertical-align middle
             width ($app-sidebar-left-icon-size)px
             height ($app-sidebar-left-icon-size)px
-        svg
-            position relative
-            left 0
-            top 0
-            transform none
-            vertical-align middle
-            height ($app-sidebar-left-icon-size)px
-            width ($app-sidebar-left-icon-size)px
 
         .material-icons
             font-size ($app-sidebar-left-icon-size)px
