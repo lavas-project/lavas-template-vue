@@ -14,16 +14,16 @@ const MANIFEST_ASSET_NAME = 'static/manifest.json';
  */
 function ManifestJson(opts) {
     this.config = opts.config;
+    this.path = opts.path;
 }
 
 /* eslint-disable fecs-camelcase */
 ManifestJson.prototype.apply = function (compiler) {
 
-    let conf = this.config || {};
-    let manifestContent = JSON.stringify(conf);
+    let manifestContent = JSON.stringify(this.config);
 
     compiler.plugin('emit', (compilation, callback) => {
-        compilation.assets[MANIFEST_ASSET_NAME] = {
+        compilation.assets[this.path] = {
             source() {
                 return manifestContent;
             },

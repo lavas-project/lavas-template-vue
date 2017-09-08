@@ -18,6 +18,7 @@ import BundleAnalyzerPlugin from 'webpack-bundle-analyzer';
 import ManifestJsonWebpackPlugin from './buildinPlugins/manifest-json-webpack-plugin';
 
 import {vueLoaders, styleLoaders} from './utils/loader';
+import {LAVAS_DIRNAME_IN_DIST, CLIENT_MANIFEST, SERVER_BUNDLE} from './constants';
 
 export default class WebpackConfig {
     constructor(config = {}, env) {
@@ -138,9 +139,6 @@ export default class WebpackConfig {
                         },
                         sourceMap: jsSourceMap
                     }),
-                    new ExtractTextPlugin({
-                        filename: this.assetsPath('css/[name].[contenthash].css')
-                    }),
                     new OptimizeCSSPlugin({
                         cssProcessorOptions: {
                             safe: true
@@ -149,6 +147,14 @@ export default class WebpackConfig {
                 ]
                 : [new FriendlyErrorsPlugin()]
         }, base);
+
+        if (cssExtract) {
+            baseConfig.plugins.unshift(
+                new ExtractTextPlugin({
+                    filename: this.assetsPath('css/[name].[contenthash].css')
+                })
+            );
+        }
 
         if (typeof extend === 'function') {
             extend.call(this, baseConfig, {
@@ -171,7 +177,7 @@ export default class WebpackConfig {
     client(config) {
         let webpackConfig = config.webpack;
         let {client, shortcuts, mergeStrategy = {}, extend} = webpackConfig;
-        let {ssr, cssSourceMap, cssMinimize,cssExtract,
+        let {ssr, cssSourceMap, cssMinimize, cssExtract,
             jsSourceMap, assetsDir, copyDir, bundleAnalyzerReport} = shortcuts;
 
         let baseConfig = this.base(config);
@@ -238,13 +244,16 @@ export default class WebpackConfig {
                 }]),
 
                 new ManifestJsonWebpackPlugin({
-                    config: this.config.manifest
+                    config: this.config.manifest,
+                    path: this.assetsPath('manifest.json')
                 })
             ]
         }, client);
 
         if (ssr) {
-            clientConfig.plugins.push(new VueSSRClientPlugin());
+            clientConfig.plugins.push(new VueSSRClientPlugin({
+                filename: join(LAVAS_DIRNAME_IN_DIST, CLIENT_MANIFEST)
+            }));
         }
 
         if (bundleAnalyzerReport) {
@@ -293,7 +302,9 @@ export default class WebpackConfig {
                     'process.env.VUE_ENV': '"server"',
                     'process.env.NODE_ENV': `"${this.env}"`
                 }),
-                new VueSSRServerPlugin()
+                new VueSSRServerPlugin({
+                    filename: join(LAVAS_DIRNAME_IN_DIST, SERVER_BUNDLE)
+                })
             ]
         }, server);
 

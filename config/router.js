@@ -25,7 +25,7 @@ module.exports = {
             // meta: {},
             template: '',
             // entry: '',
-            skeleton: '@/components/detail-id.skeleton'
+            // skeleton: '@/components/detail-id.skeleton'
         }
     ]
 

@@ -1,5 +1,5 @@
 /**
- * @file errorMiddlewareFactory.js
+ * @file koaError.js, error handler middleware for koa
  * @author lavas
  */
 
