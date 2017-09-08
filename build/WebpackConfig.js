@@ -18,6 +18,7 @@ import BundleAnalyzerPlugin from 'webpack-bundle-analyzer';
 import ManifestJsonWebpackPlugin from './buildinPlugins/manifest-json-webpack-plugin';
 
 import {vueLoaders, styleLoaders} from './utils/loader';
+import {LAVAS_DIRNAME_IN_DIST, CLIENT_MANIFEST, SERVER_BUNDLE} from './constants';
 
 export default class WebpackConfig {
     constructor(config = {}, env) {
@@ -238,13 +239,16 @@ export default class WebpackConfig {
                 }]),
 
                 new ManifestJsonWebpackPlugin({
-                    config: this.config.manifest
+                    config: this.config.manifest,
+                    path: this.assetsPath('manifest.json')
                 })
             ]
         }, client);
 
         if (ssr) {
-            clientConfig.plugins.push(new VueSSRClientPlugin());
+            clientConfig.plugins.push(new VueSSRClientPlugin({
+                filename: join(LAVAS_DIRNAME_IN_DIST, CLIENT_MANIFEST)
+            }));
         }
 
         if (bundleAnalyzerReport) {
@@ -293,7 +297,9 @@ export default class WebpackConfig {
                     'process.env.VUE_ENV': '"server"',
                     'process.env.NODE_ENV': `"${this.env}"`
                 }),
-                new VueSSRServerPlugin()
+                new VueSSRServerPlugin({
+                    filename: join(LAVAS_DIRNAME_IN_DIST, SERVER_BUNDLE)
+                })
             ]
         }, server);
 

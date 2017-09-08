@@ -7,10 +7,10 @@ import {ensureFile, writeFile} from 'fs-extra';
 import {join} from 'path';
 import glob from 'glob';
 import _ from 'lodash';
+import {CONFIG_FILE} from './constants';
+import {distLavasPath} from './utils/path';
 
-const CONFIG_FILE = 'config.json';
-
-export default class Config {
+export default class ConfigReader {
     constructor(cwd, env) {
         this.cwd = cwd;
         this.env = env;
@@ -61,11 +61,11 @@ export default class Config {
     }
 
     async readConfigFile() {
-        return await import(join(this.cwd, CONFIG_FILE));
+        return await import(distLavasPath(this.cwd, CONFIG_FILE));
     }
 
     async writeConfigFile(config) {
-        let configFilePath = join(config.webpack.base.output.path, CONFIG_FILE);
+        let configFilePath = distLavasPath(config.webpack.base.output.path, CONFIG_FILE);
         this.privateFiles.push(CONFIG_FILE);
         await ensureFile(configFilePath);
         await writeFile(

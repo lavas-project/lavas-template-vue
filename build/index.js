@@ -79,7 +79,7 @@ export default class LavasCore {
         await this._init(true);
 
         let spinner = ora();
-        spinner.start();
+        spinner.start(`[Lavas] ${this.env} build is started...`);
 
         // clear dist/
         await emptyDir(this.config.webpack.base.output.path);
@@ -103,16 +103,26 @@ export default class LavasCore {
         await this.renderer.build(clientConfig, serverConfig);
 
         if (this.isProd) {
-            // store config which will be used in online server
+            /**
+             * when running online server, renderer needs to use template and
+             * replace some variables such as meta, config in it. so we need
+             * to store some props in config.json.
+             * TODO: not all the props in config is needed. for now, only manifest
+             * & assetsDir are required. some props such as globalDir are useless.
+             */
             await this.configReader.writeConfigFile(this.config);
             // compile multi entries only in production mode
             await this.routeManager.buildMultiEntries();
             // store routes info in routes.json for later use
             await this.routeManager.writeRoutesFile();
-            await this.copyServerModuleToDist();
+            // copy to /dist
+            await this._copyServerModuleToDist();
+        }
+        else {
+            // TODO: use chokidar to rebuild...
         }
 
-        spinner.succeed();
+        spinner.succeed(`[Lavas] ${this.env} build is completed.`);
     }
 
     /**
@@ -136,7 +146,7 @@ export default class LavasCore {
     koaMiddleware() {
         if (this.isProd) {
             // add static middleware
-            this.app.use(serve(this.config.webpack.base.output.path));
+            this.app.use(serve(this.cwd));
         }
 
         // transform express/connect style middleware to koa style
@@ -157,7 +167,7 @@ export default class LavasCore {
     expressMiddleware() {
         if (this.isProd) {
             // add static middleware
-            this.app.use(serve(this.config.webpack.base.output.path));
+            this.app.use(serve(this.cwd));
         }
 
         // use middlewares directly
@@ -173,13 +183,14 @@ export default class LavasCore {
     /**
      * copy server relatived files into dist when build
      */
-    async copyServerModuleToDist() {
+    async _copyServerModuleToDist() {
+        let distPath = this.config.webpack.base.output.path;
         let libDir = join(this.cwd, './lib');
-        let distLibDir = join(this.cwd, './dist/lib');
+        let distLibDir = join(distPath, 'lib');
         let serverDir = join(this.cwd, './server.dev.js');
-        let distServerDir = join(this.cwd, './dist/server.js');
+        let distServerDir = join(distPath, 'server.js');
         let nodeModulesDir = join(this.cwd, 'node_modules');
-        let distNodeModulesDr = join(this.cwd, './dist/node_modules');
+        let distNodeModulesDr = join(distPath, 'node_modules');
 
         await Promise.all([
             copy(libDir, distLibDir),
