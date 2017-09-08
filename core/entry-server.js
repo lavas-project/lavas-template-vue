@@ -50,7 +50,7 @@ export default function (context) {
             }
 
             // middleware
-            middlewareProcess(matchedComponents);
+            await middlewareProcess(matchedComponents);
 
             // Call fetchData hooks on components matched by the route.
             // A preFetch hook dispatches a store action and returns a Promise,
