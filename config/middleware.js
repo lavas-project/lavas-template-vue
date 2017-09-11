@@ -12,13 +12,13 @@ module.exports = {
      *
      * @type {Array}
      */
-    serverMidd: ["anonymous"],
+    serverMidd: [],
 
     /**
      * client middleware
      *
      * @type {Array}
      */
-    clientMidd: ["authenticated"]
+    clientMidd: []
 
 };
