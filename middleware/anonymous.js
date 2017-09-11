@@ -1,7 +1,7 @@
 export default function ({ store, redirect }) {
     console.log('aaa');
-    if (store.getters.isAuthenticated) {
+    if (!store.getters.isAuthenticated) {
         console.log('aaa1');
-        // return redirect('/')
+        return redirect('/detail/3');
     }
 }

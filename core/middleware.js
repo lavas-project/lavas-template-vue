@@ -6,27 +6,9 @@
 
 let files = require.context('@/middleware', false, /^\.\/.*\.(js|ts)$/);
 
-export default const middleware = files.keys().reduce((obj, filename) => {
+export default files.keys().reduce((middleware, filename) => {
     let name = filename.slice(2, -3);
     let file = files(filename);
-    obj[name] = file.default || file;
-    return obj;
+    middleware[name] = file.default || file;
+    return middleware;
 }, {});
-
-// let filenames = files.keys();
-// function getModule(filename) {
-//     let file = files(filename);
-//     return file.default
-//         ? file.default
-//         : file;
-// }
-
-// export default const middleware = {};
-// let middleware = {};
-
-// Generate the middleware
-// for (let filename of filenames) {
-//     let name = filename.replace(/^\.\//, '').replace(/\.(js|ts)$/, '');
-//     middleware[name] = getModule(filename);
-// }
-// export default middleware;

@@ -19,6 +19,9 @@ module.exports = {
      *
      * @type {Array}
      */
-    clientMidd: []
+    clientMidd: [
+        'anonymous',
+        'authenticated'
+    ]
 
 };

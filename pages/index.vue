@@ -17,6 +17,7 @@ function setState(store) {
 }
 
 export default {
+    // middleware: ['authenticated'],
     name: 'index',
     head: {
         title: 'Home',
