@@ -10,7 +10,8 @@ import ConfigValidator from './ConfigValidator';
 
 import privateFileFactory from './middlewares/privateFile';
 import ssrFactory from './middlewares/ssr';
-// import errorFactory from './middlewares/error';
+import koaErrorFactory from './middlewares/koaError';
+import expressErrorFactory from './middlewares/expressError';
 
 import ora from 'ora';
 
@@ -86,6 +87,7 @@ export default class LavasCore {
 
         // build routes' info and source code
         await this.routeManager.buildRoutes();
+        this.config.routes = this.routeManager.routes;
 
         // add extension's hooks
         if (this.config.extensions) {
@@ -103,16 +105,26 @@ export default class LavasCore {
         await this.renderer.build(clientConfig, serverConfig);
 
         if (this.isProd) {
-            // store config which will be used in online server
+            /**
+             * when running online server, renderer needs to use template and
+             * replace some variables such as meta, config in it. so we need
+             * to store some props in config.json.
+             * TODO: not all the props in config is needed. for now, only manifest
+             * & assetsDir are required. some props such as globalDir are useless.
+             */
             await this.configReader.writeConfigFile(this.config);
             // compile multi entries only in production mode
             await this.routeManager.buildMultiEntries();
             // store routes info in routes.json for later use
             await this.routeManager.writeRoutesFile();
-            await this.copyServerModuleToDist();
+            // copy to /dist
+            await this._copyServerModuleToDist();
+        }
+        else {
+            // TODO: use chokidar to rebuild...
         }
 
-        spinner.succeed();
+        spinner.succeed(`[Lavas] ${this.env} build is completed.`);
     }
 
     /**
@@ -136,13 +148,14 @@ export default class LavasCore {
     koaMiddleware() {
         if (this.isProd) {
             // add static middleware
-            this.app.use(serve(this.config.webpack.base.output.path));
+            this.app.use(serve(this.cwd));
         }
 
         // transform express/connect style middleware to koa style
         let transformedMiddlewares = this.app.stack.map(m => c2k(m.handle));
 
         return composeKoa([
+            koaErrorFactory(this),
             async function (ctx, next) {
                 // koa defaults to 404 when it sees that status is unset
                 ctx.status = 200;
@@ -157,7 +170,7 @@ export default class LavasCore {
     expressMiddleware() {
         if (this.isProd) {
             // add static middleware
-            this.app.use(serve(this.config.webpack.base.output.path));
+            this.app.use(serve(this.cwd));
         }
 
         // use middlewares directly
@@ -166,22 +179,24 @@ export default class LavasCore {
         return compose([
             privateFileFactory(this),
             ...middlewares,
-            ssrFactory(this)
+            ssrFactory(this),
+            expressErrorFactory(this)
         ]);
     }
 
     /**
      * copy server relatived files into dist when build
      */
-    async copyServerModuleToDist() {
+    async _copyServerModuleToDist() {
+        let distPath = this.config.webpack.base.output.path;
         let libDir = join(this.cwd, './lib');
-        let distLibDir = join(this.cwd, './dist/lib');
+        let distLibDir = join(distPath, 'lib');
         let serverDir = join(this.cwd, './server.dev.js');
-        let distServerDir = join(this.cwd, './dist/server.js');
+        let distServerDir = join(distPath, 'server.js');
         let nodeModulesDir = join(this.cwd, 'node_modules');
-        let distNodeModulesDir = join(this.cwd, './dist/node_modules');
+        let distNodeModulesDir = join(distPath, 'node_modules');
         let jsonDir = join(this.cwd, 'package.json');
-        let distJsonDir = join(this.cwd, './dist/package.json');
+        let distJsonDir = join(distPath, 'package.json');
 
         await Promise.all([
             copy(libDir, distLibDir),

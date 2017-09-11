@@ -5,7 +5,9 @@
 
 import webpack from 'webpack';
 import merge from 'webpack-merge';
-import {posix, join} from 'path';
+import {posix, join, resolve} from 'path';
+import fs from 'fs-extra';
+import template from 'lodash.template';
 
 import nodeExternals from 'webpack-node-externals';
 import ExtractTextPlugin from 'extract-text-webpack-plugin';
@@ -16,8 +18,11 @@ import VueSSRClientPlugin from 'vue-server-renderer/client-plugin';
 import VueSSRServerPlugin from 'vue-server-renderer/server-plugin';
 import BundleAnalyzerPlugin from 'webpack-bundle-analyzer';
 import ManifestJsonWebpackPlugin from './buildinPlugins/manifest-json-webpack-plugin';
+import SWPrecacheWebPlugin from 'sw-precache-webpack-plugin';
+import SWRegisterWebpackPlugin from 'sw-register-webpack-plugin';
 
 import {vueLoaders, styleLoaders} from './utils/loader';
+import {LAVAS_DIRNAME_IN_DIST, CLIENT_MANIFEST, SERVER_BUNDLE} from './constants';
 
 export default class WebpackConfig {
     constructor(config = {}, env) {
@@ -77,9 +82,22 @@ export default class WebpackConfig {
      */
     base(config) {
         let isProd = this.env === 'production';
-        let {globals, webpack: webpackConfig, babel} = config;
+        let {globals, webpack: webpackConfig, babel, serviceWorker: swPrecacheConfig, routes} = config;
         let {base, shortcuts, mergeStrategy = {}, extend} = webpackConfig;
         let {cssSourceMap, cssMinimize, cssExtract, jsSourceMap} = shortcuts;
+
+        // add 'routes' to service-worker.js.tmpl
+        let swTemplateContent = template(fs.readFileSync(resolve(__dirname, 'templates/service-worker.js.tmpl')), {
+            evaluate: /{{([\s\S]+?)}}/g,
+            interpolate: /{{=([\s\S]+?)}}/g,
+            escape: /{{-([\s\S]+?)}}/g
+        })({
+            routes: JSON.stringify(routes)
+        });
+        let swTemplateFilePath = resolve(__dirname, 'templates/service-worker-real.js.tmpl');
+        fs.writeFileSync(swTemplateFilePath, swTemplateContent);
+        // add templateFilePath to swPrecacheConfig
+        swPrecacheConfig.templateFilePath = swTemplateFilePath;
 
         let baseConfig = merge.strategy(mergeStrategy)({
             resolve: {
@@ -138,17 +156,26 @@ export default class WebpackConfig {
                         },
                         sourceMap: jsSourceMap
                     }),
-                    new ExtractTextPlugin({
-                        filename: this.assetsPath('css/[name].[contenthash].css')
-                    }),
                     new OptimizeCSSPlugin({
                         cssProcessorOptions: {
                             safe: true
                         }
+                    }),
+                    new SWPrecacheWebPlugin(swPrecacheConfig),
+                    new SWRegisterWebpackPlugin({
+                        filePath: resolve(__dirname, 'templates/sw-register.js')
                     })
                 ]
                 : [new FriendlyErrorsPlugin()]
         }, base);
+
+        if (cssExtract) {
+            baseConfig.plugins.unshift(
+                new ExtractTextPlugin({
+                    filename: this.assetsPath('css/[name].[contenthash].css')
+                })
+            );
+        }
 
         if (typeof extend === 'function') {
             extend.call(this, baseConfig, {
@@ -171,7 +198,7 @@ export default class WebpackConfig {
     client(config) {
         let webpackConfig = config.webpack;
         let {client, shortcuts, mergeStrategy = {}, extend} = webpackConfig;
-        let {ssr, cssSourceMap, cssMinimize,cssExtract,
+        let {ssr, cssSourceMap, cssMinimize, cssExtract,
             jsSourceMap, assetsDir, copyDir, bundleAnalyzerReport} = shortcuts;
 
         let baseConfig = this.base(config);
@@ -238,13 +265,16 @@ export default class WebpackConfig {
                 }]),
 
                 new ManifestJsonWebpackPlugin({
-                    config: this.config.manifest
+                    config: this.config.manifest,
+                    path: this.assetsPath('manifest.json')
                 })
             ]
         }, client);
 
         if (ssr) {
-            clientConfig.plugins.push(new VueSSRClientPlugin());
+            clientConfig.plugins.push(new VueSSRClientPlugin({
+                filename: join(LAVAS_DIRNAME_IN_DIST, CLIENT_MANIFEST)
+            }));
         }
 
         if (bundleAnalyzerReport) {
@@ -293,7 +323,9 @@ export default class WebpackConfig {
                     'process.env.VUE_ENV': '"server"',
                     'process.env.NODE_ENV': `"${this.env}"`
                 }),
-                new VueSSRServerPlugin()
+                new VueSSRServerPlugin({
+                    filename: join(LAVAS_DIRNAME_IN_DIST, SERVER_BUNDLE)
+                })
             ]
         }, server);
 

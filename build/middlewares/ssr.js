@@ -17,12 +17,12 @@ export default function (core) {
 
         if (core.isProd
             && matchedRoute && matchedRoute.prerender) {
-            console.log(`[Lavas] prerender ${req.url}`);
+            console.log(`[Lavas] route middleware: prerender ${req.url}`);
             html = await core.routeManager.prerender(matchedRoute);
             res.end(html);
         }
         else {
-            console.log(`[Lavas] ssr ${req.url}`);
+            console.log(`[Lavas] route middleware: ssr ${req.url}`);
 
             let renderer = await core.renderer.getRenderer();
             let ctx = {
