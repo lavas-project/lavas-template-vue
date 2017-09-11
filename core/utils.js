@@ -52,12 +52,19 @@ export function getContext(context, app) {
     return ctx;
 }
 
-export function middlewareSeries(promises, context) {
+export async function middlewareSeries(promises, context) {
     if (!promises.length || context._redirected) {
-        return Promise.resolve();
+        return;
+        // return Promise.resolve();
     }
-    return promisify(promises[0], context)
-    .then(() => middlewareSeries(promises.slice(1), context));
+
+    for (let i = 0; i < promises.length; i++) {
+        await promisify(promises[i], context);
+    }
+    // await promisify(promises[0], context);
+    // return middlewareSeries(promises.slice(1), context);
+    // return promisify(promises[0], context)
+    // .then(() => middlewareSeries(promises.slice(1), context));
 }
 
 export function promisify(fn, context) {
@@ -83,7 +90,8 @@ export function promisify(fn, context) {
     return promise;
 }
 
-export function urlJoin() {
-    return [].slice.call(arguments).join('/').replace(/\/+/g, '/');
+export function urlJoin(...args) {
+    return args.join('/').replace(/\/+/g, '/');
+    // return [].slice.call(arguments).join('/').replace(/\/+/g, '/');
 }
 

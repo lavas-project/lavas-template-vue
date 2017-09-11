@@ -68,10 +68,9 @@ router.beforeEach(async (to, from, next) => {
 
     let matched = router.getMatchedComponents(to);
 
-    if (!matched.length) {
-        return next();
+    if (matched.length) {
+        await callMiddleware.call(this, matched, ctx);
     }
-    await callMiddleware.call(this, matched, ctx);
 
     next();
 });
@@ -85,6 +84,8 @@ router.beforeResolve((to, from, next) => {
     // [a, b, c, d]
     // => [c, d]
     let diffed = false;
+    // let activated;
+
     let activated = matched.filter((c, i) => diffed || (diffed = (prevMatched[i] !== c)));
 
     if (!activated.length) {
@@ -92,25 +93,25 @@ router.beforeResolve((to, from, next) => {
     }
 
     loading.start();
-    Promise.all(activated.map(c => {
 
-        /**
-         * 两种情况下执行asyncData:
-         * 1. 非keep-alive组件每次都需要执行
-         * 2. keep-alive组件首次执行，执行后添加标志
-         */
-        if (c.asyncData && (!c.asyncDataFetched || to.meta.notKeepAlive)) {
-            return c.asyncData({
-                store,
-                route: to
-            }).then(() => {
-                c.asyncDataFetched = true;
-            });
-        }
-    })).then(() => {
+    Promise.all(
+        activated
+
+         // 两种情况下执行asyncData:
+         // 1. 非keep-alive组件每次都需要执行
+         // 2. keep-alive组件首次执行，执行后添加标志
+
+        .filter(c => c.asyncData && (!c.asyncDataFetched || to.meta.notKeepAlive))
+        .map(async c => {
+            await c.asyncData({store, route: to});
+            c.asyncDataFetched = true;
+        })
+    )
+    .then(() => {
         loading.finish();
         next();
-    }).catch(next);
+    })
+    .catch(next);
 });
 
 router.onReady(() => app.$mount('#app'));

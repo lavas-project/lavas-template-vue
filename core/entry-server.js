@@ -29,7 +29,7 @@ export default function (context) {
 
 
         if (fullPath !== url) {
-            reject({url: fullPath});
+            return reject({url: fullPath});
         }
 
         // set router's location
@@ -45,7 +45,7 @@ export default function (context) {
                 // simulate nodejs file not found
                 err.code = 'ENOENT';
                 err.status = 404;
-                reject(err);
+                return reject(err);
             }
 
             // middleware
@@ -55,13 +55,20 @@ export default function (context) {
             // A preFetch hook dispatches a store action and returns a Promise,
             // which is resolved when the action is complete and store state has been
             // updated.
-            let s = isDev && Date.now();
-            Promise.all(matchedComponents.map(({asyncData}) => asyncData && asyncData({
-                store,
-                route: router.currentRoute
-            }))).then(() => {
-                isDev && console.log(`data pre-fetch: ${Date.now() - s}ms`);
 
+            try {
+                let s = isDev && Date.now();
+
+                await Promise.all(
+                    matchedComponents
+                    .filter(({asyncData}) => typeof asyncData === 'function')
+                    .map(({asyncData}) => asyncData({
+                        store,
+                        route: router.currentRoute
+                    }))
+                );
+
+                isDev && console.log(`data pre-fetch: ${Date.now() - s}ms`);
                 // After all preFetch hooks are resolved, our store is now
                 // filled with the state needed to render the app.
                 // Expose the state on the render context, and let the request handler
@@ -71,11 +78,28 @@ export default function (context) {
                 context.state = store.state;
                 context.isProd = process.env.NODE_ENV === 'production';
                 resolve(app);
-            }).catch(reject);
+            }
+            catch (err) {
+                reject(err);
+            }
+
+            // .then(() => {
+            //     isDev && console.log(`data pre-fetch: ${Date.now() - s}ms`);
+
+            //     // After all preFetch hooks are resolved, our store is now
+            //     // filled with the state needed to render the app.
+            //     // Expose the state on the render context, and let the request handler
+            //     // inline the state in the HTML response. This allows the client-side
+            //     // store to pick-up the server-side state without having to duplicate
+            //     // the initial data fetching on the client.
+            //     context.state = store.state;
+            //     context.isProd = process.env.NODE_ENV === 'production';
+            //     resolve(app);
+            // }).catch(reject);
         }, reject);
 
         async function middlewareProcess(matchedComponents) {
-            let Components = matchedComponents;
+            let components = matchedComponents;
 
             // Update context
             const ctx = getContext(context, app);
@@ -84,7 +108,7 @@ export default function (context) {
 
             // serverMidd + clientMidd + components Midd
             let midd = middConf.serverMidd.concat(middConf.clientMidd);
-            Components.forEach(Component => {
+            components.forEach(Component => {
                 if (Component.middleware) {
                     midd = midd.concat(Component.middleware);
                 }
