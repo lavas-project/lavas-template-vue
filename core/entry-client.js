@@ -85,11 +85,12 @@ router.beforeEach(async (to, from, next) => {
 
     let matched = await router.getMatchedComponents(to);
 
-    if (matched.length) {
-        await callMiddleware.call(this, matched, ctx);
+    if (!matched.length) {
+        return next();
     }
 
     await callMiddleware.call(this, matched, ctx);
+
     if (!nextCalled) {
         next();
     }
