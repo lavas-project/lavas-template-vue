@@ -30,7 +30,7 @@
     "express": "^4.15.4",
     "iscroll": "*",
     "koa": "^2.3.0",
-    "lavas-core": "^1.0.10",
+    "lavas-core": "^1.0.11",
     "normalize.css": "^7.0.0",
     "vuetify": "^0.12.7"
   },

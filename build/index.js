@@ -14,6 +14,7 @@ import koaErrorFactory from './middlewares/koaError';
 import expressErrorFactory from './middlewares/expressError';
 
 import ora from 'ora';
+import chokidar from 'chokidar';
 
 import connect from 'connect';
 import {compose} from 'compose-middleware';
@@ -120,7 +121,11 @@ export default class LavasCore {
             await this._copyServerModuleToDist();
         }
         else {
-            // TODO: use chokidar to rebuild...
+            // TODO: use chokidar to rebuild in dev mode
+            chokidar.watch(join(this.config.globals.rootDir, 'pages'))
+                .on('change', () => {
+                    this.routeManager.buildRoutes()
+                });
         }
 
         spinner.succeed(`[Lavas] ${this.env} build is completed.`);

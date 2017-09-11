@@ -45,7 +45,7 @@ export default function (core) {
         }
 
         // redirect to the corresponding url
-        res.writeHead(301, {Location: target})
+        res.writeHead(301, {Location: target});
         res.end();
     };
 }

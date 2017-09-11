@@ -1,3 +1,7 @@
+/**
+ * @file utils.router.js
+ * @author lavas
+ */
 import {resolve, dirname, basename} from 'path';
 import glob from 'glob';
 
@@ -7,7 +11,6 @@ import glob from 'glob';
  * @param {string} baseDir root folder path
  * @return {Promise} resolve generated router, reject error
  */
-
 export function generateRoutes (baseDir) {
     return getDirs(baseDir, '.vue')
         .then(dirs => {

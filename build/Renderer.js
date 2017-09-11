@@ -196,6 +196,9 @@ export default class Renderer {
 
     /**
      * create renderer
+     *
+     * @param {Object} options options
+     * @param {string} options.templatePath html template
      */
     async createRenderer({templatePath}) {
         if (this.serverBundle && this.clientManifest && templatePath) {

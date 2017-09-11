@@ -1,3 +1,8 @@
+/**
+ * @file constants.js
+ * @author lavas
+ */
+
 export const LAVAS_DIRNAME_IN_DIST = 'lavas';
 export const SKELETON_DIRNAME = 'skeletons';
 

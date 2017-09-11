@@ -18,14 +18,7 @@ module.exports = {
     },
     target: 'node',
     externals: [
-        nodeExternals(),
-        function(context, request, callback) {
-            console.log(request)
-            if (/^yourregex$/.test(request)){
-                return callback(null, 'commonjs ' + request);
-            }
-            callback();
-        }
+        nodeExternals()
     ],
     output: {
         path: resolve('dist'),

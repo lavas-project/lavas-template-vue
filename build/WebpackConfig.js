@@ -177,8 +177,10 @@ export default class WebpackConfig {
     client(config) {
         let webpackConfig = config.webpack;
         let {client, shortcuts, mergeStrategy = {}, extend} = webpackConfig;
+        /* eslint-disable fecs-one-var-per-line */
         let {ssr, cssSourceMap, cssMinimize, cssExtract,
             jsSourceMap, assetsDir, copyDir, bundleAnalyzerReport} = shortcuts;
+        /* eslint-enable fecs-one-var-per-line */
 
         let baseConfig = this.base(config);
         let clientConfig = merge.strategy(mergeStrategy)(baseConfig, {

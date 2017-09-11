@@ -62,9 +62,9 @@ export default class RouteManager {
     findMatchedRoute(path, routes = this.routes) {
         let matchedRoute = routes.find(route => route.pathRegExp.test(path));
         if (matchedRoute && matchedRoute.children) {
-            let matched = route.pathRegExp.match(path);
+            let matched = matchedRoute.pathRegExp.match(path);
             if (matched && matched[0]) {
-                matchedRoute = findMatchedRoute(
+                matchedRoute = this.findMatchedRoute(
                     path.substring(matched[0].length), matchedRoute.children);
             }
         }
@@ -233,8 +233,8 @@ export default class RouteManager {
     /**
      * merge routes with config recursively
      *
-     * @params {Array} routes
-     * @params {Array} routesConfig
+     * @param {Array} routes routes
+     * @param {Array} routesConfig config
      */
     mergeWithConfig(routes, routesConfig = []) {
 
@@ -284,7 +284,7 @@ export default class RouteManager {
     /**
      * generate routes content
      *
-     * @params {Array} routes
+     * @param {Array} routes route list
      * @return {string} content
      */
     generateRoutesContent(routes) {
@@ -301,7 +301,7 @@ export default class RouteManager {
                 component: _${cur.hash},
                 meta: ${JSON.stringify(cur.meta || {})},
                 ${childrenContent}
-            },`
+            },`;
         }, '');
     }
 

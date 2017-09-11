@@ -3,8 +3,6 @@
  * @author mj(zoumiaojiang@gmail.com)
  */
 
-const MANIFEST_ASSET_NAME = 'static/manifest.json';
-
 /**
  * Manifest Webpack plugin
  *

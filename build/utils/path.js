@@ -1,3 +1,7 @@
+/**
+ * @file utils.path.js
+ * @author lavas
+ */
 import {join} from 'path';
 import {LAVAS_DIRNAME_IN_DIST} from '../constants';
 

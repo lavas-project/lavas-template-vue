@@ -24,7 +24,8 @@ export default function (core) {
     return async (ctx, next) => {
         try {
             await next();
-        } catch (err) {
+        }
+        catch (err) {
             // console.log('[Lavas] error middleware catch error: ', err);
 
             if (err == null) {
