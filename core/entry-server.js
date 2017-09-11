@@ -6,8 +6,35 @@
 import {createApp} from './app';
 import middleware from './middleware';
 import middConf from '@/config/middleware';
-import {middlewareSeries, getContext} from './utils';
+import {stringify} from 'querystring';
+import {middlewareSeries, urlJoin} from './utils';
+import {getServerContext} from './server-ctx';
 const isDev = process.env.NODE_ENV !== 'production';
+
+const createNext = context => opts => {
+
+    context.redirected = opts;
+    if (!context.res) {
+        return;
+    }
+
+    opts.query = stringify(opts.query);
+    opts.path = opts.path + (opts.query ? '?' + opts.query : '');
+    if (opts.path.indexOf('http') !== 0
+        && opts.path.indexOf('/') !== 0
+    ) {
+        opts.path = urlJoin('/', opts.path);
+    }
+    // Avoid loop redirect
+    if (opts.path === context.url) {
+        context.redirected = false;
+        return;
+    }
+    context.res.writeHead(opts.status, {
+        Location: opts.path
+    });
+    context.res.end();
+};
 
 // This exported function will be called by `bundleRenderer`.
 // This is where we perform data-prefetching to determine the
@@ -21,16 +48,13 @@ export default function (context) {
         let url = context.url;
         let fullPath = router.resolve(url).route.fullPath;
 
-        context.store = store;
-
-        context.route = router.currentRoute;
-
-        context.meta = app.$meta();
-
-
         if (fullPath !== url) {
             reject({url: fullPath});
         }
+
+        context.store = store;
+        context.route = router.currentRoute;
+        context.meta = app.$meta();
 
         // set router's location
         router.push(url);
@@ -46,6 +70,7 @@ export default function (context) {
                 err.code = 'ENOENT';
                 err.status = 404;
                 reject(err);
+                return;
             }
 
             // middleware
@@ -76,9 +101,10 @@ export default function (context) {
 
         async function middlewareProcess(matchedComponents) {
             let Components = matchedComponents;
+            context.next = createNext(context);
 
             // Update context
-            const ctx = getContext(context, app);
+            const ctx = getServerContext(context, app);
 
             let unknownMiddleware = false;
 
@@ -93,7 +119,12 @@ export default function (context) {
             midd = midd.map(name => {
                 if (typeof middleware[name] !== 'function') {
                     unknownMiddleware = true;
-                    // 错误处理
+                    // 抛出错误
+                    context.error({
+                        statusCode: 500,
+                        message: 'Unknown middleware ' + name
+                    });
+                    return;
                 }
                 return middleware[name];
             });

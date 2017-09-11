@@ -49,7 +49,7 @@ if (typeof storeData !== 'function') {
 
         name = paths.pop();
         module[name] = getModule(filename);
-        console.log(module[name]);
+        // console.log(module[name]);
         module[name].namespaced = true;
     }
 }
@@ -81,6 +81,7 @@ function getModule(filename) {
         );
     }
 
+    // 暂时隐掉
     // if (module.state && typeof module.state !== 'function') {
     //     throw new Error(
     //         '[lavas] state should be a function in store/' + filename.replace('./', '')
@@ -110,3 +111,6 @@ function getModuleNamespace(storeData, paths) {
 
     return getModuleNamespace(nsModule, paths);
 }
+
+
+
