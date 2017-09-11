@@ -88,6 +88,7 @@ export default class LavasCore {
 
         // build routes' info and source code
         await this.routeManager.buildRoutes();
+        this.config.routes = this.routeManager.routes;
 
         // add extension's hooks
         if (this.config.extensions) {

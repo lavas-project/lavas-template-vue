@@ -160,7 +160,7 @@ export default class RouteManager {
                 mpaConfig.entry[pagename] = ['./core/entry-client.js'];
 
                 // add html webpack plugin
-                mpaConfig.plugins.push(new HtmlWebpackPlugin({
+                mpaConfig.plugins.unshift(new HtmlWebpackPlugin({
                     filename: htmlFilename,
                     template: htmlTemplatePath,
                     inject: true,
