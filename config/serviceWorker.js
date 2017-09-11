@@ -9,8 +9,6 @@
  * @author Wangyisheng(wangyisheng@baidu.com)
  */
 
-const path = require('path');
-
 module.exports = {
 
     cacheId: 'sw-cache-*__name__*',
@@ -85,5 +83,13 @@ module.exports = {
      *
      * @type {boolean}
      */
-    verbose: true
+    verbose: true,
+
+    /**
+     * 资源被 precache 时，用于打印日志的回调函数
+     * 默认是 console.log，这里设置一个空方法，隐藏 build 过程控制台的相关输出
+     *
+     * @type {Function}
+     */
+    logger: function () {}
 };
