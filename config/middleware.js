@@ -18,8 +18,8 @@ module.exports = {
      * @type {Array.<string>}
      */
     server: [
-        'common',
-        'server/auth'
+        // 'common',
+        // 'server/auth'
     ],
 
     /**
