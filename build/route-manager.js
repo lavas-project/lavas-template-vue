@@ -4,6 +4,8 @@
  * @desc generate route.js, multi entries in .lavas directory
  */
 
+'use strict';
+
 import {
     utimes,
     readFile,
@@ -294,7 +296,7 @@ export default class RouteManager {
         await ensureFile(routesFilePath);
         await writeFile(
             routesFilePath,
-            JSON.stringify(this.routes),
+            JSON.stringify(this.routes, null, 2),
             'utf8'
         );
     }
