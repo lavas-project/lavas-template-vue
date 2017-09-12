@@ -9,7 +9,8 @@ import {
     readFile,
     writeFile,
     emptyDir,
-    ensureFile
+    ensureFile,
+    readJson
 } from 'fs-extra';
 import {join} from 'path';
 import {createHash} from 'crypto';
@@ -350,7 +351,7 @@ export default class RouteManager {
      */
     async createWithRoutesFile() {
         let routesFilePath = distLavasPath(this.cwd, ROUTES_FILE);
-        this.routes = JSON.parse(await readFile(routesFilePath, 'utf8'));
+        this.routes = await readJson(routesFilePath);
         this.mergeWithConfig(this.routes);
     }
 }
