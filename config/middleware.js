@@ -17,19 +17,13 @@ module.exports = {
      *
      * @type {Array.<string>}
      */
-    server: [
-        // 'common',
-        // 'server/auth'
-    ],
+    server: [],
 
     /**
      * client middleware
      *
      * @type {Array.<string>}
      */
-    client: [
-        // 'common',
-        // 'client/log'
-    ]
+    client: []
 
 };
