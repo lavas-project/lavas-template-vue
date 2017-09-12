@@ -9,7 +9,7 @@
 module.exports = {
 
     /**
-     * common middleware
+     * common middleware， execute first
      *
      * examples:
      *   'a'
