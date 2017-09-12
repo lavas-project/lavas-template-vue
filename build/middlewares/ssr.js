@@ -13,13 +13,12 @@ export default function (core) {
     return async function (req, res, next) {
         // find matchessd route object for current path
         let matchedRoute = core.routeManager.findMatchedRoute(req.url);
-        let html;
 
         if (core.isProd
-            && matchedRoute && matchedRoute.prerender) {
-            console.log(`[Lavas] route middleware: prerender ${req.url}`);
-            html = await core.routeManager.prerender(matchedRoute);
-            res.end(html);
+            && matchedRoute && matchedRoute.static) {
+            console.log(`[Lavas] route middleware: static ${req.url}`);
+
+            res.end(await core.routeManager.getStaticHtml(matchedRoute));
         }
         else {
             console.log(`[Lavas] route middleware: ssr ${req.url}`);
@@ -38,7 +37,6 @@ export default function (core) {
                 if (err) {
                     return next(err);
                 }
-
                 res.end(html);
             });
         }

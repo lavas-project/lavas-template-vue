@@ -43,38 +43,6 @@ export default class WebpackConfig {
     }
 
     /**
-     * add hooks to proper queue
-     *
-     * @param {Object} hooks hook object contains base, client and server function
-     */
-    addHooks(hooks) {
-
-        Object.keys(hooks).forEach(hookKey => {
-            let hook = hooks[hookKey];
-            if (!this.hooks[hookKey]) {
-                this.hooks[hookKey] = [];
-            }
-            if (hook && typeof hook === 'function') {
-                this.hooks[hookKey].push(hook);
-            }
-        });
-    }
-
-    /**
-     * serially execute added hooks
-     *
-     * @param {string} type base|server|client
-     * @param {Object} config config
-     */
-    executeHooks(type, config) {
-        if (this.hooks[type]) {
-            this.hooks[type].forEach(hook => {
-                hook.call(null, config);
-            });
-        }
-    }
-
-    /**
      * generate webpack base config based on lavas config
      *
      * @param {Object} config lavas config
@@ -92,7 +60,7 @@ export default class WebpackConfig {
             interpolate: /{{=([\s\S]+?)}}/g,
             escape: /{{-([\s\S]+?)}}/g
         })({
-            routes: JSON.stringify(routes)
+            routes: JSON.stringify(routes || [])
         });
         let swTemplateFilePath = resolve(__dirname, 'templates/service-worker-real.js.tmpl');
         fs.writeFileSync(swTemplateFilePath, swTemplateContent);
@@ -183,8 +151,6 @@ export default class WebpackConfig {
                 env: this.env
             });
         }
-
-        this.executeHooks('base', baseConfig);
 
         return baseConfig;
     }
@@ -291,8 +257,6 @@ export default class WebpackConfig {
             });
         }
 
-        this.executeHooks('client', clientConfig);
-
         return clientConfig;
     }
 
@@ -337,8 +301,6 @@ export default class WebpackConfig {
                 env: this.env
             });
         }
-
-        this.executeHooks('server', serverConfig);
 
         return serverConfig;
     }

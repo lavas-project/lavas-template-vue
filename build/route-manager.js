@@ -75,7 +75,7 @@ export default class RouteManager {
      * @param {Object} route route
      * @return {Promise}
      */
-    async prerender(route) {
+    async getStaticHtml(route) {
         if (route && route.htmlPath) {
             let entry = this.prerenderCache.get(route.name);
             if (!entry) {
@@ -115,11 +115,33 @@ export default class RouteManager {
         return entryPath;
     }
 
+    groupByModule() {
+        let routes = this.routes;
+        let modules = Object.keys(this.config.module).map(name => {
+            let module = this.config.module[name];
+            let pattern = module.routes;
+
+            module.pagename = name;
+            if (pattern instanceof RegExp) {
+                module.routeList = routes.filter(r => pattern.test(r.path));
+            }
+            else if (Array.isArray(pattern)) {
+                module.routeList = routes.filter(r => pattern.includes(r.path));
+            }
+            else if (typeof pattern === 'string') {
+                module.routeList = routes.filter(r => pattern === r.path);
+            }
+            return module;
+        });
+        return modules;
+    }
+
     /**
      * create a webpack config and compile with it
      *
      */
     async buildMultiEntries() {
+        let modules = this.groupByModule();
         let {shortcuts, base} = this.config.webpack;
         let {assetsDir, ssr} = shortcuts;
 
@@ -142,18 +164,22 @@ export default class RouteManager {
          * 1. add a html-webpack-plugin to output a relative HTML file
          * 2. create an entry if a skeleton component is provided
          */
-        await Promise.all(this.routes.map(async route => {
-            let {pagename, template, prerender, skeleton} = route;
+        await Promise.all(modules.map(async module => {
+            let {pagename, htmlTemplate, routeList, skeleton, ssr: ssrModule} = module;
 
-            if (prerender) {
+            if (!ssrModule) {
 
                 // allow user to provide a custom HTML template
-                let htmlTemplatePath = template
+                let htmlTemplatePath = htmlTemplate
                     || join(__dirname, './templates/index.template.html');
                 let htmlFilename = `${pagename}.html`;
 
-                // save the path of HTML file which will be used in prerender searching process
-                route.htmlPath = join(base.output.path, htmlFilename);
+                routeList.forEach(route => {
+                    // save the path of HTML file which will be used in prerender searching process
+                    route.htmlPath = join(base.output.path, htmlFilename);
+                    // set static flag on every route in list
+                    route.static = true;
+                });
 
                 mpaConfig.entry[pagename] = ['./core/entry-client.js'];
 
@@ -221,7 +247,10 @@ export default class RouteManager {
             this.flatRoutes.add(route);
 
             // find route in config
-            let routeConfig = routesConfig.find(r => r.name === route.name);
+            let routeConfig = routesConfig.find(({pattern}) => {
+                return pattern instanceof RegExp ?
+                    pattern.test(route.path) : pattern === route.name;
+            });
 
             // mixin with config
             if (routeConfig) {
@@ -335,10 +364,16 @@ export default class RouteManager {
 
         console.log('[Lavas] auto compile routes...');
 
-        this.routes = await generateRoutes(join(this.targetDir, '../pages'));
+        // generate routes according to pages dir but ignore skeleton components
+        this.routes = await generateRoutes(
+            join(this.targetDir, '../pages'),
+            {ignore: '*.skeleton.vue'}
+        );
 
+        // merge with routes' config
         this.mergeWithConfig(this.routes, routesConfig);
 
+        // write .lavas/routes.js
         await this.writeRoutesSourceFile();
 
         console.log('[Lavas] all routes are already generated.');

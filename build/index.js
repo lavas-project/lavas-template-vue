@@ -112,20 +112,23 @@ export default class LavasCore {
         await this.renderer.build(clientConfig, serverConfig);
 
         if (this.isProd) {
-            /**
-             * when running online server, renderer needs to use template and
-             * replace some variables such as meta, config in it. so we need
-             * to store some props in config.json.
-             * TODO: not all the props in config is needed. for now, only manifest
-             * & assetsDir are required. some props such as globalDir are useless.
-             */
-            await this.configReader.writeConfigFile(this.config);
-            // compile multi entries only in production mode
-            await this.routeManager.buildMultiEntries();
-            // store routes info in routes.json for later use
-            await this.routeManager.writeRoutesFile();
-            // copy to /dist
-            await this._copyServerModuleToDist();
+            console.log(`[Lavas] write and copy files...`);
+            await Promise.all([
+                /**
+                 * when running online server, renderer needs to use template and
+                 * replace some variables such as meta, config in it. so we need
+                 * to store some props in config.json.
+                 * TODO: not all the props in config is needed. for now, only manifest
+                 * & assetsDir are required. some props such as globalDir are useless.
+                 */
+                this.configReader.writeConfigFile(this.config),
+                // compile multi entries only in production mode
+                this.routeManager.buildMultiEntries(),
+                // store routes info in routes.json for later use
+                this.routeManager.writeRoutesFile(),
+                // copy to /dist
+                this._copyServerModuleToDist()
+            ]);
         }
         else {
             // TODO: use chokidar to rebuild routes in dev mode

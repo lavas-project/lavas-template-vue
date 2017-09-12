@@ -9,10 +9,11 @@ import glob from 'glob';
  * generate router by the structure of pages/
  *
  * @param {string} baseDir root folder path
+ * @param {Object} options glob options
  * @return {Promise} resolve generated router, reject error
  */
-export function generateRoutes (baseDir) {
-    return getDirs(baseDir, '.vue')
+export function generateRoutes (baseDir, options) {
+    return getDirs(baseDir, '.vue', options)
         .then(dirs => {
             let tree = mapDirsInfo(dirs, baseDir)
                 .reduce((tree, info) => appendToTree(tree, info.level, info), []);
@@ -20,9 +21,9 @@ export function generateRoutes (baseDir) {
         });
 }
 
-function getDirs(baseDir, ext = '') {
+function getDirs(baseDir, ext = '', options) {
     return new Promise((res, reject) => {
-        glob(resolve(baseDir, '**/*' + ext), (err, dirs) => {
+        glob(resolve(baseDir, '**/*' + ext), options, (err, dirs) => {
             if (err) {
                 reject(err);
             }
