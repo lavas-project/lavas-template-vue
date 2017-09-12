@@ -141,7 +141,7 @@ function callMiddleware(components = [], context) {
         ...(middConf.clientMidd || []),
         ...components
             .filter(({middleware}) => !!middleware)
-            .map(({middleware}) => middleware)
+            .reduce((arr, {middleware}) => arr.concat(middleware), [])
     ];
 
     let name = middlewareNames.some(name => typeof middleware[name] !== 'function');

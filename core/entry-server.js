@@ -116,7 +116,7 @@ export default function (context) {
                 ...(middConf.clientMidd || []),
                 ...components
                     .filter(({middleware}) => !!middleware)
-                    .map(({middleware}) => middleware)
+                    .reduce((arr, {middleware}) => arr.concat(middleware), [])
             ];
 
             let name = middlewareNames.find(name => typeof middleware[name] !== 'function');
