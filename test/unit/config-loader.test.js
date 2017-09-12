@@ -1,5 +1,5 @@
 /**
- * @file test case for ConfigValidator.js
+ * @file test case for config loader
  * @author panyuqi (pyqiverson@gmail.com)
  */
 

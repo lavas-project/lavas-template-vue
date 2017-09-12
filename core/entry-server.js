@@ -8,7 +8,8 @@ import middleware from './middleware';
 import middConf from '@/config/middleware';
 import {stringify} from 'querystring';
 import {middlewareSeries, urlJoin} from './utils';
-import {getServerContext} from './server-ctx';
+import {getServerContext} from './context-server';
+
 const isDev = process.env.NODE_ENV !== 'production';
 
 const createNext = context => opts => {

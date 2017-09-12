@@ -6,7 +6,6 @@ import RouteManager from './route-manager';
 import Renderer from './renderer';
 import WebpackConfig from './webpack';
 import ConfigReader from './config-reader';
-import ConfigValidator from './validator';
 
 import privateFileFactory from './middlewares/privateFile';
 import ssrFactory from './middlewares/ssr';
@@ -53,8 +52,6 @@ export default class LavasCore {
         if (isInBuild) {
             // scan directory
             this.config = await this.configReader.read();
-            // validate props in config
-            ConfigValidator.validate(this.config);
             this.webpackConfig = new WebpackConfig(this.config, this.env);
         }
         else {

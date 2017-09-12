@@ -10,7 +10,7 @@ import middConf from '@/config/middleware';
 import {createApp} from './app';
 import ProgressBar from './components/ProgressBar.vue';
 import {middlewareSeries} from './utils';
-import {getClientContext} from './client-ctx';
+import {getClientContext} from './context-client';
 
 // 全局的进度条，在组件中可通过 $loading 访问
 let loading = Vue.prototype.$loading = new Vue(ProgressBar).$mount();

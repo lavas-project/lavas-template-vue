@@ -77,12 +77,11 @@ function getModule(filename) {
         );
     }
 
-    // 暂时隐掉
-    // if (module.state && typeof module.state !== 'function') {
-    //     throw new Error(
-    //         '[lavas] state should be a function in store/' + filename.replace('./', '')
-    //     );
-    // }
+    if (module.state && typeof module.state !== 'function') {
+        throw new Error(
+            '[lavas] state should be a function in store/' + filename.replace('./', '')
+        );
+    }
 
     return module;
 }
