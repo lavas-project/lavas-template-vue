@@ -28,6 +28,17 @@ export default class ManifestJson {
      * @param {*} compiler webpack compiler
      */
     apply(compiler) {
+
+        let config = this.config;
+
+        if (config && config.icons && config.icons.length > 0) {
+            config.icons.forEach((item, index) => {
+
+                // 加上时间戳，做浏览器缓存
+                config.icons[index].src = item.src + '?v=' + Date.now();
+            });
+        }
+
         let manifestContent = JSON.stringify(this.config);
 
         compiler.plugin('emit', (compilation, callback) => {
