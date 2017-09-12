@@ -11,6 +11,21 @@ module.exports = {
     rewrite: [
         {from: /^(.*)$/, to: '/msie/$1'},
         {from: '/user/index', to: '/user'}
+    ],
+
+    routes: [
+        {
+            route: /^\/user\/index/,
+            options: {
+                keepAlive: true
+            }
+        },
+        {
+            route: /^\/.*/,
+            options: {
+                keepAlive: false
+            }
+        }
     ]
 
 };
