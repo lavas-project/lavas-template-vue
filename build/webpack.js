@@ -86,8 +86,8 @@ export default class WebpackConfig {
         let {base, shortcuts, mergeStrategy = {}, extend} = webpackConfig;
         let {cssSourceMap, cssMinimize, cssExtract, jsSourceMap} = shortcuts;
 
-        // add 'routes' to service-worker.js.tmpl
-        let swTemplateContent = template(fs.readFileSync(resolve(__dirname, 'templates/service-worker.js.tmpl')), {
+        // add 'routes' to service-worker.tmpl.js
+        let swTemplateContent = template(fs.readFileSync(resolve(__dirname, 'templates/service-worker.tmpl.js')), {
             evaluate: /{{([\s\S]+?)}}/g,
             interpolate: /{{=([\s\S]+?)}}/g,
             escape: /{{-([\s\S]+?)}}/g
