@@ -5,20 +5,31 @@
 
 'use strict';
 
+// 中间件的配置，需要支持路径（middlewares文件夹内路径）
 module.exports = {
 
     /**
      * server middleware
      *
-     * @type {Array}
+     * examples:
+     *   'a'
+     *   '{path}/a'
+     *
+     * @type {Array.<string>}
      */
-    serverMidd: [],
+    server: [
+        // 'common',
+        // 'server/auth'
+    ],
 
     /**
      * client middleware
      *
-     * @type {Array}
+     * @type {Array.<string>}
      */
-    clientMidd: []
+    client: [
+        // 'common',
+        // 'client/log'
+    ]
 
 };
