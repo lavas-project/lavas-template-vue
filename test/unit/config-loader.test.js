@@ -14,7 +14,8 @@ let core;
 
 test.beforeEach('init', async t => {
     core = new LavasCore(join(__dirname, '../fixtures'));
-    await core.init();
+    core.env = 'development';
+    core._init(true);
 });
 
 test('it should add a new alias', async t => {

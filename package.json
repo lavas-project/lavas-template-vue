@@ -20,7 +20,7 @@
     "concurrency": 1,
     "failFast": true,
     "files": [
-      "test/unit/renderer.test.js"
+      "test/unit/middleware.test.js"
     ],
     "require": [
       "babel-register"
@@ -32,6 +32,7 @@
     "koa": "^2.3.0",
     "lavas-core": "^1.0.11",
     "normalize.css": "^7.0.0",
+    "serve-favicon": "^2.4.3",
     "sw-precache-webpack-plugin": "^0.11.4",
     "sw-register-webpack-plugin": "^1.0.11",
     "url-loader": "^0.5.9",

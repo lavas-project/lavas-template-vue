@@ -12,6 +12,7 @@ import webpackHotMiddleware from 'webpack-hot-middleware';
 import {createBundleRenderer} from 'vue-server-renderer';
 
 import {distLavasPath} from './utils/path';
+import {webpackCompile} from './utils/webpack';
 import {CLIENT_MANIFEST, SERVER_BUNDLE, TEMPLATE_HTML} from './constants';
 
 export default class Renderer {
@@ -20,13 +21,12 @@ export default class Renderer {
         this.config = core.config;
         this.rootDir = this.config && this.config.globals.rootDir;
         this.cwd = core.cwd;
-        this.app = core.app;
+        this.internalMiddlewares = core.internalMiddlewares;
         this.renderer = null;
         this.serverBundle = null;
         this.clientManifest = null;
         this.resolve = null;
         this.readyPromise = new Promise(r => this.resolve = r);
-        this.privateFiles = [CLIENT_MANIFEST, SERVER_BUNDLE, TEMPLATE_HTML];
     }
 
     async createWithBundle() {
@@ -43,39 +43,14 @@ export default class Renderer {
         serverConfig.context = this.rootDir;
 
         // start to build client & server configs
-        await new Promise((resolve, reject) => {
-
-            webpack([clientConfig, serverConfig], (err, stats) => {
-                if (err) {
-                    console.error(err.stack || err);
-                    if (err.details) {
-                        console.error(err.details);
-                    }
-                    reject(err);
-                    return;
-                }
-
-                const info = stats.toJson();
-
-                if (stats.hasErrors()) {
-                    console.error(info.errors);
-                    reject(info.errors);
-                    return;
-                }
-
-                if (stats.hasWarnings()) {
-                    console.warn(info.warnings);
-                }
-
-                console.log('[Lavas] SSR build completed.');
-                resolve();
-            });
-        });
+        await webpackCompile([clientConfig, serverConfig]);
 
         // copy index.template.html to dist/lavas
         let templatePath = join(this.rootDir, 'core', TEMPLATE_HTML);
         let distTemplatePath = distLavasPath(this.config.webpack.base.output.path, TEMPLATE_HTML);
         await copy(templatePath, distTemplatePath);
+
+        console.log('[Lavas] SSR build completed.');
     }
 
     async build(clientConfig, serverConfig) {
@@ -124,14 +99,14 @@ export default class Renderer {
             noInfo: true
         });
 
-        this.app.use(devMiddleware);
+        this.internalMiddlewares.push(devMiddleware);
 
         // hot middleware
         let hotMiddleware = webpackHotMiddleware(clientCompiler, {
             heartbeat: 5000
         });
 
-        this.app.use(hotMiddleware);
+        this.internalMiddlewares.push(hotMiddleware);
 
         clientCompiler.plugin('done', stats => {
             stats = stats.toJson();
@@ -171,6 +146,7 @@ export default class Renderer {
         const mfs = new MFS();
         serverCompiler.outputFileSystem = mfs;
         serverCompiler.watch({}, (err, stats) => {
+
             if (err) {
                 throw err;
             }
@@ -206,7 +182,6 @@ export default class Renderer {
             let template = await readFile(templatePath, 'utf-8');
             this.renderer = createBundleRenderer(this.serverBundle, {
                 template,
-                // basedir: this.config.webpack.base.output.path,
                 clientManifest: this.clientManifest,
                 runInNewContext: false
             });

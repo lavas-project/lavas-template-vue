@@ -7,13 +7,6 @@
 
 module.exports = {
 
-    /**
-     * vue router mode, which is not recommended to change it.
-     *
-     * @type {string}
-     */
-    mode: 'history',
-
     routes: [
         {
             name: 'detail-id',
@@ -25,7 +18,7 @@ module.exports = {
             // meta: {},
             template: '',
             // entry: '',
-            // skeleton: '@/components/detail-id.skeleton'
+            skeleton: '@/components/detail-id.skeleton'
         }
     ]
 

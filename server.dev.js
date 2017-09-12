@@ -10,24 +10,27 @@ const app = new Koa();
 let env = process.env.NODE_ENV || 'production';
 let port = process.env.PORT || 3000;
 
-(async () => {
-    try {
-        let core = new LavasCore(__dirname);
+let core = new LavasCore(__dirname);
 
-        if (env === 'development') {
-            await core.build();
-        }
-        else if (env === 'production') {
-            await core.runAfterBuild();
-        }
+let startLavasPromise;
 
-        app.use(core.koaMiddleware());
+if (env === 'development') {
+    startLavasPromise = core.init(env, true).then(() => {
+        return core.build();
+    });
+}
+else {
+    startLavasPromise = core.init(env).then(() => {
+        return core.runAfterBuild();
+    });
+}
 
-        app.listen(port, () => {
-            console.log('server started at localhost:' + port);
-        });
-    }
-    catch (e) {
-        console.error(e);
-    }
-})();
+startLavasPromise.then(() => {
+    app.use(core.koaMiddleware());
+
+    app.listen(port, () => {
+        console.log('server started at localhost:' + port);
+    });
+}).catch((err) => {
+    console.log(err);
+});

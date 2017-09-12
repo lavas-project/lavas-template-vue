@@ -14,9 +14,13 @@ export default class ConfigReader {
     constructor(cwd, env) {
         this.cwd = cwd;
         this.env = env;
-        this.privateFiles = [];
     }
 
+    /**
+     * generate a config object according to config directory and NODE_ENV
+     *
+     * @return {Object} config
+     */
     async read() {
         const config = {};
         let configDir = join(this.cwd, 'config');
@@ -60,13 +64,22 @@ export default class ConfigReader {
         return config;
     }
 
+    /**
+     * in prod mode, read config.json directly instead of analysing config directory
+     *
+     * @return {Object} config
+     */
     async readConfigFile() {
         return await import(distLavasPath(this.cwd, CONFIG_FILE));
     }
 
+    /**
+     * write config.json which will be used in prod mode
+     *
+     * @param {Object} config
+     */
     async writeConfigFile(config) {
         let configFilePath = distLavasPath(config.webpack.base.output.path, CONFIG_FILE);
-        this.privateFiles.push(CONFIG_FILE);
         await ensureFile(configFilePath);
         await writeFile(
             configFilePath,

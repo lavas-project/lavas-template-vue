@@ -11,15 +11,16 @@
  * @return {Function} koa middleware
  */
 export default function (core) {
-    // static files such as routes.json, vue-server-bundle.json
     let privateFiles = [
-        ...core.routeManager.privateFiles,
-        ...core.renderer.privateFiles,
-        ...core.configReader.privateFiles
+        'server.js',
+        'package.json',
+        '/lib/',
+        '/node_modules/',
+        '/lavas/'
     ];
 
     return async function (req, res, next) {
-        if (privateFiles.find(file => req.url.indexOf(file) > -1)) {
+        if (privateFiles.find(file => req.url.startsWith(file))) {
             await next({status: 404});
         }
         else {

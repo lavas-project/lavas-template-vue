@@ -5,14 +5,13 @@
 
 const LavasCore = require('./lib');
 
-(async () => {
-    try {
-        let core = new LavasCore(__dirname);
+let core = new LavasCore(__dirname);
 
-        await core.build('production');
-        process.exit(0);
-    }
-    catch (e) {
-        console.error(e);
-    }
-})();
+core.init('production', true).then(() => {
+    return core.build();
+}).then(() => {
+    // TODO: fix a building bug in prod mode
+    process.exit(0);
+}).catch((e) => {
+    console.error(e);
+});

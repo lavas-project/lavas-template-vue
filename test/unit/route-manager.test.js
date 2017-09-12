@@ -14,7 +14,7 @@ let core;
 
 test.beforeEach('init', async t => {
     core = new LavasCore(join(__dirname, '../fixtures'));
-    await core.init('production');
+    await core._init(true);
 });
 
 /**
@@ -78,13 +78,14 @@ function emptyRegExp(routes) {
 
 test.serial('it should generate routes.json in dist directory in prod mode', async t => {
     await core.routeManager.buildRoutes();
+    await core.routeManager.writeRoutesFile();
 
     let routes = core.routeManager.routes;
 
     // regexp can't be serialized
     emptyRegExp(routes);
 
-    let savedRoutes = JSON.parse(await readFile(join(__dirname, '../fixtures/dist/routes.json'), 'utf8'));
+    let savedRoutes = JSON.parse(await readFile(join(__dirname, '../fixtures/dist/lavas/routes.json'), 'utf8'));
 
     t.deepEqual(routes, savedRoutes)
 });

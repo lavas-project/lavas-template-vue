@@ -4,7 +4,7 @@
  * @desc validate lavas' config
  */
 import Ajv from 'ajv';
-import LavasConfigSchema from './LavasConfigSchema.json';
+import LavasConfigSchema from './config-schema.json';
 
 const ajv = new Ajv({
     errorDataPath: 'configuration',

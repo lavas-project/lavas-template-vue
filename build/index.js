@@ -2,11 +2,11 @@
  * @file index.js
  * @author lavas
  */
-import RouteManager from './RouteManager';
-import Renderer from './Renderer';
-import WebpackConfig from './WebpackConfig';
-import ConfigReader from './ConfigReader';
-import ConfigValidator from './ConfigValidator';
+import RouteManager from './route-manager';
+import Renderer from './renderer';
+import WebpackConfig from './webpack';
+import ConfigReader from './config-reader';
+import ConfigValidator from './validator';
 
 import privateFileFactory from './middlewares/privateFile';
 import ssrFactory from './middlewares/ssr';
@@ -16,11 +16,11 @@ import expressErrorFactory from './middlewares/expressError';
 import ora from 'ora';
 import chokidar from 'chokidar';
 
-import connect from 'connect';
 import {compose} from 'compose-middleware';
 import composeKoa from 'koa-compose';
 import c2k from 'koa-connect';
 import serve from 'serve-static';
+import favicon from 'serve-favicon';
 
 import {emptyDir, copy} from 'fs-extra';
 import {join} from 'path';
@@ -31,11 +31,13 @@ export default class LavasCore {
     }
 
     /**
-     * invoked by build & runAfterBuild, do something different in each senario
+     * invoked before build & runAfterBuild, do something different in each senario
      *
+     * @param {string} env NODE_ENV
      * @param {boolean} isInBuild is in build process
      */
-    async _init(isInBuild) {
+    async init(env, isInBuild) {
+        this.env = env;
         this.isProd = this.env === 'production';
         this.configReader = new ConfigReader(this.cwd, this.env);
 
@@ -57,12 +59,24 @@ export default class LavasCore {
         }
         else {
             // read config from config.json
-            this.config = await this.configReader.readConfigFile(this.cwd);
+            this.config = await this.configReader.readConfigFile();
         }
 
-        // in prod build process we don't need to run a server
-        if (!isInBuild || !this.isProd) {
-            this.app = connect();
+        /**
+         * only in prod build process we don't need to use middlewares
+         */
+        if (!(isInBuild && this.isProd)) {
+            this.internalMiddlewares = [];
+            /**
+             * add static files middleware only in prod mode,
+             * we already have webpack-dev-middleware in dev mode
+             */
+            if (this.isProd) {
+                this.internalMiddlewares.push(serve(this.cwd));
+            }
+            // serve favicon
+            let faviconPath = join(this.cwd, 'static/img/icons', 'favicon.ico');
+            this.internalMiddlewares.push(favicon(faviconPath));
         }
 
         // init renderer & routeManager
@@ -73,13 +87,8 @@ export default class LavasCore {
     /**
      * build in dev & prod mode
      *
-     * @param {string} env NODE_ENV
      */
-    async build(env = 'development') {
-        this.env = env || process.env.NODE_ENV;
-
-        await this._init(true);
-
+    async build() {
         let spinner = ora();
         spinner.start();
 
@@ -122,11 +131,12 @@ export default class LavasCore {
             await this._copyServerModuleToDist();
         }
         else {
-            // TODO: use chokidar to rebuild in dev mode
-            chokidar.watch(join(this.config.globals.rootDir, 'pages'))
-                .on('change', () => {
-                    this.routeManager.buildRoutes()
-                });
+            // TODO: use chokidar to rebuild routes in dev mode
+            // let pagesDir = join(this.config.globals.rootDir, 'pages');
+            // chokidar.watch(pagesDir)
+            //     .on('change', async () => {
+            //         await this.routeManager.buildRoutes();
+            //     });
         }
 
         spinner.succeed(`[Lavas] ${this.env} build is completed.`);
@@ -137,8 +147,6 @@ export default class LavasCore {
      *
      */
     async runAfterBuild() {
-        this.env = 'production';
-        await this._init();
         // create with routes.json
         await this.routeManager.createWithRoutesFile();
         // create with bundle & manifest
@@ -151,14 +159,7 @@ export default class LavasCore {
      * @return {Function} koa middleware
      */
     koaMiddleware() {
-        if (this.isProd) {
-            // add static middleware
-            this.app.use(serve(this.cwd));
-        }
-
         // transform express/connect style middleware to koa style
-        let transformedMiddlewares = this.app.stack.map(m => c2k(m.handle));
-
         return composeKoa([
             koaErrorFactory(this),
             async function (ctx, next) {
@@ -167,23 +168,20 @@ export default class LavasCore {
                 await next();
             },
             c2k(privateFileFactory(this)),
-            ...transformedMiddlewares,
+            ...this.internalMiddlewares.map(c2k),
             c2k(ssrFactory(this))
         ]);
     }
 
+    /**
+     * compose all the middlewares
+     *
+     * @return {Function} express middleware
+     */
     expressMiddleware() {
-        if (this.isProd) {
-            // add static middleware
-            this.app.use(serve(this.cwd));
-        }
-
-        // use middlewares directly
-        let middlewares = this.app.stack.map(m => m.handle);
-
         return compose([
             privateFileFactory(this),
-            ...middlewares,
+            ...this.internalMiddlewares,
             ssrFactory(this),
             expressErrorFactory(this)
         ]);

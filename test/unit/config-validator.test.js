@@ -5,7 +5,7 @@
 
 import {join, resolve} from 'path';
 import test from 'ava';
-import ConfigValidator from '../../lib/ConfigValidator';
+import ConfigValidator from '../../lib/validator';
 
 test('it should throw validation errors when missing some required props', t => {
     let config = {};

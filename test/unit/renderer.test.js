@@ -13,7 +13,6 @@ let core;
 
 test.beforeEach('init', async t => {
     core = new LavasCore(join(__dirname, '../fixtures'));
-    await core.init('production');
 });
 
 // test.serial('it should copy all the files in static directory in production mode', async t => {
@@ -68,6 +67,13 @@ test.beforeEach('init', async t => {
 // });
 
 test.serial('it should prerender detail.html in production mode', async t => {
+    try {
+        await core.build('production');
+    }
+    catch (e) {
+        console.log(e);
+    }
+
     let webpackConfig = core.config.webpack;
     let outputPath = webpackConfig.base.output.path;
 
@@ -86,8 +92,6 @@ test.serial('it should prerender detail.html in production mode', async t => {
             }
         ]
     });
-
-    await core.build();
 
     // output detail.html
     t.true(existsSync(join(outputPath, 'detail.html')));

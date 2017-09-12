@@ -14,7 +14,6 @@ import {
 import {join} from 'path';
 import {createHash} from 'crypto';
 import template from 'lodash.template';
-import webpack from 'webpack';
 import merge from 'webpack-merge';
 import lruCache from 'lru-cache';
 
@@ -23,6 +22,7 @@ import SkeletonWebpackPlugin from 'vue-skeleton-webpack-plugin';
 
 import {generateRoutes} from './utils/router';
 import {distLavasPath} from './utils/path';
+import {webpackCompile} from './utils/webpack';
 import {ROUTES_FILE, SKELETON_DIRNAME} from './constants';
 
 const routesTemplate = join(__dirname, './templates/routes.tpl');
@@ -48,8 +48,6 @@ export default class RouteManager {
             max: 1000,
             maxAge: 1000 * 60 * 15
         });
-
-        this.privateFiles = [];
     }
 
     /**
@@ -169,7 +167,8 @@ export default class RouteManager {
                         collapseWhitespace: true,
                         removeAttributeQuotes: true
                     },
-                    favicon: join(assetsDir, 'img/icons/favicon.ico'),
+                    // we already use serve-favicon middleware
+                    // favicon: join(assetsDir, 'img/icons/favicon.ico'),
                     chunksSortMode: 'dependency',
                     config: this.config
                 }));
@@ -197,36 +196,8 @@ export default class RouteManager {
         }
 
         if (Object.keys(mpaConfig.entry).length) {
-
-            await new Promise((resolve, reject) => {
-
-                // start to compile multi entries
-                webpack(mpaConfig, (err, stats) => {
-                    if (err) {
-                        console.error(err.stack || err);
-                        if (err.details) {
-                            console.error(err.details);
-                        }
-                        reject(err);
-                        return;
-                    }
-
-                    const info = stats.toJson();
-
-                    if (stats.hasErrors()) {
-                        console.error(info.errors);
-                        reject(info.errors);
-                        return;
-                    }
-
-                    if (stats.hasWarnings()) {
-                        console.warn(info.warnings);
-                    }
-
-                    console.log('[Lavas] MPA build completed.');
-                    resolve();
-                });
-            });
+            await webpackCompile(mpaConfig);
+            console.log('[Lavas] MPA build completed.');
         }
     }
 
@@ -237,6 +208,12 @@ export default class RouteManager {
      * @param {Array} routesConfig config
      */
     mergeWithConfig(routes, routesConfig = []) {
+        /**
+         * in dev mode, we need to add timestamp to every route's hash as prefix.
+         * otherwise when we change the code in page.vue, route's hash remains the same,
+         * webpack hot middleware will throw a "Duplicate declaration" error.
+         */
+        let timestamp = (new Date()).getTime();
 
         routes.forEach(route => {
 
@@ -266,7 +243,8 @@ export default class RouteManager {
                  * an underscore "_" will be added in front of each hash, because JS variables can't
                  * start with numbers
                  */
-                route.hash = createHash('md5').update(route.name).digest('hex');
+                route.hash = timestamp
+                    + createHash('md5').update(route.name).digest('hex');
             }
 
             /**
@@ -275,6 +253,7 @@ export default class RouteManager {
              */
             route.pathRegExp = new RegExp(`^${route.path.replace(/\/:[^\/]*/g, '/[^\/]+')}\/?`);
 
+            // merge recursively
             if (route.children && route.children.length) {
                 this.mergeWithConfig(route.children, routeConfig && routeConfig.children);
             }
@@ -312,7 +291,6 @@ export default class RouteManager {
     async writeRoutesFile() {
         // write contents into dist/lavas/routes.json
         let routesFilePath = distLavasPath(this.config.webpack.base.output.path, ROUTES_FILE);
-        this.privateFiles.push(ROUTES_FILE);
         await ensureFile(routesFilePath);
         await writeFile(
             routesFilePath,
