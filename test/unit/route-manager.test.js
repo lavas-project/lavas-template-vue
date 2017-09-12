@@ -8,7 +8,7 @@
 import {join} from 'path';
 import test from 'ava';
 import LavasCore from '../../lib';
-import {readFile} from 'fs-extra';
+import {readFile, readJson} from 'fs-extra';
 
 let core;
 
@@ -85,7 +85,7 @@ test.serial('it should generate routes.json in dist directory in prod mode', asy
     // regexp can't be serialized
     emptyRegExp(routes);
 
-    let savedRoutes = JSON.parse(await readFile(join(__dirname, '../fixtures/dist/lavas/routes.json'), 'utf8'));
+    let savedRoutes = await readJson(join(__dirname, '../fixtures/dist/lavas/routes.json'));
 
     t.deepEqual(routes, savedRoutes)
 });
