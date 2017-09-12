@@ -57,7 +57,9 @@ Vue.mixin({
 
 router.beforeEach(async (to, from, next) => {
     // Avoid loop redirect with next(path)
-    if (from.path === to.path) {
+    const fromPath = from.fullPath.split('#')[0];
+    const toPath = to.fullPath.split('#')[0];
+    if (fromPath === toPath) {
         return;
     }
 
@@ -72,7 +74,6 @@ router.beforeEach(async (to, from, next) => {
         }
         nextCalled = true;
         next(path);
-        // window.location.href = window.location.origin + path.path;
     };
 
     // Update context
