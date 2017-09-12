@@ -28,7 +28,10 @@ export default function (core) {
             let ctx = {
                 title: 'Lavas', // default title
                 url: req.url,
-                config: core.config // mount config to ctx which will be used when rendering template
+                config: core.config, // mount config to ctx which will be used when rendering template
+                req,
+                res,
+                error: err => next(err)
             };
             // render to string
             renderer.renderToString(ctx, (err, html) => {

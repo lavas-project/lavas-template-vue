@@ -5,18 +5,10 @@
 'use strict';
 
 let files = require.context('@/middleware', false, /^\.\/.*\.(js|ts)$/);
-let filenames = files.keys();
-function getModule(filename) {
-    let file = files(filename);
-    return file.default
-        ? file.default
-        : file;
-}
-let middleware = {};
 
-// Generate the middleware
-for (let filename of filenames) {
-    let name = filename.replace(/^\.\//, '').replace(/\.(js|ts)$/, '');
-    middleware[name] = getModule(filename);
-}
-export default middleware;
+export default files.keys().reduce((middleware, filename) => {
+    let name = filename.slice(2, -3);
+    let file = files(filename);
+    middleware[name] = file.default || file;
+    return middleware;
+}, {});

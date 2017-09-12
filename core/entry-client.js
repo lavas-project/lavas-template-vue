@@ -9,11 +9,13 @@ import middleware from './middleware';
 import middConf from '@/config/middleware';
 import {createApp} from './app';
 import ProgressBar from './components/ProgressBar.vue';
-import {getContext, middlewareSeries} from './utils';
+import {middlewareSeries} from './utils';
+import {getClientContext} from './client-ctx';
 
 // 全局的进度条，在组件中可通过 $loading 访问
 let loading = Vue.prototype.$loading = new Vue(ProgressBar).$mount();
 let {app, router, store} = createApp();
+let me = this;
 
 if (window.__INITIAL_STATE__) {
     store.replaceState(window.__INITIAL_STATE__);
@@ -54,33 +56,50 @@ Vue.mixin({
 });
 
 router.beforeEach(async (to, from, next) => {
+    // Avoid loop redirect with next(path)
+    if (from.path === to.path) {
+        return;
+    }
+
+    let nextCalled = false;
+    // nextCalled is true when redirected
+    const nextRedirect = path => {
+        if (loading.finish) {
+            loading.finish();
+        }
+        if (nextCalled) {
+            return;
+        }
+        nextCalled = true;
+        next(path);
+        // window.location.href = window.location.origin + path.path;
+    };
 
     // Update context
-    const ctx = getContext({
+    const ctx = getClientContext({
         to,
         from,
         store,
-        isClient: true,
-        next: next.bind(this)
+        next: nextRedirect.bind(me)
     }, app);
 
-    // console.log(context);
-
-    let matched = router.getMatchedComponents(to);
+    let matched = await router.getMatchedComponents(to);
 
     if (!matched.length) {
         return next();
     }
+
     await callMiddleware.call(this, matched, ctx);
 
-    next();
+    if (!nextCalled) {
+        next();
+    }
 });
 
 // 此时异步组件已经加载完成
 router.beforeResolve((to, from, next) => {
     let matched = router.getMatchedComponents(to);
     let prevMatched = router.getMatchedComponents(from);
-
     // [a, b]
     // [a, b, c, d]
     // => [c, d]
@@ -92,55 +111,47 @@ router.beforeResolve((to, from, next) => {
     }
 
     loading.start();
-    Promise.all(activated.map(c => {
 
-        /**
-         * 两种情况下执行asyncData:
-         * 1. 非keep-alive组件每次都需要执行
-         * 2. keep-alive组件首次执行，执行后添加标志
-         */
-        if (c.asyncData && (!c.asyncDataFetched || to.meta.notKeepAlive)) {
-            return c.asyncData({
-                store,
-                route: to
-            }).then(() => {
-                c.asyncDataFetched = true;
-            });
-        }
-    })).then(() => {
+    Promise.all(
+        activated
+
+         // 两种情况下执行asyncData:
+         // 1. 非keep-alive组件每次都需要执行
+         // 2. keep-alive组件首次执行，执行后添加标志
+
+        .filter(c => c.asyncData && (!c.asyncDataFetched || to.meta.notKeepAlive))
+        .map(async c => {
+            await c.asyncData({store, route: to});
+            c.asyncDataFetched = true;
+        })
+    )
+    .then(() => {
         loading.finish();
         next();
-    }).catch(next);
+    })
+    .catch(next);
 });
 
 router.onReady(() => app.$mount('#app'));
 
 
-function callMiddleware(Components, context) {
-    let midd = middConf.clientMidd;
-    let unknownMiddleware = false;
+function callMiddleware(components = [], context) {
+    let middlewareSet = [
+            ...(middConf.clientMidd || []),
+            ...components
+                .filter(({middleware}) => !!middleware)
+                .map(({middleware}) => middleware)
+        ]
+        .reduce((set, name) => set.add(name), new Set());
 
-    // If Components
-    if (Components.length) {
-        let componentMidd = [];
-        Components.forEach(Component => {
-            if (Component.middleware) {
-                componentMidd = componentMidd.concat(Component.middleware);
-            }
-        });
+    let middlewareNames = Array.from(middlewareSet);
+    let name = middlewareNames.some(name => typeof middleware[name] !== 'function');
+    if (name) {
+        // 用户自行处理错误
+        throw new Error(`Unknown middleware ${name}`);
     }
 
-    midd = midd.map(name => {
-        if (typeof middleware[name] !== 'function') {
-            unknownMiddleware = true;
-            // 错误处理
-        }
-        return middleware[name];
-    });
-
-    if (unknownMiddleware) {
-        return;
-    }
-    return middlewareSeries(midd, context);
+    let matchedMiddlewares = middlewareNames.map(name => middleware[name]);
+    return middlewareSeries(matchedMiddlewares, context);
 }
 
