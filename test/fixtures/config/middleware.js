@@ -9,18 +9,11 @@
 module.exports = {
 
     /**
-     * common middleware
+     * server middleware
      *
      * examples:
      *   'a'
      *   '{path}/a'
-     *
-     * @type {Array.<string>}
-     */
-    all: [],
-
-    /**
-     * server middleware
      *
      * @type {Array.<string>}
      */
