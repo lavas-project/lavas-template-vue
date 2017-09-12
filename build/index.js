@@ -15,14 +15,14 @@ import expressErrorFactory from './middlewares/expressError';
 import ora from 'ora';
 import chokidar from 'chokidar';
 
-import {compose} from 'compose-middleware';
+import composeMiddleware from 'compose-middleware';
 import composeKoa from 'koa-compose';
 import c2k from 'koa-connect';
 import serve from 'serve-static';
 import favicon from 'serve-favicon';
 
-import {emptyDir, copy} from 'fs-extra';
-import {join} from 'path';
+import fs from 'fs-extra';
+import path from 'path';
 
 export default class LavasCore {
     constructor(cwd = process.cwd()) {
@@ -72,7 +72,7 @@ export default class LavasCore {
                 this.internalMiddlewares.push(serve(this.cwd));
             }
             // serve favicon
-            let faviconPath = join(this.cwd, 'static/img/icons', 'favicon.ico');
+            let faviconPath = path.join(this.cwd, 'static/img/icons', 'favicon.ico');
             this.internalMiddlewares.push(favicon(faviconPath));
         }
 
@@ -86,23 +86,24 @@ export default class LavasCore {
      *
      */
     async build() {
-        let spinner = ora();
+        let spinner = ora(`[Lavas] ${this.env} build start`);
         spinner.start();
 
         // clear dist/
-        await emptyDir(this.config.webpack.base.output.path);
+        await fs.emptyDir(this.config.webpack.base.output.path);
 
         // build routes' info and source code
         await this.routeManager.buildRoutes();
+        // add routes to config which will be used by service worker
         this.config.routes = this.routeManager.routes;
 
         // add extension's hooks
-        if (this.config.extensions) {
-            this.config.extensions.forEach(({name, init}) => {
-                console.log(`[Lavas] ${name} extension is running...`);
-                this.webpackConfig.addHooks(init);
-            });
-        }
+        // if (this.config.extensions) {
+        //     this.config.extensions.forEach(({name, init}) => {
+        //         console.log(`[Lavas] ${name} extension is running...`);
+        //         this.webpackConfig.addHooks(init);
+        //     });
+        // }
 
         // webpack client & server config
         let clientConfig = this.webpackConfig.client(this.config);
@@ -119,22 +120,24 @@ export default class LavasCore {
              * TODO: not all the props in config is needed. for now, only manifest
              * & assetsDir are required. some props such as globalDir are useless.
              */
-            await this.configReader.writeConfigFile(this.config);
-            // compile multi entries only in production mode
-            await this.routeManager.buildMultiEntries();
-            // store routes info in routes.json for later use
-            await this.routeManager.writeRoutesFile();
-            // copy to /dist
-            await this._copyServerModuleToDist();
+            await Promise.all([
+                this.configReader.writeConfigFile(this.config),
+                // compile multi entries only in production mode
+                this.routeManager.buildMultiEntries(),
+                // store routes info in routes.json for later use
+                this.routeManager.writeRoutesFile(),
+                // copy to /dist
+                this._copyServerModuleToDist()
+            ]);
         }
-        else {
+        // else {
             // TODO: use chokidar to rebuild routes in dev mode
             // let pagesDir = join(this.config.globals.rootDir, 'pages');
             // chokidar.watch(pagesDir)
             //     .on('change', async () => {
             //         await this.routeManager.buildRoutes();
             //     });
-        }
+        // }
 
         spinner.succeed(`[Lavas] ${this.env} build is completed.`);
     }
@@ -144,10 +147,12 @@ export default class LavasCore {
      *
      */
     async runAfterBuild() {
-        // create with routes.json
-        await this.routeManager.createWithRoutesFile();
-        // create with bundle & manifest
-        await this.renderer.createWithBundle();
+        await Promise.all([
+            // create with routes.json
+            this.routeManager.createWithRoutesFile(),
+            // create with bundle & manifest
+            this.renderer.createWithBundle()
+        ]);
     }
 
     /**
@@ -176,7 +181,7 @@ export default class LavasCore {
      * @return {Function} express middleware
      */
     expressMiddleware() {
-        return compose([
+        return composeMiddleware.compose([
             privateFileFactory(this),
             ...this.internalMiddlewares,
             ssrFactory(this),
@@ -189,20 +194,24 @@ export default class LavasCore {
      */
     async _copyServerModuleToDist() {
         let distPath = this.config.webpack.base.output.path;
-        let libDir = join(this.cwd, './lib');
-        let distLibDir = join(distPath, 'lib');
-        let serverDir = join(this.cwd, './server.dev.js');
-        let distServerDir = join(distPath, 'server.js');
-        let nodeModulesDir = join(this.cwd, 'node_modules');
-        let distNodeModulesDir = join(distPath, 'node_modules');
-        let jsonDir = join(this.cwd, 'package.json');
-        let distJsonDir = join(distPath, 'package.json');
+
+        let libDir = path.join(this.cwd, 'lib');
+        let distLibDir = path.join(distPath, 'lib');
+
+        let serverDir = path.join(this.cwd, 'server.dev.js');
+        let distServerDir = path.join(distPath, 'server.js');
+
+        let nodeModulesDir = path.join(this.cwd, 'node_modules');
+        let distNodeModulesDir = path.join(distPath, 'node_modules');
+
+        let jsonDir = path.join(this.cwd, 'package.json');
+        let distJsonDir = path.join(distPath, 'package.json');
 
         await Promise.all([
-            copy(libDir, distLibDir),
-            copy(serverDir, distServerDir),
-            copy(nodeModulesDir, distNodeModulesDir),
-            copy(jsonDir, distJsonDir)
+            fs.copy(libDir, distLibDir),
+            fs.copy(serverDir, distServerDir),
+            fs.copy(nodeModulesDir, distNodeModulesDir),
+            fs.copy(jsonDir, distJsonDir)
         ]);
     }
 }
