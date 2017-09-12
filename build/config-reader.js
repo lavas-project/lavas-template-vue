@@ -83,7 +83,7 @@ export default class ConfigReader {
         await ensureFile(configFilePath);
         await writeFile(
             configFilePath,
-            JSON.stringify(config),
+            JSON.stringify(config, null, 2),
             'utf8'
         );
     }
