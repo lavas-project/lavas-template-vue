@@ -9,7 +9,7 @@ module.exports = {
 
     default: {
         /**
-         * 是否启用 ssr，决定上面那些属性会有效
+         * 是否启用 ssr，决定下面哪些属性会生效
          *
          */
         ssr: true,
