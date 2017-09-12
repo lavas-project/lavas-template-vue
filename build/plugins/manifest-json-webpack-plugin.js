@@ -4,35 +4,45 @@
  */
 
 /**
- * Manifest Webpack plugin
+ * Generate manifest.json file
  *
- * @constructor
- *
- * @param {Object} opts 插件配置
+ * @class
  */
-function ManifestJson(opts) {
-    this.config = opts.config;
-    this.path = opts.path;
+export default class ManifestJson {
+
+    /**
+     * constructor
+     *
+     * @param {*} opts options
+     * @param {Object} opts.config config
+     * @param {string} opts.path path
+     */
+    constructor(opts) {
+        this.config = opts.config;
+        this.path = opts.path;
+    }
+
+    /**
+     * webpack apply
+     *
+     * @param {*} compiler webpack compiler
+     */
+    apply(compiler) {
+        let manifestContent = JSON.stringify(this.config);
+
+        compiler.plugin('emit', (compilation, callback) => {
+            compilation.assets[this.path] = {
+                source() {
+                    return manifestContent;
+                },
+
+                size() {
+                    return manifestContent.length;
+                }
+            };
+
+            callback();
+        });
+    }
+
 }
-
-/* eslint-disable fecs-camelcase */
-ManifestJson.prototype.apply = function (compiler) {
-
-    let manifestContent = JSON.stringify(this.config);
-
-    compiler.plugin('emit', (compilation, callback) => {
-        compilation.assets[this.path] = {
-            source() {
-                return manifestContent;
-            },
-
-            size() {
-                return manifestContent.length;
-            }
-        };
-        callback();
-    });
-};
-
-
-module.exports = ManifestJson;
