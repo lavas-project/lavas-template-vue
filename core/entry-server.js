@@ -95,10 +95,10 @@ export default function (context) {
  * @param {*} app Vue app
  */
 async function execMiddlewares(components = [], context, app) {
-    // serverMidd + clientMidd + components Midd
+    // server + client + components middlewares
     let middlewareNames = [
-        ...(middConf.serverMidd || []),
-        ...(middConf.clientMidd || []),
+        ...(middConf.server || []),
+        ...(middConf.client || []),
         ...components
             .filter(({middleware}) => !!middleware)
             .reduce((arr, {middleware}) => arr.concat(middleware), [])
