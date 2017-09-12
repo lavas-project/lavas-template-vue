@@ -150,7 +150,7 @@ async function execMiddlewares(components = [], context) {
             .reduce((arr, {middleware}) => arr.concat(middleware), [])
     ];
 
-    let name = middlewareNames.some(name => typeof middleware[name] !== 'function');
+    let name = middlewareNames.find(name => typeof middleware[name] !== 'function');
     if (name) {
         // 用户自行处理错误
         throw new Error(`Unknown middleware ${name}`);
