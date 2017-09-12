@@ -4,35 +4,56 @@
  */
 
 /**
- * Manifest Webpack plugin
+ * Generate manifest.json file
  *
- * @constructor
- *
- * @param {Object} opts 插件配置
+ * @class
  */
-function ManifestJson(opts) {
-    this.config = opts.config;
-    this.path = opts.path;
+export default class ManifestJson {
+
+    /**
+     * constructor
+     *
+     * @param {*} opts options
+     * @param {Object} opts.config config
+     * @param {string} opts.path path
+     */
+    constructor(opts) {
+        this.config = opts.config;
+        this.path = opts.path;
+    }
+
+    /**
+     * webpack apply
+     *
+     * @param {*} compiler webpack compiler
+     */
+    apply(compiler) {
+
+        let config = this.config;
+
+        if (config && config.icons && config.icons.length > 0) {
+            config.icons.forEach((item, index) => {
+
+                // 加上时间戳，做浏览器缓存
+                config.icons[index].src = item.src + '?v=' + Date.now();
+            });
+        }
+
+        let manifestContent = JSON.stringify(this.config);
+
+        compiler.plugin('emit', (compilation, callback) => {
+            compilation.assets[this.path] = {
+                source() {
+                    return manifestContent;
+                },
+
+                size() {
+                    return manifestContent.length;
+                }
+            };
+
+            callback();
+        });
+    }
+
 }
-
-/* eslint-disable fecs-camelcase */
-ManifestJson.prototype.apply = function (compiler) {
-
-    let manifestContent = JSON.stringify(this.config);
-
-    compiler.plugin('emit', (compilation, callback) => {
-        compilation.assets[this.path] = {
-            source() {
-                return manifestContent;
-            },
-
-            size() {
-                return manifestContent.length;
-            }
-        };
-        callback();
-    });
-};
-
-
-module.exports = ManifestJson;

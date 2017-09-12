@@ -31,7 +31,6 @@ Fast - Respond quickly to user interactions with silky smooth animations and no 
 function setState(store) {}
 
 export default {
-    // middleware: ['anonymous'],
     name: 'detail-_id',
     head() {
         return {

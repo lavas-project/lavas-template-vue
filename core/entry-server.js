@@ -12,31 +12,6 @@ import {getServerContext} from './context-server';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
-const createNext = context => opts => {
-
-    context.redirected = opts;
-    if (!context.res) {
-        return;
-    }
-
-    opts.query = stringify(opts.query);
-    opts.path = opts.path + (opts.query ? '?' + opts.query : '');
-    if (opts.path.indexOf('http') !== 0
-        && opts.path.indexOf('/') !== 0
-    ) {
-        opts.path = urlJoin('/', opts.path);
-    }
-    // Avoid loop redirect
-    if (opts.path === context.url) {
-        context.redirected = false;
-        return;
-    }
-    context.res.writeHead(opts.status, {
-        Location: opts.path
-    });
-    context.res.end();
-};
-
 // This exported function will be called by `bundleRenderer`.
 // This is where we perform data-prefetching to determine the
 // state of our application before actually rendering it.
@@ -74,7 +49,7 @@ export default function (context) {
             }
 
             // middleware
-            await middlewareProcess(matchedComponents);
+            await execMiddlewares.call(this, matchedComponents, context, app);
 
             // Call fetchData hooks on components matched by the route.
             // A preFetch hook dispatches a store action and returns a Promise,
@@ -109,38 +84,72 @@ export default function (context) {
             }
         }, reject);
 
-        async function middlewareProcess(components = []) {
-            // let unknownMiddleware = false;
+    });
+}
 
-            // serverMidd + clientMidd + components Midd
-            let middlewareSet = [
-                    ...(middConf.serverMidd || []),
-                    ...(middConf.clientMidd || []),
-                    ...components
-                        .filter(({middleware}) => !!middleware)
-                        .map(({middleware}) => middleware)
-                ]
-                .reduce((set, name) => set.add(name), new Set());
+/**
+ * execute middlewares
+ *
+ * @param {Array.<*>} components matched components
+ * @param {*} context Vue context
+ * @param {*} app Vue app
+ */
+async function execMiddlewares(components = [], context, app) {
+    // server + client + components middlewares
+    let middlewareNames = [
+        ...(middConf.server || []),
+        ...(middConf.client || []),
+        ...components
+            .filter(({middleware}) => !!middleware)
+            .reduce((arr, {middleware}) => arr.concat(middleware), [])
+    ];
 
-            let middlewareNames = Array.from(middlewareSet);
+    let name = middlewareNames.find(name => typeof middleware[name] !== 'function');
+    if (name) {
+        context.error({
+            statusCode: 500,
+            message: `Unknown middleware ${name}`
+        });
+        return;
+    }
 
-            let name = middlewareNames.find(name => typeof middleware[name] !== 'function');
-            if (name) {
-                return context.error({
-                    statusCode: 500,
-                    message: `Unknown middleware ${name}`
-                });
-            }
+    let matchedMiddlewares = middlewareNames.map(name => middleware[name]);
 
-            let matchedMiddlewares = middlewareNames.map(name => middleware[name]);
+    context.next = createNext(context);
+    // Update context
+    const ctx = getServerContext(context, app);
 
-            context.next = createNext(context);
-            // Update context
-            const ctx = getServerContext(context, app);
+    await middlewareSeries(matchedMiddlewares, ctx);
+}
 
-            await middlewareSeries(matchedMiddlewares, ctx);
+/**
+ * create next
+ *
+ * @param {*} context context
+ * @return {Function}
+ */
+function createNext(context) {
+    return opts => {
+        context.redirected = opts;
+        if (!context.res) {
+            return;
         }
 
-
-    });
+        opts.query = stringify(opts.query);
+        opts.path = opts.path + (opts.query ? '?' + opts.query : '');
+        if (opts.path.indexOf('http') !== 0
+            && opts.path.indexOf('/') !== 0
+        ) {
+            opts.path = urlJoin('/', opts.path);
+        }
+        // Avoid loop redirect
+        if (opts.path === context.url) {
+            context.redirected = false;
+            return;
+        }
+        context.res.writeHead(opts.status, {
+            Location: opts.path
+        });
+        context.res.end();
+    };
 }

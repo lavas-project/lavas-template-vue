@@ -4,6 +4,8 @@
  * @desc generate route.js, multi entries in .lavas directory
  */
 
+'use strict';
+
 import {
     utimes,
     readFile,

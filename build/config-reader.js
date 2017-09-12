@@ -22,7 +22,9 @@ export default class ConfigReader {
      * @return {Object} config
      */
     async read() {
-        const config = {};
+        const config = {
+            buildVersion: Date.now()
+        };
         let configDir = join(this.cwd, 'config');
         let files = glob.sync(
             '**/*.js', {
@@ -83,7 +85,7 @@ export default class ConfigReader {
         await ensureFile(configFilePath);
         await writeFile(
             configFilePath,
-            JSON.stringify(config),
+            JSON.stringify(config, null, 2),
             'utf8'
         );
     }
