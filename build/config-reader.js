@@ -26,8 +26,8 @@ export default class ConfigReader {
         let configDir = join(this.cwd, 'config');
         let files = glob.sync(
             '**/*.js', {
-                cwd: configDir,
-                ignore: '*.recommend.js'
+                cwd: configDir
+                // ignore: '*.recommend.js'
             }
         );
 

@@ -86,7 +86,7 @@ export default class LavasCore {
      *
      */
     async build() {
-        let spinner = ora(`[Lavas] ${this.env} build start`);
+        let spinner = ora();
         spinner.start();
 
         // clear dist/

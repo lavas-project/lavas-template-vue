@@ -9,8 +9,9 @@ import {
     readFile,
     writeFile,
     emptyDir,
-    ensureFile,
-    readJson
+    readJson,
+    outputFile,
+    outputJson
 } from 'fs-extra';
 import {join} from 'path';
 import {createHash} from 'crypto';
@@ -121,8 +122,7 @@ export default class RouteManager {
      *
      */
     async buildMultiEntries() {
-        let {shortcuts, base} = this.config.webpack;
-        let {assetsDir, ssr} = shortcuts;
+        let {shortcuts: {assetsDir, ssr}, base} = this.config.webpack;
 
         // create mpa config based on client config
         let mpaConfig = merge(this.webpackConfig.client(this.config));
@@ -292,10 +292,9 @@ export default class RouteManager {
     async writeRoutesFile() {
         // write contents into dist/lavas/routes.json
         let routesFilePath = distLavasPath(this.config.webpack.base.output.path, ROUTES_FILE);
-        await ensureFile(routesFilePath);
-        await writeFile(
+        await outputJson(
             routesFilePath,
-            JSON.stringify(this.routes),
+            this.routes,
             'utf8'
         );
     }
@@ -309,8 +308,7 @@ export default class RouteManager {
 
         // write contents into .lavas/routes.js
         let routesFilePath = join(this.targetDir, './routes.js');
-        await ensureFile(routesFilePath);
-        await writeFile(
+        await outputFile(
             routesFilePath,
             template(await readFile(routesTemplate, 'utf8'))({
                 routes: this.flatRoutes,
