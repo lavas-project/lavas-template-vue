@@ -89,7 +89,7 @@ router.beforeEach(async (to, from, next) => {
         return next();
     }
 
-    await callMiddleware.call(this, matched, ctx);
+    await execMiddlewares.call(this, matched, ctx);
 
     if (!nextCalled) {
         next();
@@ -135,7 +135,13 @@ router.beforeResolve((to, from, next) => {
 router.onReady(() => app.$mount('#app'));
 
 
-function callMiddleware(components = [], context) {
+/**
+ * execute middlewares
+ *
+ * @param {Array.<*>} components matched components
+ * @param {*} context Vue context
+ */
+async function execMiddlewares(components = [], context) {
     // clientMidd + components Midd
     let middlewareNames = [
         ...(middConf.clientMidd || []),
@@ -150,7 +156,6 @@ function callMiddleware(components = [], context) {
         throw new Error(`Unknown middleware ${name}`);
     }
 
-    let matchedMiddlewares = middlewareNames.map(name => middleware[name]);
-    return middlewareSeries(matchedMiddlewares, context);
+    await middlewareSeries(middlewareNames.map(name => middleware[name]), context);
 }
 
