@@ -22,7 +22,9 @@ export default class ConfigReader {
      * @return {Object} config
      */
     async read() {
-        const config = {};
+        const config = {
+            buildVersion: Date.now()
+        };
         let configDir = join(this.cwd, 'config');
         let files = glob.sync(
             '**/*.js', {
