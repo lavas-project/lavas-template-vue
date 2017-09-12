@@ -110,19 +110,14 @@ export default function (context) {
         }, reject);
 
         async function middlewareProcess(components = []) {
-            // let unknownMiddleware = false;
-
             // serverMidd + clientMidd + components Midd
-            let middlewareSet = [
-                    ...(middConf.serverMidd || []),
-                    ...(middConf.clientMidd || []),
-                    ...components
-                        .filter(({middleware}) => !!middleware)
-                        .map(({middleware}) => middleware)
-                ]
-                .reduce((set, name) => set.add(name), new Set());
-
-            let middlewareNames = Array.from(middlewareSet);
+            let middlewareNames = [
+                ...(middConf.serverMidd || []),
+                ...(middConf.clientMidd || []),
+                ...components
+                    .filter(({middleware}) => !!middleware)
+                    .map(({middleware}) => middleware)
+            ];
 
             let name = middlewareNames.find(name => typeof middleware[name] !== 'function');
             if (name) {

@@ -136,15 +136,14 @@ router.onReady(() => app.$mount('#app'));
 
 
 function callMiddleware(components = [], context) {
-    let middlewareSet = [
-            ...(middConf.clientMidd || []),
-            ...components
-                .filter(({middleware}) => !!middleware)
-                .map(({middleware}) => middleware)
-        ]
-        .reduce((set, name) => set.add(name), new Set());
+    // clientMidd + components Midd
+    let middlewareNames = [
+        ...(middConf.clientMidd || []),
+        ...components
+            .filter(({middleware}) => !!middleware)
+            .map(({middleware}) => middleware)
+    ];
 
-    let middlewareNames = Array.from(middlewareSet);
     let name = middlewareNames.some(name => typeof middleware[name] !== 'function');
     if (name) {
         // 用户自行处理错误
