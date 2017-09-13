@@ -211,6 +211,9 @@ export default class LavasCore {
         ]);
     }
 
+    /**
+     * inject routes into service-worker.js.tmpl for later use
+     */
     async _writeServiceWorker() {
         // add 'routes' to service-worker.tmpl.js
         let rawTemplate = await readFile(join(__dirname, 'templates/service-worker.js.tmpl'));

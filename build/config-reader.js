@@ -22,6 +22,7 @@ export default class ConfigReader {
      * @return {Object} config
      */
     async read() {
+        // add buildVersion
         const config = {
             buildVersion: Date.now()
         };
