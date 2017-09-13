@@ -5,9 +5,9 @@
 
 'use strict';
 
-module.exports = {
-
-    default: {
+module.exports = [
+    {
+        name: 'detail',
         /**
          * 是否启用 ssr，决定下面哪些属性会生效
          *
@@ -15,48 +15,25 @@ module.exports = {
         ssr: true,
 
         /**
-         * entry，如果 module 中没有指定，默认为 @/core/entry-client.js
+         * 这个模块匹配的路径，default 的优先级最低
          *
-         * @type {string}
+         * @type {RegExp|string|Array.<RegExp|string>}
          */
-        entry: '@/core/entry-client.js',
-
+        routes: /^rewrite\/detail\/.+$/
+    },
+    {
+        name: 'main',
         /**
-         * skeleton，仅在非 ssr 的情况下有效
+         * 是否启用 ssr，决定下面哪些属性会生效
          *
-         * @type {string}
          */
-        skeleton: '@/pages/index.skeleton.vue',
-
-        /**
-         * html template，仅在非 ssr 的情况下有效，如果没指定，默认为 @core/index.html
-         * 是 mpa 页面的入口
-         *
-         * @type {string}
-         */
-        htmlTemplate: '@/core/index.html',
-
-        /**
-         * ssr html template，顾名思义，是各 ssr 模块的入口
-         *
-         * @type {string}
-         */
-        ssrHtmlTemplate: '@/core/index.template.html',
+        ssr: true,
 
         /**
          * 这个模块匹配的路径，default 的优先级最低
          *
          * @type {RegExp|string|Array.<RegExp|string>}
          */
-        routes: /^.*$/,
-    },
-
-    user: {
-        ssr: false,
-        entry: '@/modules/user/entry-client.js',
-        skeleton: '@pages/user.skeleton.vue',
-        htmlTemplate: '@modules/user/index.html',
-        routes: /^\/user\/.*$/
+        routes: /^.*$/
     }
-
-};
+];
