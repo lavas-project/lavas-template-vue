@@ -57,7 +57,9 @@ Vue.mixin({
 
 router.beforeEach(async (to, from, next) => {
     // Avoid loop redirect with next(path)
-    if (from.path === to.path) {
+    const fromPath = from.fullPath.split('#')[0];
+    const toPath = to.fullPath.split('#')[0];
+    if (fromPath === toPath) {
         return;
     }
 
@@ -72,7 +74,6 @@ router.beforeEach(async (to, from, next) => {
         }
         nextCalled = true;
         next(path);
-        // window.location.href = window.location.origin + path.path;
     };
 
     // Update context
@@ -89,7 +90,7 @@ router.beforeEach(async (to, from, next) => {
         return next();
     }
 
-    await callMiddleware.call(this, matched, ctx);
+    await execMiddlewares.call(this, matched, ctx);
 
     if (!nextCalled) {
         next();
@@ -135,23 +136,28 @@ router.beforeResolve((to, from, next) => {
 router.onReady(() => app.$mount('#app'));
 
 
-function callMiddleware(components = [], context) {
-    let middlewareSet = [
-            ...(middConf.clientMidd || []),
-            ...components
-                .filter(({middleware}) => !!middleware)
-                .map(({middleware}) => middleware)
-        ]
-        .reduce((set, name) => set.add(name), new Set());
+/**
+ * execute middlewares
+ *
+ * @param {Array.<*>} components matched components
+ * @param {*} context Vue context
+ */
+async function execMiddlewares(components = [], context) {
+    // all + client + components middlewares
+    let middlewareNames = [
+        ...(middConf.all || []),
+        ...(middConf.client || []),
+        ...components
+            .filter(({middleware}) => !!middleware)
+            .reduce((arr, {middleware}) => arr.concat(middleware), [])
+    ];
 
-    let middlewareNames = Array.from(middlewareSet);
-    let name = middlewareNames.some(name => typeof middleware[name] !== 'function');
+    let name = middlewareNames.find(name => typeof middleware[name] !== 'function');
     if (name) {
         // 用户自行处理错误
         throw new Error(`Unknown middleware ${name}`);
     }
 
-    let matchedMiddlewares = middlewareNames.map(name => middleware[name]);
-    return middlewareSeries(matchedMiddlewares, context);
+    await middlewareSeries(middlewareNames.map(name => middleware[name]), context);
 }
 

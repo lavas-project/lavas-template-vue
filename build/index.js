@@ -15,14 +15,15 @@ import expressErrorFactory from './middlewares/expressError';
 import ora from 'ora';
 import chokidar from 'chokidar';
 
-import {compose} from 'compose-middleware';
+import composeMiddleware from 'compose-middleware';
 import composeKoa from 'koa-compose';
 import c2k from 'koa-connect';
 import serve from 'serve-static';
 import favicon from 'serve-favicon';
 
-import {emptyDir, copy} from 'fs-extra';
+import {copy, emptyDir, readFile, writeFile} from 'fs-extra';
 import {join} from 'path';
+import template from 'lodash.template';
 
 export default class LavasCore {
     constructor(cwd = process.cwd()) {
@@ -94,15 +95,10 @@ export default class LavasCore {
 
         // build routes' info and source code
         await this.routeManager.buildRoutes();
+        // add routes to config which will be used by service worker
         this.config.routes = this.routeManager.routes;
 
-        // add extension's hooks
-        if (this.config.extensions) {
-            this.config.extensions.forEach(({name, init}) => {
-                console.log(`[Lavas] ${name} extension is running...`);
-                this.webpackConfig.addHooks(init);
-            });
-        }
+        await this._writeServiceWorker();
 
         // webpack client & server config
         let clientConfig = this.webpackConfig.client(this.config);
@@ -130,14 +126,14 @@ export default class LavasCore {
                 this._copyServerModuleToDist()
             ]);
         }
-        else {
+        // else {
             // TODO: use chokidar to rebuild routes in dev mode
             // let pagesDir = join(this.config.globals.rootDir, 'pages');
             // chokidar.watch(pagesDir)
             //     .on('change', async () => {
             //         await this.routeManager.buildRoutes();
             //     });
-        }
+        // }
 
         spinner.succeed(`[Lavas] ${this.env} build is completed.`);
     }
@@ -147,10 +143,12 @@ export default class LavasCore {
      *
      */
     async runAfterBuild() {
-        // create with routes.json
-        await this.routeManager.createWithRoutesFile();
-        // create with bundle & manifest
-        await this.renderer.createWithBundle();
+        await Promise.all([
+            // create with routes.json
+            this.routeManager.createWithRoutesFile(),
+            // create with bundle & manifest
+            this.renderer.createWithBundle()
+        ]);
     }
 
     /**
@@ -179,7 +177,7 @@ export default class LavasCore {
      * @return {Function} express middleware
      */
     expressMiddleware() {
-        return compose([
+        return composeMiddleware.compose([
             privateFileFactory(this),
             ...this.internalMiddlewares,
             ssrFactory(this),
@@ -192,12 +190,16 @@ export default class LavasCore {
      */
     async _copyServerModuleToDist() {
         let distPath = this.config.webpack.base.output.path;
-        let libDir = join(this.cwd, './lib');
+
+        let libDir = join(this.cwd, 'lib');
         let distLibDir = join(distPath, 'lib');
-        let serverDir = join(this.cwd, './server.dev.js');
+
+        let serverDir = join(this.cwd, 'server.dev.js');
         let distServerDir = join(distPath, 'server.js');
+
         let nodeModulesDir = join(this.cwd, 'node_modules');
         let distNodeModulesDir = join(distPath, 'node_modules');
+
         let jsonDir = join(this.cwd, 'package.json');
         let distJsonDir = join(distPath, 'package.json');
 
@@ -207,5 +209,19 @@ export default class LavasCore {
             copy(nodeModulesDir, distNodeModulesDir),
             copy(jsonDir, distJsonDir)
         ]);
+    }
+
+    async _writeServiceWorker() {
+        // add 'routes' to service-worker.tmpl.js
+        let rawTemplate = await readFile(join(__dirname, 'templates/service-worker.js.tmpl'));
+        let swTemplateContent = template(rawTemplate, {
+            evaluate: /{{([\s\S]+?)}}/g,
+            interpolate: /{{=([\s\S]+?)}}/g,
+            escape: /{{-([\s\S]+?)}}/g
+        })({
+            routes: JSON.stringify(this.routeManager.routes)
+        });
+        let swTemplateFilePath = join(__dirname, 'templates/service-worker-real.js.tmpl');
+        await writeFile(swTemplateFilePath, swTemplateContent);
     }
 }

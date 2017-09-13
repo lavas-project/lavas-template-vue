@@ -4,13 +4,11 @@
  */
 
 export async function middlewareSeries(promises, context) {
+    if (context._redirected) {
+        return;
+    }
 
     for (let i = 0; i < promises.length; i++) {
-
-        if (context._redirected) {
-            return;
-        }
-
         await promisify(promises[i], context);
     }
 }

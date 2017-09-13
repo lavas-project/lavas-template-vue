@@ -7,7 +7,6 @@ import webpack from 'webpack';
 import merge from 'webpack-merge';
 import {posix, join, resolve} from 'path';
 import fs from 'fs-extra';
-import template from 'lodash.template';
 
 import nodeExternals from 'webpack-node-externals';
 import ExtractTextPlugin from 'extract-text-webpack-plugin';
@@ -53,19 +52,6 @@ export default class WebpackConfig {
         let {globals, webpack: webpackConfig, babel, serviceWorker: swPrecacheConfig, routes} = config;
         let {base, shortcuts, mergeStrategy = {}, extend} = webpackConfig;
         let {cssSourceMap, cssMinimize, cssExtract, jsSourceMap} = shortcuts;
-
-        // add 'routes' to service-worker.js.tmpl
-        let swTemplateContent = template(fs.readFileSync(resolve(__dirname, 'templates/service-worker.js.tmpl')), {
-            evaluate: /{{([\s\S]+?)}}/g,
-            interpolate: /{{=([\s\S]+?)}}/g,
-            escape: /{{-([\s\S]+?)}}/g
-        })({
-            routes: JSON.stringify(routes || [])
-        });
-        let swTemplateFilePath = resolve(__dirname, 'templates/service-worker-real.js.tmpl');
-        fs.writeFileSync(swTemplateFilePath, swTemplateContent);
-        // add templateFilePath to swPrecacheConfig
-        swPrecacheConfig.templateFilePath = swTemplateFilePath;
 
         let baseConfig = merge.strategy(mergeStrategy)({
             resolve: {
@@ -129,7 +115,9 @@ export default class WebpackConfig {
                             safe: true
                         }
                     }),
-                    new SWPrecacheWebPlugin(swPrecacheConfig),
+                    new SWPrecacheWebPlugin(Object.assign(swPrecacheConfig, {
+                        templateFilePath: resolve(__dirname, 'templates/service-worker-real.js.tmpl')
+                    })),
                     new SWRegisterWebpackPlugin({
                         filePath: resolve(__dirname, 'templates/sw-register.js')
                     })

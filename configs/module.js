@@ -9,7 +9,7 @@ module.exports = {
 
     default: {
         /**
-         * 是否启用 ssr，决定上面那些属性会有效
+         * 是否启用 ssr，决定下面哪些属性会生效
          *
          */
         ssr: true,
@@ -48,15 +48,15 @@ module.exports = {
          *
          * @type {RegExp|string|Array.<RegExp|string>}
          */
-        routes: /^.*$/
+        routes: /^.*$/,
     },
 
-    detail: {
+    user: {
         ssr: false,
-        // entry: '@/modules/user/entry-client.js',
-        skeleton: '@/pages/detail/detail.skeleton',
-        // htmlTemplate: '@/modules/user/index.html',
-        routes: /^\/detail\/.*$/
+        entry: '@/modules/user/entry-client.js',
+        skeleton: '@pages/user.skeleton.vue',
+        htmlTemplate: '@modules/user/index.html',
+        routes: /^\/user\/.*$/
     }
 
 };
