@@ -119,13 +119,17 @@ export default class RouteManager {
         return entryPath;
     }
 
-    groupByModule() {
+    extractModules() {
         let routes = this.routes;
         let modules = Object.keys(this.config.module).map(name => {
             let module = this.config.module[name];
             let pattern = module.routes;
 
+            // set default pagename to index
+            name = name === 'default' ? 'index' : name;
             module.pagename = name;
+
+            // add routes matched specific pattern to routeList
             if (pattern instanceof RegExp) {
                 module.routeList = routes.filter(r => pattern.test(r.path));
             }
@@ -145,7 +149,9 @@ export default class RouteManager {
      *
      */
     async buildMultiEntries() {
-        let modules = this.groupByModule();
+        // extract modules base on config
+        let modules = this.extractModules();
+
         let {shortcuts: {assetsDir, ssr}, base} = this.config.webpack;
 
         // create mpa config based on client config
@@ -163,14 +169,14 @@ export default class RouteManager {
         }
 
         /**
-         * for each route needs prerendering, we will:
+         * for each module needs prerendering, we will:
          * 1. add a html-webpack-plugin to output a relative HTML file
          * 2. create an entry if a skeleton component is provided
          */
         await Promise.all(modules.map(async module => {
-            let {pagename, htmlTemplate, routeList, skeleton, ssr: ssrModule} = module;
+            let {pagename, htmlTemplate, routeList, skeleton, ssr: needSSR} = module;
 
-            if (!ssrModule) {
+            if (!needSSR) {
 
                 // allow user to provide a custom HTML template
                 let htmlTemplatePath = htmlTemplate
@@ -231,12 +237,41 @@ export default class RouteManager {
     }
 
     /**
+     * rewrite route path with rules
+     *
+     * @param {Array} rewriteRules rewrite rules
+     * @param {string} path original route path
+     * @return {string} path rewrited
+     */
+    rewriteRoutePath(rewriteRules, path) {
+        for (let i = 0; i < rewriteRules.length; i++) {
+            let rule = rewriteRules[i];
+            let {from, to} = rule;
+            /**
+             * if type of 'from' is regexp, use String.replace
+             */
+            if (from instanceof RegExp && from.test(path)) {
+                return path.replace(from, to);
+            }
+            /**
+             * if type of 'from' is array|string, 'to' must be a
+             * single rule, just replace with it
+             */
+            else if ((Array.isArray(from) && from.includes(path))
+                || (typeof from === 'string' && from === path)) {
+                return to;
+            }
+        }
+        return path;
+    }
+
+    /**
      * merge routes with config recursively
      *
      * @param {Array} routes routes
      * @param {Array} routesConfig config
      */
-    mergeWithConfig(routes, routesConfig = []) {
+    mergeWithConfig(routes, routesConfig = [], rewriteRules) {
         /**
          * in dev mode, we need to add timestamp to every route's hash as prefix.
          * otherwise when we change the code in page.vue, route's hash remains the same,
@@ -255,7 +290,10 @@ export default class RouteManager {
                     pattern.test(route.path) : pattern === route.name;
             });
 
-            // mixin with config
+            // rewrite route path with rules
+            route.path = this.rewriteRoutePath(rewriteRules, route.path);
+
+            // mixin with config, rewrites path, add lazyLoading, meta
             if (routeConfig) {
                 let {
                     path: routePath,
@@ -287,7 +325,8 @@ export default class RouteManager {
 
             // merge recursively
             if (route.children && route.children.length) {
-                this.mergeWithConfig(route.children, routeConfig && routeConfig.children);
+                this.mergeWithConfig(route.children,
+                    routeConfig && routeConfig.children, rewriteRules);
             }
         });
     }
@@ -361,7 +400,7 @@ export default class RouteManager {
      *
      */
     async buildRoutes() {
-        const routesConfig = this.config.router && this.config.router.routes || [];
+        const {routes: routesConfig = [], rewrite: rewriteRules = []} = this.config.router;
 
         console.log('[Lavas] auto compile routes...');
 
@@ -372,7 +411,7 @@ export default class RouteManager {
         );
 
         // merge with routes' config
-        this.mergeWithConfig(this.routes, routesConfig);
+        this.mergeWithConfig(this.routes, routesConfig, rewriteRules);
 
         // write .lavas/routes.js
         await this.writeRoutesSourceFile();

@@ -95,10 +95,9 @@ export default class LavasCore {
 
         // build routes' info and source code
         await this.routeManager.buildRoutes();
-        // add routes to config which will be used by service worker
-        this.config.routes = this.routeManager.routes;
 
-        await this._writeServiceWorker();
+        // inject routes into service-worker.js.tmpl for later use
+        await this._injectRoutesToSW();
 
         // webpack client & server config
         let clientConfig = this.webpackConfig.client(this.config);
@@ -214,7 +213,7 @@ export default class LavasCore {
     /**
      * inject routes into service-worker.js.tmpl for later use
      */
-    async _writeServiceWorker() {
+    async _injectRoutesToSW() {
         // add 'routes' to service-worker.tmpl.js
         let rawTemplate = await readFile(join(__dirname, 'templates/service-worker.js.tmpl'));
         let swTemplateContent = template(rawTemplate, {
