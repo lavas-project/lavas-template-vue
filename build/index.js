@@ -21,8 +21,9 @@ import c2k from 'koa-connect';
 import serve from 'serve-static';
 import favicon from 'serve-favicon';
 
-import fs from 'fs-extra';
-import path from 'path';
+import {copy, emptyDir, readFile, writeFile} from 'fs-extra';
+import {join} from 'path';
+import template from 'lodash.template';
 
 export default class LavasCore {
     constructor(cwd = process.cwd()) {
@@ -72,7 +73,7 @@ export default class LavasCore {
                 this.internalMiddlewares.push(serve(this.cwd));
             }
             // serve favicon
-            let faviconPath = path.join(this.cwd, 'static/img/icons', 'favicon.ico');
+            let faviconPath = join(this.cwd, 'static/img/icons', 'favicon.ico');
             this.internalMiddlewares.push(favicon(faviconPath));
         }
 
@@ -90,20 +91,14 @@ export default class LavasCore {
         spinner.start();
 
         // clear dist/
-        await fs.emptyDir(this.config.webpack.base.output.path);
+        await emptyDir(this.config.webpack.base.output.path);
 
         // build routes' info and source code
         await this.routeManager.buildRoutes();
         // add routes to config which will be used by service worker
         this.config.routes = this.routeManager.routes;
 
-        // add extension's hooks
-        // if (this.config.extensions) {
-        //     this.config.extensions.forEach(({name, init}) => {
-        //         console.log(`[Lavas] ${name} extension is running...`);
-        //         this.webpackConfig.addHooks(init);
-        //     });
-        // }
+        await this._writeServiceWorker();
 
         // webpack client & server config
         let clientConfig = this.webpackConfig.client(this.config);
@@ -113,14 +108,15 @@ export default class LavasCore {
         await this.renderer.build(clientConfig, serverConfig);
 
         if (this.isProd) {
-            /**
-             * when running online server, renderer needs to use template and
-             * replace some variables such as meta, config in it. so we need
-             * to store some props in config.json.
-             * TODO: not all the props in config is needed. for now, only manifest
-             * & assetsDir are required. some props such as globalDir are useless.
-             */
+            console.log(`[Lavas] write and copy files...`);
             await Promise.all([
+                /**
+                 * when running online server, renderer needs to use template and
+                 * replace some variables such as meta, config in it. so we need
+                 * to store some props in config.json.
+                 * TODO: not all the props in config is needed. for now, only manifest
+                 * & assetsDir are required. some props such as globalDir are useless.
+                 */
                 this.configReader.writeConfigFile(this.config),
                 // compile multi entries only in production mode
                 this.routeManager.buildMultiEntries(),
@@ -195,23 +191,40 @@ export default class LavasCore {
     async _copyServerModuleToDist() {
         let distPath = this.config.webpack.base.output.path;
 
-        let libDir = path.join(this.cwd, 'lib');
-        let distLibDir = path.join(distPath, 'lib');
+        let libDir = join(this.cwd, 'lib');
+        let distLibDir = join(distPath, 'lib');
 
-        let serverDir = path.join(this.cwd, 'server.dev.js');
-        let distServerDir = path.join(distPath, 'server.js');
+        let serverDir = join(this.cwd, 'server.dev.js');
+        let distServerDir = join(distPath, 'server.js');
 
-        let nodeModulesDir = path.join(this.cwd, 'node_modules');
-        let distNodeModulesDir = path.join(distPath, 'node_modules');
+        let nodeModulesDir = join(this.cwd, 'node_modules');
+        let distNodeModulesDir = join(distPath, 'node_modules');
 
-        let jsonDir = path.join(this.cwd, 'package.json');
-        let distJsonDir = path.join(distPath, 'package.json');
+        let jsonDir = join(this.cwd, 'package.json');
+        let distJsonDir = join(distPath, 'package.json');
 
         await Promise.all([
-            fs.copy(libDir, distLibDir),
-            fs.copy(serverDir, distServerDir),
-            fs.copy(nodeModulesDir, distNodeModulesDir),
-            fs.copy(jsonDir, distJsonDir)
+            copy(libDir, distLibDir),
+            copy(serverDir, distServerDir),
+            copy(nodeModulesDir, distNodeModulesDir),
+            copy(jsonDir, distJsonDir)
         ]);
+    }
+
+    /**
+     * inject routes into service-worker.js.tmpl for later use
+     */
+    async _writeServiceWorker() {
+        // add 'routes' to service-worker.tmpl.js
+        let rawTemplate = await readFile(join(__dirname, 'templates/service-worker.js.tmpl'));
+        let swTemplateContent = template(rawTemplate, {
+            evaluate: /{{([\s\S]+?)}}/g,
+            interpolate: /{{=([\s\S]+?)}}/g,
+            escape: /{{-([\s\S]+?)}}/g
+        })({
+            routes: JSON.stringify(this.routeManager.routes)
+        });
+        let swTemplateFilePath = join(__dirname, 'templates/service-worker-real.js.tmpl');
+        await writeFile(swTemplateFilePath, swTemplateContent);
     }
 }

@@ -143,8 +143,9 @@ router.onReady(() => app.$mount('#app'));
  * @param {*} context Vue context
  */
 async function execMiddlewares(components = [], context) {
-    // client + components middlewares
+    // all + client + components middlewares
     let middlewareNames = [
+        ...(middConf.all || []),
         ...(middConf.client || []),
         ...components
             .filter(({middleware}) => !!middleware)

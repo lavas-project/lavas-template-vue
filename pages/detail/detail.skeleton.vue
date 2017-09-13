@@ -9,24 +9,9 @@
 </template>
 
 <script>
-// import {mapActions} from 'vuex';
 
 export default {
-    name: 'skeleton',
-    methods: {
-        // ...mapActions('appShell/appHeader', [
-        //     'setAppHeader'
-        // ]),
-        // ...mapActions('appShell/appBottomNavigator', [
-        //     'hideBottomNav'
-        // ])
-    },
-    activated() {
-        // this.setAppHeader({
-        //     show: false
-        // });
-        // this.hideBottomNav();
-    }
+    name: 'skeleton'
 };
 </script>
 

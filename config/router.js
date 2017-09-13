@@ -7,19 +7,34 @@
 
 module.exports = {
 
+    // 自定义路由规则
+    rewrite: [
+        {from: /^(.*)$/, to: '/msie/$1'},
+        {from: '/user/index', to: '/user'}
+    ],
+
     routes: [
         {
-            name: 'detail-id',
-            prerender: true,
-            pagename: 'detail',
-            lazyLoading: true,
-            chunkname: '',
+            pattern: 'detail-id',
             // path: '/detail/rewrite/:id',
-            // meta: {},
-            template: '',
-            // entry: '',
-            skeleton: '@/components/detail-id.skeleton'
+            meta: {
+                keepAlive: true
+            }
         }
     ]
+
+    // routes: [
+    //     {
+    //         name: 'detail-id',
+    //         prerender: true,
+    //         pagename: 'detail',
+    //
+    //         // path: '/detail/rewrite/:id',
+    //         // meta: {},
+    //         template: '',
+    //         // entry: '',
+    //         skeleton: '@/pages/detail/detail.skeleton'
+    //     }
+    // ]
 
 };
