@@ -95,7 +95,7 @@ export default class WebpackConfig {
             routes: JSON.stringify(routes)
         });
         let swTemplateFilePath = resolve(__dirname, 'templates/service-worker-real.js.tmpl');
-        await fs.writeFile(swTemplateFilePath, swTemplateContent);
+        fs.writeFileSync(swTemplateFilePath, swTemplateContent);
         // add templateFilePath to swPrecacheConfig
         swPrecacheConfig.templateFilePath = swTemplateFilePath;
 
