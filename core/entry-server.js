@@ -6,24 +6,15 @@
 // import {createApp} from './app';
 import middleware from './middleware';
 import middConf from '@/config/middleware';
-import moduleConf from '@/configs/module';
+import entryConf from '@/configs/entry';
 import {stringify} from 'querystring';
 import {middlewareSeries, urlJoin} from './utils';
 import {getServerContext} from './context-server';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
-function getApps(requireContext) {
-    let apps = {};
-
-    return requireContext.keys().map(filename => {
-        // TODO HERE
-        requireContext
-    });
-}
-
 // import app.js from all modules
-const apps = requireAll(require.context('./entry', true, /^\.\/app\.js$/));
+const apps = getApps(require.context('./entry', true, /^.*\/app\.js$/));
 
 // This exported function will be called by `bundleRenderer`.
 // This is where we perform data-prefetching to determine the
@@ -40,6 +31,8 @@ export default function (context) {
         if (fullPath !== url) {
             return reject({url: fullPath});
         }
+
+        let {app, router, store} = findApp(url)();
 
         context.store = store;
         context.route = router.currentRoute;
@@ -165,4 +158,29 @@ function createNext(context) {
         });
         context.res.end();
     };
+}
+
+function getApps(requireContext) {
+    let apps = {};
+
+    requireContext.keys().forEach(filename => {
+        let match = filename.match(/\/(.+)\/app\.js$/);
+
+        if (match) {
+            let entry = match[1];
+            apps[entry] = requireContext(filename);
+        }
+    });
+
+    return apps;
+}
+
+function findApp(url) {
+    let entryName = moduleConf.find(config => {
+        return typeof config.routes === 'object'
+            && typeof config.routes.test === 'function'
+            && config.routes.test(url)
+    });
+
+    return apps[entryName];
 }
