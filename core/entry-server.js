@@ -3,7 +3,6 @@
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
-// import {createApp} from './app';
 import middleware from './middleware';
 import middConf from '@/config/middleware';
 import entryConf from '@/config/entry';
@@ -14,7 +13,7 @@ import {getServerContext} from './context-server';
 const isDev = process.env.NODE_ENV !== 'production';
 
 // import app.js from all modules
-const apps = getApps(require.context('../entries', true, /^.*\/app\.js$/));
+const apps = getAllApps();
 
 // This exported function will be called by `bundleRenderer`.
 // This is where we perform data-prefetching to determine the
@@ -23,11 +22,15 @@ const apps = getApps(require.context('../entries', true, /^.*\/app\.js$/));
 // return a Promise that resolves to the app instance.
 export default function (context) {
     return new Promise((resolve, reject) => {
-        // let {app, router, store} = createApp();
 
         let url = context.url;
-        let {app, router, store} = findApp(url);
+        let createApp = findApp(url);
 
+        if (!createApp || typeof createApp !== 'function') {
+            return reject();
+        }
+
+        let {app, router, store} = createApp();
         let fullPath = router.resolve(url).route.fullPath;
 
         if (fullPath !== url) {
@@ -160,15 +163,16 @@ function createNext(context) {
     };
 }
 
-function getApps(requireContext) {
+function getAllApps() {
     let apps = {};
+    let context = require.context('../entries', true, /^.*\/app\.js$/);
 
-    requireContext.keys().forEach(filename => {
+    context.keys().forEach(filename => {
         let match = filename.match(/\/(.+)\/app\.js$/);
 
         if (match) {
             let entry = match[1];
-            apps[entry] = requireContext(filename);
+            apps[entry] = context(filename);
         }
     });
 
@@ -176,10 +180,25 @@ function getApps(requireContext) {
 }
 
 function findApp(url) {
-    let entry = entryConf.find(config => {
-        return typeof config.routes === 'object'
-            && typeof config.routes.test === 'function'
-            && config.routes.test(url)
-    });
-    return apps[entry.name].createApp();
+    let entry = entryConf.find(config => matchUrl(config.routes, url));
+
+    if (entry && apps[entry.name]) {
+        return apps[entry.name].createApp;
+    }
+}
+
+function matchUrl(routes, url) {
+    if (Array.isArray(routes)) {
+        return routes.some(route => matchUrl(route, url));
+    }
+
+    let reg;
+    if (typeof routes === 'string') {
+        reg = new RegExp('^' + routes.replace(/\/:[^\/]*/g, '/[^\/]+') + '\/?');
+    }
+    else if (typeof routes === 'object' && typeof routes.test === 'function') {
+        reg = routes;
+    }
+
+    return reg.test(url);
 }
