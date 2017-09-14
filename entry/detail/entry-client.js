@@ -5,12 +5,12 @@
 
 import Vue from 'vue';
 import FastClick from 'fastclick';
-import middleware from './middleware';
+import middleware from '@/core/middleware';
 import middConf from '@/config/middleware';
 import {createApp} from './app';
-import ProgressBar from './components/ProgressBar.vue';
-import {middlewareSeries} from './utils';
-import {getClientContext} from './context-client';
+import ProgressBar from '@/core/components/ProgressBar.vue';
+import {middlewareSeries} from '@/core/utils';
+import {getClientContext} from '@/core/context-client';
 
 // 全局的进度条，在组件中可通过 $loading 访问
 let loading = Vue.prototype.$loading = new Vue(ProgressBar).$mount();
@@ -160,4 +160,3 @@ async function execMiddlewares(components = [], context) {
 
     await middlewareSeries(middlewareNames.map(name => middleware[name]), context);
 }
-

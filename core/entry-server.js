@@ -3,7 +3,7 @@
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
-import {createApp} from './app';
+import {createApp} from '@/entry/detail/app';
 import middleware from './middleware';
 import middConf from '@/config/middleware';
 import {stringify} from 'querystring';

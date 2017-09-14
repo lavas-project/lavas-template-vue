@@ -1,6 +1,6 @@
 <template>
     <div id="app">
-        Lavas
+        Lavas Detail
         <router-view></router-view>
     </div>
 </template>
