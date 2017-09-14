@@ -103,7 +103,7 @@ export default class Renderer {
         let clientConfig = this.clientConfig;
 
         clientConfig.context = this.rootDir;
-        clientConfig.entry.app = ['webpack-hot-middleware/client', ...clientConfig.entry.app];
+        clientConfig.entry.main = ['webpack-hot-middleware/client', ...clientConfig.entry.main];
         clientConfig.plugins.push(
             new webpack.HotModuleReplacementPlugin(),
             new webpack.NoEmitOnErrorsPlugin()

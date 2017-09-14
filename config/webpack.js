@@ -38,8 +38,8 @@ module.exports = {
 
     client: {
         entry: {
-            main: ['./entry/main/entry-client.js'],
-            detail: ['./entry/detail/entry-client.js']
+            main: ['./entries/main/entry-client.js'],
+            detail: ['./entries/detail/entry-client.js']
         }
     },
 

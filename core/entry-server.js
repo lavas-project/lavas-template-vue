@@ -6,7 +6,7 @@
 // import {createApp} from './app';
 import middleware from './middleware';
 import middConf from '@/config/middleware';
-import entryConf from '@/configs/entry';
+import entryConf from '@/config/entry';
 import {stringify} from 'querystring';
 import {middlewareSeries, urlJoin} from './utils';
 import {getServerContext} from './context-server';
@@ -14,7 +14,7 @@ import {getServerContext} from './context-server';
 const isDev = process.env.NODE_ENV !== 'production';
 
 // import app.js from all modules
-const apps = getApps(require.context('./entry', true, /^.*\/app\.js$/));
+const apps = getApps(require.context('../entries', true, /^.*\/app\.js$/));
 
 // This exported function will be called by `bundleRenderer`.
 // This is where we perform data-prefetching to determine the
@@ -26,13 +26,13 @@ export default function (context) {
         // let {app, router, store} = createApp();
 
         let url = context.url;
+        let {app, router, store} = findApp(url);
+
         let fullPath = router.resolve(url).route.fullPath;
 
         if (fullPath !== url) {
             return reject({url: fullPath});
         }
-
-        let {app, router, store} = findApp(url)();
 
         context.store = store;
         context.route = router.currentRoute;
@@ -176,11 +176,10 @@ function getApps(requireContext) {
 }
 
 function findApp(url) {
-    let entryName = moduleConf.find(config => {
+    let entry = entryConf.find(config => {
         return typeof config.routes === 'object'
             && typeof config.routes.test === 'function'
             && config.routes.test(url)
     });
-
-    return apps[entryName];
+    return apps[entry.name].createApp();
 }
