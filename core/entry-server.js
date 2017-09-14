@@ -3,14 +3,27 @@
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
-import {createApp} from '@/entry/detail/app';
+// import {createApp} from './app';
 import middleware from './middleware';
 import middConf from '@/config/middleware';
+import moduleConf from '@/configs/module';
 import {stringify} from 'querystring';
 import {middlewareSeries, urlJoin} from './utils';
 import {getServerContext} from './context-server';
 
 const isDev = process.env.NODE_ENV !== 'production';
+
+function getApps(requireContext) {
+    let apps = {};
+
+    return requireContext.keys().map(filename => {
+        // TODO HERE
+        requireContext
+    });
+}
+
+// import app.js from all modules
+const apps = requireAll(require.context('./entry', true, /^\.\/app\.js$/));
 
 // This exported function will be called by `bundleRenderer`.
 // This is where we perform data-prefetching to determine the
@@ -19,7 +32,7 @@ const isDev = process.env.NODE_ENV !== 'production';
 // return a Promise that resolves to the app instance.
 export default function (context) {
     return new Promise((resolve, reject) => {
-        let {app, router, store} = createApp();
+        // let {app, router, store} = createApp();
 
         let url = context.url;
         let fullPath = router.resolve(url).route.fullPath;

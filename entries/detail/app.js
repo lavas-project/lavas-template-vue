@@ -4,7 +4,6 @@
  */
 
 import Vue from 'vue';
-import Meta from 'vue-meta';
 import {createRouter} from '@/core/router';
 import {createStore} from '@/core/store';
 import App from './App.vue';

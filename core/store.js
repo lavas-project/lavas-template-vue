@@ -10,9 +10,10 @@
 
 import Vue from 'vue';
 import Vuex from 'vuex';
+import Meta from 'vue-meta';
 
 Vue.use(Vuex);
-
+// TODO:meta相关从app.js先搬来这里，之后再决定放哪里
 Vue.use(Meta, {
     keyName: 'head', // vue-meta 的参数名称
     attribute: 'data-vue-meta', // 由 vue-meta 渲染的元素会添加一个属性 <title data-vue-meta=""></title>
