@@ -36,12 +36,12 @@ module.exports = {
         }
     },
 
-    client: {
-        entry: {
-            main: ['./entries/main/entry-client.js'],
-            detail: ['./entries/detail/entry-client.js']
-        }
-    },
+    // client: {
+    //     entry: {
+    //         main: ['./entries/main/entry-client.js'],
+    //         detail: ['./entries/detail/entry-client.js']
+    //     }
+    // },
 
     server: {
         entry: './core/entry-server.js'

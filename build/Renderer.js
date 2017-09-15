@@ -4,16 +4,17 @@
  */
 
 import {join} from 'path';
-import {readFile, copy} from 'fs-extra';
+import fs from 'fs-extra';
 import webpack from 'webpack';
 import MFS from 'memory-fs';
 import webpackDevMiddleware from 'webpack-dev-middleware';
 import webpackHotMiddleware from 'webpack-hot-middleware';
 import {createBundleRenderer} from 'vue-server-renderer';
+import VueSSRClientPlugin from 'vue-server-renderer/client-plugin';
 
 import {distLavasPath, resolveAliasPath} from './utils/path';
 import {webpackCompile} from './utils/webpack';
-import {CLIENT_MANIFEST, SERVER_BUNDLE, TEMPLATE_HTML} from './constants';
+import constants from './constants';
 
 export default class Renderer {
     constructor(core) {
@@ -22,9 +23,9 @@ export default class Renderer {
         this.rootDir = this.config && this.config.globals.rootDir;
         this.cwd = core.cwd;
         this.internalMiddlewares = core.internalMiddlewares;
-        this.renderer = null;
+        this.renderer = {};
         this.serverBundle = null;
-        this.clientManifest = null;
+        this.clientManifest = {};
         this.resolve = null;
         this.readyPromise = new Promise(r => this.resolve = r);
     }
@@ -33,29 +34,24 @@ export default class Renderer {
      * resolve template path with webpack alias
      *
      * @param {string} alias webpack alias
+     * @param {string} entryName entry name
      * @return {string} resolved path
      */
-    getTemplatePath(alias) {
-        let templatePath;
-        try {
-            // try to use template defined in config
-            templatePath = resolveAliasPath(alias, this.config.module.default.ssrHtmlTemplate);
-        }
-        catch (e) {
-            // use default template instead
-            templatePath = join(this.rootDir, 'core', TEMPLATE_HTML);
-        }
-        return templatePath;
+    getTemplatePath(entryName) {
+        // TODO alias
+        return join(this.rootDir, `entries/${entryName}/`, constants.TEMPLATE_HTML);
     }
 
     async createWithBundle() {
-        this.serverBundle = await import(distLavasPath(this.cwd, SERVER_BUNDLE));
-        this.clientManifest = await import(distLavasPath(this.cwd, CLIENT_MANIFEST));
+        this.serverBundle = await import(distLavasPath(this.cwd, constants.SERVER_BUNDLE));
+        // TODO entryName
+        this.clientManifest = await import(distLavasPath(this.cwd, constants.CLIENT_MANIFEST));
         await this.createRenderer({
-            templatePath: distLavasPath(this.cwd, TEMPLATE_HTML)
+            templatePath: distLavasPath(this.cwd, constants.TEMPLATE_HTML)
         });
     }
 
+    // TODO
     async buildInProduction(clientConfig, serverConfig) {
         // set context in both configs
         clientConfig.context = this.rootDir;
@@ -66,32 +62,38 @@ export default class Renderer {
 
         // copy index.template.html to dist/lavas
         let templatePath = this.getTemplatePath(clientConfig.resolve.alias);
-        let distTemplatePath = distLavasPath(this.config.webpack.base.output.path, TEMPLATE_HTML);
-        await copy(templatePath, distTemplatePath);
+        let distTemplatePath = distLavasPath(this.config.webpack.base.output.path, constants.TEMPLATE_HTML);
+        await fs.copy(templatePath, distTemplatePath);
 
         console.log('[Lavas] SSR build completed.');
     }
 
     async build(clientConfig, serverConfig) {
-        let templatePath = this.getTemplatePath(clientConfig.resolve.alias);
-        this.clientConfig = clientConfig;
-        this.serverConfig = serverConfig;
-        if (this.env === 'production') {
-            await this.buildInProduction(clientConfig, serverConfig);
-        }
-        else {
-            // get client manifest
-            this.getClientManifest(async (err, manifest) => {
-                this.clientManifest = manifest;
-                await this.createRenderer({templatePath});
-            });
+        // generate manifest, serverBundle, templatePath for each entry
+        this.config.entries.forEach(entry => {
+            let entryName = entry.name;
+            // TODO use clientConfig.resolve.alias
+            let templatePath = this.getTemplatePath(entryName);
+            this.clientConfig = clientConfig;
+            this.serverConfig = serverConfig;
+            if (this.env === 'production') {
+                // TODO
+                await this.buildInProduction(clientConfig, serverConfig);
+            }
+            else {
+                // get client manifest
+                this.getClientManifest(entryName, async (err, manifest) => {
+                    this.clientManifest[entryName] = manifest;
+                    await this.createRenderer(templatePath, entryName);
+                });
 
-            // get server bundle
-            this.getServerBundle(async (err, serverBundle) => {
-                this.serverBundle = serverBundle;
-                await this.createRenderer({templatePath});
-            });
-        }
+                // get server bundle
+                this.getServerBundle(async (err, serverBundle) => {
+                    this.serverBundle = serverBundle;
+                    await this.createRenderer(templatePath, entryName);
+                });
+            }
+        });
     }
 
     /**
@@ -99,14 +101,17 @@ export default class Renderer {
      *
      * @param {Function} callback callback
      */
-    getClientManifest(callback) {
+    getClientManifest(entryName, callback) {
         let clientConfig = this.clientConfig;
 
         clientConfig.context = this.rootDir;
-        clientConfig.entry.main = ['webpack-hot-middleware/client', ...clientConfig.entry.main];
+        // clientConfig.entry.main = ['webpack-hot-middleware/client', ...clientConfig.entry.main];
         clientConfig.plugins.push(
             new webpack.HotModuleReplacementPlugin(),
-            new webpack.NoEmitOnErrorsPlugin()
+            new webpack.NoEmitOnErrorsPlugin(),
+            new VueSSRClientPlugin({
+                filename: join(LAVAS_DIRNAME_IN_DIST, entryName, constants.CLIENT_MANIFEST)
+            })
         );
 
         // init client compiler
@@ -142,7 +147,7 @@ export default class Renderer {
             }
 
             let rawContent = devMiddleware.fileSystem
-                .readFileSync(distLavasPath(clientConfig.output.path, CLIENT_MANIFEST), 'utf-8');
+                .readFileSync(distLavasPath(clientConfig.output.path, entryName, constants.CLIENT_MANIFEST), 'utf-8');
 
             callback(null, JSON.parse(rawContent));
         });
@@ -178,7 +183,7 @@ export default class Renderer {
             }
 
             let rawContent = mfs.readFileSync(
-                distLavasPath(serverConfig.output.path, SERVER_BUNDLE), 'utf8');
+                distLavasPath(serverConfig.output.path, constants.SERVER_BUNDLE), 'utf8');
 
             callback(null, JSON.parse(rawContent));
         });
@@ -190,19 +195,19 @@ export default class Renderer {
      * @param {Object} options options
      * @param {string} options.templatePath html template
      */
-    async createRenderer({templatePath}) {
-        if (this.serverBundle && this.clientManifest && templatePath) {
+    async createRenderer(templatePath, entryName) {
+        if (this.serverBundle && this.clientManifest[entryName] && templatePath) {
 
-            let first = !this.renderer;
-            let template = await readFile(templatePath, 'utf-8');
-            this.renderer = createBundleRenderer(this.serverBundle, {
+            let first = !this.renderer[entryName];
+            let template = await fs.readFile(templatePath, 'utf-8');
+            this.renderer[entryName] = createBundleRenderer(this.serverBundle, {
                 template,
-                clientManifest: this.clientManifest,
+                clientManifest: this.clientManifest[entryName],
                 runInNewContext: false
             });
 
             if (first) {
-                this.resolve(this.renderer);
+                this.resolve(this.renderer[entryName]);
             }
         }
     }
@@ -212,9 +217,9 @@ export default class Renderer {
      *
      * @return {Promise.<*>}
      */
-    getRenderer() {
-        if (this.renderer) {
-            return Promise.resolve(this.renderer);
+    getRenderer(entryName) {
+        if (this.renderer[entryName]) {
+            return Promise.resolve(this.renderer[entryName]);
         }
 
         return this.readyPromise;

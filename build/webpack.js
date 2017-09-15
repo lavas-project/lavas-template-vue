@@ -227,11 +227,11 @@ export default class WebpackConfig {
             ]
         }, client);
 
-        if (ssr) {
-            clientConfig.plugins.push(new VueSSRClientPlugin({
-                filename: join(LAVAS_DIRNAME_IN_DIST, CLIENT_MANIFEST)
-            }));
-        }
+        // if (ssr) {
+        //     clientConfig.plugins.push(new VueSSRClientPlugin({
+        //         filename: join(LAVAS_DIRNAME_IN_DIST, CLIENT_MANIFEST)
+        //     }));
+        // }
 
         if (bundleAnalyzerReport) {
             clientConfig.plugins.push(
