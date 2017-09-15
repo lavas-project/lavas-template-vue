@@ -12,8 +12,8 @@ import {LAVAS_DIRNAME_IN_DIST} from '../constants';
  * @param {string} path path
  * @return {string} resolved path
  */
-export function distLavasPath(rootDir, path) {
-    return join(rootDir, LAVAS_DIRNAME_IN_DIST, path);
+export function distLavasPath(rootDir, entryName='', path) {
+    return join(rootDir, LAVAS_DIRNAME_IN_DIST, entryName, path);
 }
 
 /**

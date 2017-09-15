@@ -66,8 +66,8 @@ export default class Renderer {
 
     async build(clientConfig, serverConfig) {
         // generate manifest, serverBundle, templatePath for each entry
-        this.config.entries.forEach(entry => {
-            let entryName = entry.name;
+        this.config.entry.forEach(async entryConfig => {
+            let entryName = entryConfig.name;
             // TODO use clientConfig.resolve.alias
             let templatePath = this.getTemplatePath(entryName);
             this.clientConfig = clientConfig;
@@ -119,7 +119,7 @@ export default class Renderer {
         clientConfig.entry[entryName] = ['webpack-hot-middleware/client', ...clientConfig.entry[entryName]];
         clientConfig.plugins.push(
             new webpack.HotModuleReplacementPlugin(),
-            new webpack.NoEmitOnErrorsPlugin(),
+            new webpack.NoEmitOnErrorsPlugin()
         );
 
         // init client compiler
