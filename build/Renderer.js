@@ -51,8 +51,7 @@ export default class Renderer {
         });
     }
 
-    // TODO
-    async buildInProduction(clientConfig, serverConfig) {
+    async buildInProduction(clientConfig, serverConfig, entryName) {
         // set context in both configs
         clientConfig.context = this.rootDir;
         serverConfig.context = this.rootDir;
@@ -64,8 +63,6 @@ export default class Renderer {
         let templatePath = this.getTemplatePath(clientConfig.resolve.alias);
         let distTemplatePath = distLavasPath(this.config.webpack.base.output.path, TEMPLATE_HTML);
         await fs.copy(templatePath, distTemplatePath);
-
-        console.log('[Lavas] SSR build completed.');
     }
 
     async build(clientConfig, serverConfig) {
@@ -100,6 +97,7 @@ export default class Renderer {
         let entryNames = Object.keys(clientConfig.entry);
 
         clientConfig.context = this.rootDir;
+
         entryNames.forEach(entryName => {
             clientConfig.entry[entryName] = ['webpack-hot-middleware/client', ...clientConfig.entry[entryName]];
         });
