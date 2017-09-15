@@ -13,7 +13,7 @@ import ExtractTextPlugin from 'extract-text-webpack-plugin';
 import FriendlyErrorsPlugin from 'friendly-errors-webpack-plugin';
 import OptimizeCSSPlugin from 'optimize-css-assets-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
-import VueSSRClientPlugin from 'vue-server-renderer/client-plugin';
+// import VueSSRClientPlugin from 'vue-server-renderer/client-plugin';
 import VueSSRServerPlugin from 'vue-server-renderer/server-plugin';
 import BundleAnalyzerPlugin from 'webpack-bundle-analyzer';
 import ManifestJsonWebpackPlugin from './plugins/manifest-json-webpack-plugin';
