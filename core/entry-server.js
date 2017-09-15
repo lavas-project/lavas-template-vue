@@ -24,7 +24,7 @@ export default function (context) {
     return new Promise((resolve, reject) => {
 
         let url = context.url;
-        let createApp = findApp(url);
+        let createApp = apps[context.entryName].createApp;
 
         if (!createApp || typeof createApp !== 'function') {
             return reject();
@@ -177,28 +177,4 @@ function getAllApps() {
     });
 
     return apps;
-}
-
-function findApp(url) {
-    let entry = entryConf.find(config => matchUrl(config.routes, url));
-
-    if (entry && apps[entry.name]) {
-        return apps[entry.name].createApp;
-    }
-}
-
-function matchUrl(routes, url) {
-    if (Array.isArray(routes)) {
-        return routes.some(route => matchUrl(route, url));
-    }
-
-    let reg;
-    if (typeof routes === 'string') {
-        reg = new RegExp('^' + routes.replace(/\/:[^\/]*/g, '/[^\/]+') + '\/?');
-    }
-    else if (typeof routes === 'object' && typeof routes.test === 'function') {
-        reg = routes;
-    }
-
-    return reg.test(url);
 }

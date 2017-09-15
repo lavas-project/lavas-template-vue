@@ -5,6 +5,22 @@
 import {resolve, dirname, basename} from 'path';
 import glob from 'glob';
 
+export function matchUrl (routes, url) {
+    if (Array.isArray(routes)) {
+        return routes.some(route => matchUrl(route, url));
+    }
+
+    let reg;
+    if (typeof routes === 'string') {
+        reg = new RegExp('^' + routes.replace(/\/:[^\/]*/g, '/[^\/]+') + '\/?');
+    }
+    else if (typeof routes === 'object' && typeof routes.test === 'function') {
+        reg = routes;
+    }
+
+    return reg.test(url);
+}
+
 /**
  * generate router by the structure of pages/
  *

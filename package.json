@@ -28,13 +28,14 @@
   },
   "dependencies": {
     "express": "^4.15.4",
+    "hash-sum": "^1.0.2",
     "iscroll": "*",
     "koa": "^2.3.0",
     "lavas-core": "^1.0.11",
+    "lodash.uniq": "^4.5.0",
     "normalize.css": "^7.0.0",
-    "serve-favicon": "^2.4.3",
-    "webpack-hot-middleware": "^2.19.1",
     "querystring": "^0.2.0",
+    "serve-favicon": "^2.4.3",
     "sw-precache-webpack-plugin": "^0.11.4",
     "sw-register-webpack-plugin": "^1.0.11",
     "url-loader": "^0.5.9",
@@ -42,7 +43,8 @@
     "vue-meta": "^1.0.5",
     "vue-router": "^2.7.0",
     "vue-server-renderer": "^2.3.4",
-    "vuex": "^2.3.1"
+    "vuex": "^2.3.1",
+    "webpack-hot-middleware": "^2.19.1"
   },
   "devDependencies": {
     "ava": "^0.18.2",
