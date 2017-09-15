@@ -38,7 +38,6 @@ export default class Renderer {
      * @return {string} resolved path
      */
     getTemplatePath(entryName) {
-        // TODO alias
         return join(this.rootDir, `entries/${entryName}/`, constants.TEMPLATE_HTML);
     }
 
@@ -51,8 +50,7 @@ export default class Renderer {
         });
     }
 
-    // TODO
-    async buildInProduction(clientConfig, serverConfig) {
+    async buildInProduction(clientConfig, serverConfig, entryName) {
         // set context in both configs
         clientConfig.context = this.rootDir;
         serverConfig.context = this.rootDir;
@@ -61,11 +59,9 @@ export default class Renderer {
         await webpackCompile([clientConfig, serverConfig]);
 
         // copy index.template.html to dist/lavas
-        let templatePath = this.getTemplatePath(clientConfig.resolve.alias);
-        let distTemplatePath = distLavasPath(this.config.webpack.base.output.path, constants.TEMPLATE_HTML);
+        let templatePath = this.getTemplatePath(entryName);
+        let distTemplatePath = distLavasPath(this.config.webpack.base.output.path, entryName, constants.TEMPLATE_HTML);
         await fs.copy(templatePath, distTemplatePath);
-
-        console.log('[Lavas] SSR build completed.');
     }
 
     async build(clientConfig, serverConfig) {
@@ -76,9 +72,11 @@ export default class Renderer {
             let templatePath = this.getTemplatePath(entryName);
             this.clientConfig = clientConfig;
             this.serverConfig = serverConfig;
+            // add client entry and plugins to clientConfig
+            this.extendClientConfig(entryName);
+
             if (this.env === 'production') {
-                // TODO
-                await this.buildInProduction(clientConfig, serverConfig);
+                await this.buildInProduction(clientConfig, serverConfig, entryName);
             }
             else {
                 // get client manifest
@@ -94,7 +92,20 @@ export default class Renderer {
                 });
             }
         });
-    }
+
+        if (this.env === 'production') {
+            console.log('[Lavas] SSR build completed.');
+        }
+    },
+
+    extendClientConfig(entryName) {
+        this.clientConfig.entry[entryName] = [`./entries/${entryName}/entry-client.js`];
+        this.clientConfig.plugins.push(
+            new VueSSRClientPlugin({
+                filename: join(constants.LAVAS_DIRNAME_IN_DIST, entryName, constants.CLIENT_MANIFEST)
+            })
+        );
+    },
 
     /**
      * get client manifest, and add middlewares to Koa instance
@@ -105,13 +116,10 @@ export default class Renderer {
         let clientConfig = this.clientConfig;
 
         clientConfig.context = this.rootDir;
-        // clientConfig.entry.main = ['webpack-hot-middleware/client', ...clientConfig.entry.main];
+        clientConfig.entry[entryName] = ['webpack-hot-middleware/client', ...clientConfig.entry[entryName]];
         clientConfig.plugins.push(
             new webpack.HotModuleReplacementPlugin(),
             new webpack.NoEmitOnErrorsPlugin(),
-            new VueSSRClientPlugin({
-                filename: join(LAVAS_DIRNAME_IN_DIST, entryName, constants.CLIENT_MANIFEST)
-            })
         );
 
         // init client compiler
