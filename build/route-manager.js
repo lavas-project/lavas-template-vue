@@ -271,7 +271,7 @@ export default class RouteManager {
      * @param {Array} routes routes
      * @param {Array} routesConfig config
      */
-    mergeWithConfig(routes, routesConfig = [], rewriteRules) {
+    mergeWithConfig(routes, routesConfig = [], rewriteRules = []) {
         /**
          * in dev mode, we need to add timestamp to every route's hash as prefix.
          * otherwise when we change the code in page.vue, route's hash remains the same,

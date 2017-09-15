@@ -12,7 +12,7 @@ module.exports = {
          * 是否启用 ssr，决定上面那些属性会有效
          *
          */
-        ssr: false,
+        ssr: true,
 
         /**
          * entry，如果 module 中没有指定，默认为 @/core/entry-client.js
@@ -51,12 +51,12 @@ module.exports = {
         routes: /^.*$/
     },
 
-    // detail: {
-    //     ssr: false,
-    //     // entry: '@/modules/user/entry-client.js',
-    //     skeleton: '@/pages/detail/detail.skeleton',
-    //     // htmlTemplate: '@/modules/user/index.html',
-    //     routes: /^\/detail\/.*$/
-    // }
+    detail: {
+        ssr: false,
+        // entry: '@/modules/user/entry-client.js',
+        skeleton: '@/pages/detail/detail.skeleton',
+        // htmlTemplate: '@/modules/user/index.html',
+        routes: /^\/detail\/.*$/
+    }
 
 };
