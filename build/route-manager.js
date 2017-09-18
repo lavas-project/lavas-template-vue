@@ -24,7 +24,7 @@ import lruCache from 'lru-cache';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import SkeletonWebpackPlugin from 'vue-skeleton-webpack-plugin';
 
-import {generateRoutes} from './utils/router';
+import {generateRoutes, matchUrl} from './utils/router';
 import {distLavasPath} from './utils/path';
 import {webpackCompile} from './utils/webpack';
 import {ROUTES_FILE, SKELETON_DIRNAME} from './constants';
@@ -271,7 +271,7 @@ export default class RouteManager {
      * @param {Array} routes routes
      * @param {Array} routesConfig config
      */
-    mergeWithConfig(routes, routesConfig = [], rewriteRules) {
+    mergeWithConfig(routes, routesConfig = [], rewriteRules, parentPath = '') {
         /**
          * in dev mode, we need to add timestamp to every route's hash as prefix.
          * otherwise when we change the code in page.vue, route's hash remains the same,
@@ -292,6 +292,12 @@ export default class RouteManager {
 
             // rewrite route path with rules
             route.path = this.rewriteRoutePath(rewriteRules, route.path);
+            route.fullPath = parentPath ? `${parentPath}/${route.path}` : route.path;
+
+            let entry = this.config.entry.find(entryConfig => matchUrl(entryConfig.routes, route.fullPath));
+            if (entry) {
+                route.entryName = entry.name;
+            }
 
             // mixin with config, rewrites path, add lazyLoading, meta
             if (routeConfig) {
@@ -326,7 +332,7 @@ export default class RouteManager {
             // merge recursively
             if (route.children && route.children.length) {
                 this.mergeWithConfig(route.children,
-                    routeConfig && routeConfig.children, rewriteRules);
+                    routeConfig && routeConfig.children, rewriteRules, route.fullPath);
             }
         });
     }
@@ -370,29 +376,86 @@ export default class RouteManager {
     }
 
     /**
-     * write .lavas/routes.js
+     * write routes.js for each entry
      *
      */
     async writeRoutesSourceFile() {
-        let routesContent = this.generateRoutesContent(this.routes);
+        let writePromise = [];
+        let utimesPromise = [];
 
-        // write contents into .lavas/routes.js
-        let routesFilePath = join(this.targetDir, './routes.js');
-        await outputFile(
-            routesFilePath,
-            template(await readFile(routesTemplate, 'utf8'))({
-                routes: this.flatRoutes,
-                routesContent
-            }),
-            'utf8'
-        );
+        this.config.entry.forEach(async entryConfig => {
+            let entryName = entryConfig.name;
+
+            let entryRoutes = this.routes.filter(route => route.entryName === entryName);
+            let entryFlatRoutes = new Set();
+            this.flatRoutes.forEach(flatRoute => {
+                if (flatRoute.entryName === entryName) {
+                    entryFlatRoutes.add(flatRoute)
+                }
+            });
+
+            let routesFilePath = join(this.targetDir, `./${entryName}.routes.js`);
+            let routesContent = this.generateRoutesContent(entryRoutes);
+            writePromise.push(outputFile(
+                routesFilePath,
+                template(await readFile(routesTemplate, 'utf8'))({
+                    routes: entryFlatRoutes,
+                    routesContent
+                }),
+                'utf8'
+            ));
+
+            /**
+             * hack for watchpack, solve the rebuilding problem in dev mode
+             * https://github.com/webpack/watchpack/issues/25#issuecomment-287789288
+             */
+            let then = Date.now() / 1000 - 10;
+            utimesPromise.push(utimes(routesFilePath, then, then));
+        });
+
+        await Promise.all(writePromise);
+        await Promise.all(utimesPromise);
+
+        /* this.routes =
+        [ { path: '/404',
+            component: 'pages/404.vue',
+            name: '404',
+            hash: '15054639573994f4adcbf8c6f66dcfc8a3282ac2bf10a',
+            pathRegExp: /^\/404\/?/ },
+          { path: '/500',
+            component: 'pages/500.vue',
+            name: '500',
+            hash: '1505463957399cee631121c2ec9232f3a2f028ad5c89b',
+            pathRegExp: /^\/500\/?/ },
+          { path: '/rewrite/detail/:id',
+            component: 'pages/detail/_id.vue',
+            name: 'detail-id',
+            hash: '1505463957399ac8e138a7c5d3d9236e8143027097887',
+            pathRegExp: /^\/rewrite\/detail\/[^\/]+\/?/ },
+          { path: '/',
+            component: 'pages/index.vue',
+            name: 'index',
+            hash: '15054639573996a992d5529f459a44fee58c733255e86',
+            pathRegExp: /^\/\/?/ } ]
+         */
+        // let routesContent = this.generateRoutesContent(this.routes);
+        // // write contents into .lavas/routes.js
+        // let routesFilePath = join(this.targetDir, './routes.js');
+        // await outputFile(
+        //     routesFilePath,
+        //     template(await readFile(routesTemplate, 'utf8'))({
+        //         routes: this.flatRoutes,
+        //         routesContent
+        //     }),
+        //     'utf8'
+        // );
 
         /**
          * hack for watchpack, solve the rebuilding problem in dev mode
          * https://github.com/webpack/watchpack/issues/25#issuecomment-287789288
          */
-        let then = Date.now() / 1000 - 10;
-        await utimes(routesFilePath, then, then);
+        // let then = Date.now() / 1000 - 10;
+        // await utimes(routesFilePath, then, then);
     }
 
     /**
