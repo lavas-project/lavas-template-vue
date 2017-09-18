@@ -1,5 +1,6 @@
 <template>
     <div class="detail-wrapper">
+        Sub Route ID
         <article class="detail-content text-xs-center">
             <header class="detail-title text-xs-center">
                 Detail {{$route.params.id}}
@@ -17,9 +18,7 @@
 Reliable - Load instantly and never show the downasaur, even in uncertain network conditions.
 Fast - Respond quickly to user interactions with silky smooth animations and no janky scrolling.
             </p>
-            <router-link :to="{
-                name: 'index',
-            }">
+            <router-link to="/">
                 Back to home
             </router-link>
         </article>

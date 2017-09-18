@@ -1,5 +1,8 @@
 <template>
-    <router-view></router-view>
+    <div>
+        Parent Route Detail
+        <router-view></router-view>
+    </div>
 </template>
 <script>
 export default {

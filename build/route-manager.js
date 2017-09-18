@@ -64,9 +64,9 @@ export default class RouteManager {
     findMatchedRoute(path, routes = this.routes) {
         let matchedRoute = routes.find(route => route.pathRegExp.test(path));
         if (matchedRoute && matchedRoute.children) {
-            let matched = matchedRoute.pathRegExp.match(path);
+            let matched = path.match(matchedRoute.pathRegExp);
             if (matched && matched[0]) {
-                matchedRoute = this.findMatchedRoute(
+                return this.findMatchedRoute(
                     path.substring(matched[0].length), matchedRoute.children);
             }
         }
@@ -271,7 +271,7 @@ export default class RouteManager {
      * @param {Array} routes routes
      * @param {Array} routesConfig config
      */
-    mergeWithConfig(routes, routesConfig = [], rewriteRules, parentPath = '') {
+    mergeWithConfig(routes, routesConfig = [], rewriteRules = [], parentPath = '') {
         /**
          * in dev mode, we need to add timestamp to every route's hash as prefix.
          * otherwise when we change the code in page.vue, route's hash remains the same,
@@ -380,10 +380,8 @@ export default class RouteManager {
      *
      */
     async writeRoutesSourceFile() {
-        let writePromise = [];
-        let utimesPromise = [];
 
-        this.config.entry.forEach(async entryConfig => {
+        await Promise.all(this.config.entry.map(async entryConfig => {
             let entryName = entryConfig.name;
 
             let entryRoutes = this.routes.filter(route => route.entryName === entryName);
@@ -396,25 +394,22 @@ export default class RouteManager {
 
             let routesFilePath = join(this.targetDir, `./${entryName}.routes.js`);
             let routesContent = this.generateRoutesContent(entryRoutes);
-            writePromise.push(outputFile(
+            await outputFile(
                 routesFilePath,
                 template(await readFile(routesTemplate, 'utf8'))({
                     routes: entryFlatRoutes,
                     routesContent
                 }),
                 'utf8'
-            ));
+            );
 
             /**
              * hack for watchpack, solve the rebuilding problem in dev mode
              * https://github.com/webpack/watchpack/issues/25#issuecomment-287789288
              */
             let then = Date.now() / 1000 - 10;
-            utimesPromise.push(utimes(routesFilePath, then, then));
-        });
-
-        await Promise.all(writePromise);
-        await Promise.all(utimesPromise);
+            await utimes(routesFilePath, then, then);
+        }));
 
         /* this.routes =
         [ { path: '/404',

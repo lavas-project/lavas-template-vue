@@ -4,7 +4,7 @@
  */
 
 import Vue from 'vue';
-import {createRouter} from '@/core/router';
+import {createRouter} from './router';
 import {createStore} from '@/core/store';
 import App from './App.vue';
 

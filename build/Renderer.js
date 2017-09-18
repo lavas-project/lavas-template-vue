@@ -221,7 +221,6 @@ export default class Renderer {
      */
     getRenderer(entryName) {
         if (this.renderer[entryName]) {
-            console.log(entryName, this.renderer[entryName])
             return Promise.resolve(this.renderer[entryName]);
         }
 

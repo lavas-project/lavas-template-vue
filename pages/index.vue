@@ -2,12 +2,7 @@
     <div>
         <h2 class="gray--text">LAVAS</h2>
         <h4 class="gray--text">[ˈlɑ:vəz]</h4>
-        <router-link :to="{
-            name: 'detail-id',
-            params: {
-                id: 1
-            }
-        }">detail</router-link>
+        <router-link to="rewrite/detail/1">detail</router-link>
     </div>
 </template>
 

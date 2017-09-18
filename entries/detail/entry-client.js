@@ -87,6 +87,8 @@ router.beforeEach(async (to, from, next) => {
     let matched = await router.getMatchedComponents(to);
 
     if (!matched.length) {
+        // can't find matched component, use href jump
+        window.location.href = toPath;
         return next();
     }
 

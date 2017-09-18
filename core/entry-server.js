@@ -31,6 +31,7 @@ export default function (context) {
         }
 
         let {app, router, store} = createApp();
+
         let fullPath = router.resolve(url).route.fullPath;
 
         if (fullPath !== url) {
