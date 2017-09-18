@@ -68,6 +68,10 @@ export default class Renderer {
     async build(clientConfig, serverConfig) {
         this.clientConfig = clientConfig;
         this.serverConfig = serverConfig;
+
+        // generate client.entry.xxx
+        this.generateEntryInfo();
+
         if (this.env === 'production') {
             // TODO
             await this.buildInProduction(clientConfig, serverConfig);
@@ -85,6 +89,15 @@ export default class Renderer {
                 await this.createRenderer();
             });
         }
+    }
+
+    generateEntryInfo() {
+        this.clientConfig.entry = {};
+        this.config.entry.forEach(entryConfig => {
+            let entryName = entryConfig.name;
+
+            this.clientConfig.entry[entryName] = [`./entries/${entryName}/entry-client.js`];
+        });
     }
 
     /**

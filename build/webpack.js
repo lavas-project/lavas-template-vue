@@ -13,7 +13,6 @@ import ExtractTextPlugin from 'extract-text-webpack-plugin';
 import FriendlyErrorsPlugin from 'friendly-errors-webpack-plugin';
 import OptimizeCSSPlugin from 'optimize-css-assets-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
-// import VueSSRClientPlugin from 'vue-server-renderer/client-plugin';
 import VueSSRServerPlugin from 'vue-server-renderer/server-plugin';
 import BundleAnalyzerPlugin from 'webpack-bundle-analyzer';
 import ManifestJsonWebpackPlugin from './plugins/manifest-json-webpack-plugin';
@@ -21,7 +20,7 @@ import SWPrecacheWebPlugin from 'sw-precache-webpack-plugin';
 import SWRegisterWebpackPlugin from 'sw-register-webpack-plugin';
 
 import {vueLoaders, styleLoaders} from './utils/loader';
-import {LAVAS_DIRNAME_IN_DIST, CLIENT_MANIFEST, SERVER_BUNDLE} from './constants';
+import {LAVAS_DIRNAME_IN_DIST, SERVER_BUNDLE} from './constants';
 
 export default class WebpackConfig {
     constructor(config = {}, env) {
@@ -226,12 +225,6 @@ export default class WebpackConfig {
                 })
             ]
         }, client);
-
-        // if (ssr) {
-        //     clientConfig.plugins.push(new VueSSRClientPlugin({
-        //         filename: join(LAVAS_DIRNAME_IN_DIST, CLIENT_MANIFEST)
-        //     }));
-        // }
 
         if (bundleAnalyzerReport) {
             clientConfig.plugins.push(
