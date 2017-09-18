@@ -114,40 +114,11 @@ export default class RouteManager {
         return entryPath;
     }
 
-    extractModules() {
-        let routes = this.routes;
-
-        return Object.keys(this.config.entry).map(entryConfig => {
-            // name
-            let module = this.config.module[name];
-            let pattern = module.routes;
-
-            // set default pagename to index
-            name = name === 'default' ? 'index' : name;
-            module.pagename = name;
-
-            // add routes matched specific pattern to routeList
-            if (pattern instanceof RegExp) {
-                module.routeList = routes.filter(r => pattern.test(r.path));
-            }
-            else if (Array.isArray(pattern)) {
-                module.routeList = routes.filter(r => pattern.includes(r.path));
-            }
-            else if (typeof pattern === 'string') {
-                module.routeList = routes.filter(r => pattern === r.path);
-            }
-            return module;
-        });
-    }
-
     /**
      * create a webpack config and compile with it
      *
      */
     async buildMultiEntries() {
-        // extract modules base on config
-        // let modules = this.extractModules();
-
         let {shortcuts: {assetsDir, ssr}, base} = this.config.webpack;
 
         // create mpa config based on client config
@@ -169,7 +140,6 @@ export default class RouteManager {
          * 1. add a html-webpack-plugin to output a relative HTML file
          * 2. create an entry if a skeleton component is provided
          */
-        // await Promise.all(modules.map(async module => {
         await Promise.all(this.config.entry).map(async entryConfig => {
             // let {pagename, htmlTemplate, routeList, skeleton, ssr: needSSR} = module;
             let {name: entryName, ssr: needSSR} = entryConfig;
@@ -177,8 +147,11 @@ export default class RouteManager {
             if (!needSSR) {
 
                 // allow user to provide a custom HTML template
-                let htmlTemplatePath = htmlTemplate
-                    || join(__dirname, './templates/index.template.html');
+                let htmlTemplatePath = join(__dirname, '../entries/${entryName}/index.template.html');
+                if (!await fs.pathExists(htmlTemplatePath)) {
+                    htmlTemplatePath = join(__dirname, './templates/index.template.html');
+                }
+
                 let htmlFilename = `${entryName}.html`;
 
                 // routeList.forEach(route => {
