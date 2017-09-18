@@ -151,15 +151,7 @@ export default class RouteManager {
                 if (!await fs.pathExists(htmlTemplatePath)) {
                     htmlTemplatePath = join(__dirname, './templates/index.template.html');
                 }
-
                 let htmlFilename = `${entryName}.html`;
-
-                // routeList.forEach(route => {
-                //     // save the path of HTML file which will be used in prerender searching process
-                //     route.htmlPath = join(base.output.path, htmlFilename);
-                //     // set static flag on every route in list
-                //     route.static = true;
-                // });
 
                 mpaConfig.entry[pagename] = [join(__dirname, `../entries/${entryName}/entry-client.js`)];
 
