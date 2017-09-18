@@ -1,6 +1,6 @@
 <template>
     <div class="detail-wrapper">
-        Sub Route ID
+        Children Route ID
         <article class="detail-content text-xs-center">
             <header class="detail-title text-xs-center">
                 Detail {{$route.params.id}}

@@ -52,10 +52,6 @@ export default class Renderer {
     }
 
     async buildInProduction(clientConfig, serverConfig, entryName) {
-        // set context in both configs
-        clientConfig.context = this.rootDir;
-        serverConfig.context = this.rootDir;
-
         // start to build client & server configs
         await webpackCompile([clientConfig, serverConfig]);
 
@@ -69,8 +65,8 @@ export default class Renderer {
         this.clientConfig = clientConfig;
         this.serverConfig = serverConfig;
 
-        // generate client.entry.xxx
-        this.generateEntryInfo();
+        // set entries in both client & server webpack config
+        this.setWebpackEntries();
 
         if (this.env === 'production') {
             // TODO
@@ -91,13 +87,23 @@ export default class Renderer {
         }
     }
 
-    generateEntryInfo() {
+    /**
+     * set entries in both client & server webpack config
+     */
+    setWebpackEntries() {
+        // set context in both configs first
+        this.clientConfig.context = this.rootDir;
+        this.serverConfig.context = this.rootDir;
+
+        // each entry should have an independent client entry
         this.clientConfig.entry = {};
         this.config.entry.forEach(entryConfig => {
             let entryName = entryConfig.name;
-
             this.clientConfig.entry[entryName] = [`./entries/${entryName}/entry-client.js`];
         });
+
+        // only one entry in server side
+        this.serverConfig.entry = './core/entry-server.js';
     }
 
     /**
@@ -108,8 +114,6 @@ export default class Renderer {
     getClientManifest(callback) {
         let clientConfig = this.clientConfig;
         let entryNames = Object.keys(clientConfig.entry);
-
-        clientConfig.context = this.rootDir;
 
         entryNames.forEach(entryName => {
             clientConfig.entry[entryName] = ['webpack-hot-middleware/client', ...clientConfig.entry[entryName]];
@@ -174,7 +178,6 @@ export default class Renderer {
      */
     getServerBundle(callback) {
         let serverConfig = this.serverConfig;
-        serverConfig.context = this.rootDir;
 
         // watch and update server renderer
         const serverCompiler = webpack(serverConfig);
