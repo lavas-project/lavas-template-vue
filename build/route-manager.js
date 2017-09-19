@@ -91,20 +91,15 @@ export default class RouteManager {
     /**
      * create an entry file for a skeleton component
      *
-     * @param {string} pagename pagename
+     * @param {string} entryName entryName
      * @param {string} skeletonPath used as import
      * @return {string} entryPath
      */
-    async createEntryForSkeleton(pagename, skeletonPath) {
+    async createEntryForSkeleton(entryName, skeletonPath) {
+        // .lavas/${entryName}/skeleton.js
+        let entryPath = join(this.targetDir, `${entryName}/skeleton.js`);
 
-        // .lavas/skeletons
-        let skeletonsDir = join(this.targetDir, SKELETON_DIRNAME);
-        await emptyDir(skeletonsDir);
-
-        // eg. .lavas/skeletons/detail-entry-skeleton.js
-        let entryPath = join(skeletonsDir, `./${pagename}-entry-skeleton.js`);
-
-        await writeFile(
+        await outputFile(
             entryPath,
             template(await readFile(skeletonEntryTemplate, 'utf8'))({
                 skeleton: {
@@ -137,24 +132,20 @@ export default class RouteManager {
          * 1. add a html-webpack-plugin to output a relative HTML file
          * 2. create an entry if a skeleton component is provided
          */
-        await Promise.all(modules.map(async module => {
-            let {pagename, htmlTemplate, routeList, skeleton, ssr: needSSR} = module;
+        await Promise.all(this.config.entry).map(async entryConfig => {
+            // let {pagename, htmlTemplate, routeList, skeleton, ssr: needSSR} = module;
+            let {name: entryName, ssr: needSSR} = entryConfig;
 
             if (!needSSR) {
 
                 // allow user to provide a custom HTML template
-                let htmlTemplatePath = htmlTemplate
-                    || join(__dirname, './templates/index.template.html');
-                let htmlFilename = `${pagename}.html`;
+                let htmlTemplatePath = join(__dirname, '../entries/${entryName}/index.template.html');
+                if (!await fs.pathExists(htmlTemplatePath)) {
+                    htmlTemplatePath = join(__dirname, './templates/index.template.html');
+                }
+                let htmlFilename = `${entryName}.html`;
 
-                routeList.forEach(route => {
-                    // save the path of HTML file which will be used in prerender searching process
-                    route.htmlPath = join(base.output.path, htmlFilename);
-                    // set static flag on every route in list
-                    route.static = true;
-                });
-
-                mpaConfig.entry[pagename] = ['./core/entry-client.js'];
+                mpaConfig.entry[pagename] = [join(__dirname, `../entries/${entryName}/entry-client.js`)];
 
                 // add html webpack plugin
                 mpaConfig.plugins.unshift(new HtmlWebpackPlugin({
@@ -172,12 +163,15 @@ export default class RouteManager {
                     config: this.config
                 }));
 
-                if (skeleton) {
-                    let entryPath = await this.createEntryForSkeleton(pagename, skeleton);
-                    skeletonEntries[pagename] = [entryPath];
+                let skeleton = join(__dirname, `../entries/${entryName}/skeleton.vue`);
+                let hasSkeleton = await fs.pathExists(skeleton);
+
+                if (hasSkeleton) {
+                    let entryPath = await this.createEntryForSkeleton(entryName, skeleton);
+                    skeletonEntries[entryName] = [entryPath];
                 }
             }
-        }));
+        });
 
         if (Object.keys(skeletonEntries).length) {
             let skeletonConfig = merge(this.webpackConfig.server(this.config));
@@ -356,7 +350,7 @@ export default class RouteManager {
                 }
             });
 
-            let routesFilePath = join(this.targetDir, `./${entryName}.routes.js`);
+            let routesFilePath = join(this.targetDir, `${entryName}/routes.js`);
             let routesContent = this.generateRoutesContent(entryRoutes);
             await outputFile(
                 routesFilePath,

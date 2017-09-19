@@ -7,7 +7,7 @@
 
 import Vue from 'vue';
 import Router from 'vue-router';
-import {routes} from '@/.lavas/detail.routes';
+import {routes} from '@/.lavas/detail/routes';
 
 Vue.use(Router);
 
