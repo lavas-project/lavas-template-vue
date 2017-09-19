@@ -165,7 +165,7 @@ export default class RouteManager {
                     skeletonEntries[entryName] = [entryPath];
                 }
             }
-        }));
+        });
 
         if (Object.keys(skeletonEntries).length) {
             let skeletonConfig = merge(this.webpackConfig.server(this.config));
