@@ -18,7 +18,7 @@ import {LAVAS_DIRNAME_IN_DIST, TEMPLATE_HTML, SERVER_BUNDLE, CLIENT_MANIFEST} fr
 
 export default class Renderer {
     constructor(core) {
-        this.env = core.env;
+        this.isProd = core.isProd;
         this.config = core.config;
         this.rootDir = this.config && this.config.globals.rootDir;
         this.cwd = core.cwd;
@@ -89,7 +89,7 @@ export default class Renderer {
         // set entries in both client & server webpack config
         this.setWebpackEntries();
 
-        if (this.env === 'production') {
+        if (this.isProd) {
             await this.buildInProduction();
         }
         else {
@@ -122,8 +122,11 @@ export default class Renderer {
 
         // each entry should have an independent client entry
         this.clientConfig.entry = {};
-        this.entries.forEach(entryName => {
-            this.clientConfig.entry[entryName] = [`./entries/${entryName}/entry-client.js`];
+        this.config.entry.forEach(entryConfig => {
+            if (this.isProd && entryConfig.ssr) {
+                let entryName = entryConfig.name;
+                this.clientConfig.entry[entryName] = [`./entries/${entryName}/entry-client.js`];
+            }
         });
 
         // only one entry in server side
