@@ -5,7 +5,7 @@
 
 import webpack from 'webpack';
 import merge from 'webpack-merge';
-import {posix, join, resolve} from 'path';
+import {posix, join, resolve, sep} from 'path';
 import fs from 'fs-extra';
 
 import nodeExternals from 'webpack-node-externals';
@@ -192,16 +192,21 @@ export default class WebpackConfig {
                 new webpack.optimize.CommonsChunkPlugin({
                     name: 'vue',
                     minChunks(module, count) {
+                        // On Windows, context will be seperated by '\',
+                        // then paths like '\node_modules\vue\' cannot be matched because of '\v'.
+                        // Transforming into '::node_modules::vue::' can solve this.
                         let context = module.context;
+                        let matchContext = context ? context.split(sep).join('::') : '';
                         let targets = ['vue', 'vue-router', 'vuex', 'vue-meta'];
+                        // /^(vue|vue-router)$/i
+                        let npmRegExp = new RegExp(targets.join('|'), 'i');
+                        // /^(_vue@2.4.2@vue|_vue-router@1.2.3@vue-router)$/i
+                        let cnpmRegExp =
+                            new RegExp(targets.map(t => `_${t}@\\d\\.\\d\\.\\d@${t}`).join('|'), 'i');
+
                         return context
-                            && context.indexOf('node_modules') >= 0
-                            && targets.find(t => {
-                                let npmRegExp = new RegExp(`/${t}/`, 'i');
-                                // compatible with cnpm, eg./_vue@2.4.2@vue/
-                                let cnpmRegExp = new RegExp(`/_${t}@\\d\\.\\d\\.\\d@${t}/`, 'i');
-                                return npmRegExp.test(context) || cnpmRegExp.test(context);
-                            });
+                            && matchContext.indexOf('node_modules') !== -1
+                            && (npmRegExp.test(matchContext) || cnpmRegExp.test(matchContext));
                     }
                 }),
 
