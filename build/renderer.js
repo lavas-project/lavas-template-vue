@@ -43,6 +43,17 @@ export default class Renderer {
         return join(this.rootDir, `entries/${entryName}/`, TEMPLATE_HTML);
     }
 
+    /**
+     * add custom ssr client plugin in config
+     */
+    addSSRClientPlugin() {
+        this.clientConfig.plugins.push(
+            new VueSSRClientPlugin({
+                filename: join(LAVAS_DIRNAME_IN_DIST, `[entryName]/${CLIENT_MANIFEST}`)
+            })
+        );
+    }
+
     async createWithBundle() {
         this.serverBundle = await import(distLavasPath(this.cwd, SERVER_BUNDLE));
 
@@ -55,6 +66,8 @@ export default class Renderer {
     }
 
     async buildInProduction() {
+        this.addSSRClientPlugin();
+
         // start to build client & server configs
         await webpackCompile([this.clientConfig, this.serverConfig]);
 
@@ -127,12 +140,13 @@ export default class Renderer {
         entryNames.forEach(entryName => {
             clientConfig.entry[entryName] = ['webpack-hot-middleware/client', ...clientConfig.entry[entryName]];
         });
+
+        // add custom ssr client plugin
+        this.addSSRClientPlugin();
+        // add other plugins in dev mode
         clientConfig.plugins.push(
             new webpack.HotModuleReplacementPlugin(),
-            new webpack.NoEmitOnErrorsPlugin(),
-            new VueSSRClientPlugin({
-                filename: join(LAVAS_DIRNAME_IN_DIST, `[entryName]/${CLIENT_MANIFEST}`)
-            })
+            new webpack.NoEmitOnErrorsPlugin()
         );
 
         // init client compiler

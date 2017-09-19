@@ -137,7 +137,6 @@ export default class RouteManager {
             let {name: entryName, ssr: needSSR} = entryConfig;
 
             if (!needSSR) {
-
                 // allow user to provide a custom HTML template
                 let htmlTemplatePath = join(rootDir, `entries/${entryName}/client.template.html`);
                 if (!await pathExists(htmlTemplatePath)) {
@@ -161,11 +160,9 @@ export default class RouteManager {
                     config: this.config // use config in template
                 }));
 
-                let skeleton = join(rootDir, `entries/${entryName}/skeleton.vue`);
-                let hasSkeleton = await pathExists(skeleton);
-
-                if (hasSkeleton) {
-                    let entryPath = await this.createEntryForSkeleton(entryName, skeleton);
+                let skeletonPath = join(rootDir, `entries/${entryName}/skeleton.vue`);
+                if (await pathExists(skeletonPath)) {
+                    let entryPath = await this.createEntryForSkeleton(entryName, skeletonPath);
                     skeletonEntries[entryName] = [entryPath];
                 }
             }
