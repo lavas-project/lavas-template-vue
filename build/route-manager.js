@@ -9,11 +9,11 @@
 import {
     utimes,
     readFile,
-    writeFile,
     emptyDir,
     readJson,
     outputFile,
-    outputJson
+    outputJson,
+    pathExists
 } from 'fs-extra';
 import {join} from 'path';
 import {createHash} from 'crypto';
@@ -26,7 +26,7 @@ import SkeletonWebpackPlugin from 'vue-skeleton-webpack-plugin';
 
 import {generateRoutes, matchUrl} from './utils/router';
 import {distLavasPath} from './utils/path';
-import {webpackCompile} from './utils/webpack';
+import {webpackCompile, writeFileInDev} from './utils/webpack';
 import {ROUTES_FILE, SKELETON_DIRNAME} from './constants';
 
 const routesTemplate = join(__dirname, './templates/routes.tpl');
@@ -117,7 +117,7 @@ export default class RouteManager {
      *
      */
     async buildMultiEntries() {
-        let {shortcuts: {assetsDir, ssr}, base} = this.config.webpack;
+        let rootDir = this.config.globals.rootDir;
 
         // create mpa config based on client config
         let mpaConfig = merge(this.webpackConfig.client(this.config));
@@ -125,27 +125,27 @@ export default class RouteManager {
 
         // set context and clear entries
         mpaConfig.entry = {};
-        mpaConfig.context = this.config.globals.rootDir;
+        mpaConfig.context = rootDir;
 
         /**
          * for each module needs prerendering, we will:
          * 1. add a html-webpack-plugin to output a relative HTML file
          * 2. create an entry if a skeleton component is provided
          */
-        await Promise.all(this.config.entry).map(async entryConfig => {
+        await Promise.all(this.config.entry.map(async entryConfig => {
             // let {pagename, htmlTemplate, routeList, skeleton, ssr: needSSR} = module;
             let {name: entryName, ssr: needSSR} = entryConfig;
 
             if (!needSSR) {
 
                 // allow user to provide a custom HTML template
-                let htmlTemplatePath = join(__dirname, '../entries/${entryName}/index.template.html');
-                if (!await fs.pathExists(htmlTemplatePath)) {
+                let htmlTemplatePath = join(rootDir, `entries/${entryName}/client.template.html`);
+                if (!await pathExists(htmlTemplatePath)) {
                     htmlTemplatePath = join(__dirname, './templates/index.template.html');
                 }
                 let htmlFilename = `${entryName}.html`;
 
-                mpaConfig.entry[pagename] = [join(__dirname, `../entries/${entryName}/entry-client.js`)];
+                mpaConfig.entry[entryName] = [join(rootDir, `entries/${entryName}/entry-client.js`)];
 
                 // add html webpack plugin
                 mpaConfig.plugins.unshift(new HtmlWebpackPlugin({
@@ -157,29 +157,24 @@ export default class RouteManager {
                         collapseWhitespace: true,
                         removeAttributeQuotes: true
                     },
-                    // we already use serve-favicon middleware
-                    // favicon: join(assetsDir, 'img/icons/favicon.ico'),
                     chunksSortMode: 'dependency',
-                    config: this.config
+                    config: this.config // use config in template
                 }));
 
-                let skeleton = join(__dirname, `../entries/${entryName}/skeleton.vue`);
-                let hasSkeleton = await fs.pathExists(skeleton);
+                let skeleton = join(rootDir, `entries/${entryName}/skeleton.vue`);
+                let hasSkeleton = await pathExists(skeleton);
 
                 if (hasSkeleton) {
                     let entryPath = await this.createEntryForSkeleton(entryName, skeleton);
                     skeletonEntries[entryName] = [entryPath];
                 }
             }
-        });
+        }));
 
         if (Object.keys(skeletonEntries).length) {
             let skeletonConfig = merge(this.webpackConfig.server(this.config));
             // remove vue-ssr-client plugin
-            if (ssr) {
-                // TODO: what if vue-ssr-server-plugin is not the last one in plugins array?
-                skeletonConfig.plugins.pop();
-            }
+            skeletonConfig.plugins.pop();
             skeletonConfig.entry = skeletonEntries;
 
             // add skeleton plugin
@@ -252,7 +247,9 @@ export default class RouteManager {
             route.path = this.rewriteRoutePath(rewriteRules, route.path);
             route.fullPath = parentPath ? `${parentPath}/${route.path}` : route.path;
 
-            let entry = this.config.entry.find(entryConfig => matchUrl(entryConfig.routes, route.fullPath));
+            // map entry to every route
+            let entry = this.config.entry.find(
+                entryConfig => matchUrl(entryConfig.routes, route.fullPath));
             if (entry) {
                 route.entryName = entry.name;
             }
@@ -352,21 +349,12 @@ export default class RouteManager {
 
             let routesFilePath = join(this.targetDir, `${entryName}/routes.js`);
             let routesContent = this.generateRoutesContent(entryRoutes);
-            await outputFile(
-                routesFilePath,
-                template(await readFile(routesTemplate, 'utf8'))({
-                    routes: entryFlatRoutes,
-                    routesContent
-                }),
-                'utf8'
-            );
 
-            /**
-             * hack for watchpack, solve the rebuilding problem in dev mode
-             * https://github.com/webpack/watchpack/issues/25#issuecomment-287789288
-             */
-            let then = Date.now() / 1000 - 10;
-            await utimes(routesFilePath, then, then);
+            let routesFileContent = template(await readFile(routesTemplate, 'utf8'))({
+                routes: entryFlatRoutes,
+                routesContent
+            });
+            await writeFileInDev(routesFilePath, routesFileContent);
         }));
     }
 
@@ -379,11 +367,8 @@ export default class RouteManager {
 
         console.log('[Lavas] auto compile routes...');
 
-        // generate routes according to pages dir but ignore skeleton components
-        this.routes = await generateRoutes(
-            join(this.targetDir, '../pages'),
-            {ignore: '*.skeleton.vue'}
-        );
+        // generate routes according to pages dir
+        this.routes = await generateRoutes(join(this.targetDir, '../pages'));
 
         // merge with routes' config
         this.mergeWithConfig(this.routes, routesConfig, rewriteRules);
