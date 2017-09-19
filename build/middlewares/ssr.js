@@ -16,8 +16,6 @@ export default function (core) {
         let url = req.url;
         let matchedEntry = core.config.entry.find(entryConfig => matchUrl(entryConfig.routes, url));
         let {ssr: needSSR, name: entryName} = matchedEntry;
-        // find matchessd route object for current path
-        // let matchedRoute = core.routeManager.findMatchedRoute(url);
 
         if (core.isProd && !needSSR) {
             console.log(`[Lavas] route middleware: static ${url}`);

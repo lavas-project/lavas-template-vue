@@ -119,8 +119,6 @@ export default class LavasCore {
                 this.configReader.writeConfigFile(this.config),
                 // compile multi entries only in production mode
                 this.routeManager.buildMultiEntries(),
-                // store routes info in routes.json for later use
-                this.routeManager.writeRoutesFile(),
                 // copy to /dist
                 this._copyServerModuleToDist()
             ]);
@@ -142,12 +140,8 @@ export default class LavasCore {
      *
      */
     async runAfterBuild() {
-        await Promise.all([
-            // create with routes.json
-            this.routeManager.createWithRoutesFile(),
-            // create with bundle & manifest
-            this.renderer.createWithBundle()
-        ]);
+        // create with bundle & manifest
+        await this.renderer.createWithBundle();
     }
 
     /**

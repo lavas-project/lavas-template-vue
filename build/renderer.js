@@ -63,6 +63,8 @@ export default class Renderer {
             this.templates[entryName] = await fs.readFile(templatePath, 'utf-8');
             this.clientManifest[entryName] = await import(manifestPath);
         }));
+
+        await this.createRenderer();
     }
 
     async buildInProduction() {

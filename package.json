@@ -36,6 +36,7 @@
     "normalize.css": "^7.0.0",
     "querystring": "^0.2.0",
     "serve-favicon": "^2.4.3",
+    "super-json": "^2.2.0",
     "sw-precache-webpack-plugin": "^0.11.4",
     "sw-register-webpack-plugin": "^1.0.11",
     "url-loader": "^0.5.9",

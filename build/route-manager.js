@@ -12,7 +12,6 @@ import {
     emptyDir,
     readJson,
     outputFile,
-    outputJson,
     pathExists
 } from 'fs-extra';
 import {join} from 'path';
@@ -55,25 +54,6 @@ export default class RouteManager {
     }
 
     /**
-     * find matched route
-     *
-     * @param {string} path route path
-     * @param {Array} routes routes
-     * @return {Object} matchedRoute
-     */
-    findMatchedRoute(path, routes = this.routes) {
-        let matchedRoute = routes.find(route => route.pathRegExp.test(path));
-        if (matchedRoute && matchedRoute.children) {
-            let matched = path.match(matchedRoute.pathRegExp);
-            if (matched && matched[0]) {
-                return this.findMatchedRoute(
-                    path.substring(matched[0].length), matchedRoute.children);
-            }
-        }
-        return matchedRoute;
-    }
-
-    /**
      * find html according to current route
      *
      * @param {string} entryName entryName
@@ -82,7 +62,7 @@ export default class RouteManager {
     async getStaticHtml(entryName) {
         let entry = this.prerenderCache.get(entryName);
         if (!entry) {
-            entry = await readFile(route.htmlPath, 'utf8');
+            entry = await readFile(join(this.cwd, `${entryName}.html`), 'utf8');
             this.prerenderCache.set(entryName, entry);
         }
         return entry;
@@ -315,20 +295,6 @@ export default class RouteManager {
     }
 
     /**
-     * write dist/routes.json which will be used in prod mode
-     *
-     */
-    async writeRoutesFile() {
-        // write contents into dist/lavas/routes.json
-        let routesFilePath = distLavasPath(this.config.webpack.base.output.path, ROUTES_FILE);
-        await outputJson(
-            routesFilePath,
-            this.routes,
-            'utf8'
-        );
-    }
-
-    /**
      * write routes.js for each entry
      *
      */
@@ -374,15 +340,5 @@ export default class RouteManager {
         await this.writeRoutesSourceFile();
 
         console.log('[Lavas] all routes are already generated.');
-    }
-
-    /**
-     * create routes based on routes.json
-     *
-     */
-    async createWithRoutesFile() {
-        let routesFilePath = distLavasPath(this.cwd, ROUTES_FILE);
-        this.routes = await readJson(routesFilePath);
-        this.mergeWithConfig(this.routes);
     }
 }
