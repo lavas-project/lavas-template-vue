@@ -26,8 +26,10 @@ export default class Renderer {
         this.renderer = {};
         this.serverBundle = null;
         this.clientManifest = {};
+        this.templates = {};
         this.resolve = null;
         this.readyPromise = new Promise(r => this.resolve = r);
+        this.entries = this.config.entry.map(e => e.name);
     }
 
     /**
@@ -38,27 +40,31 @@ export default class Renderer {
      * @return {string} resolved path
      */
     getTemplatePath(entryName) {
-        // TODO alias
         return join(this.rootDir, `entries/${entryName}/`, TEMPLATE_HTML);
     }
 
     async createWithBundle() {
         this.serverBundle = await import(distLavasPath(this.cwd, SERVER_BUNDLE));
-        // TODO entryName
-        this.clientManifest = await import(distLavasPath(this.cwd, CLIENT_MANIFEST));
-        await this.createRenderer({
-            templatePath: distLavasPath(this.cwd, TEMPLATE_HTML)
-        });
+
+        await Promise.all(this.entries.map(async entryName => {
+            let templatePath = distLavasPath(this.cwd, `${entryName}/${TEMPLATE_HTML}`);
+            let manifestPath = distLavasPath(this.cwd, `${entryName}/${CLIENT_MANIFEST}`);
+            this.templates[entryName] = await fs.readFile(templatePath, 'utf-8');
+            this.clientManifest[entryName] = await import(manifestPath);
+        }));
     }
 
-    async buildInProduction(clientConfig, serverConfig, entryName) {
+    async buildInProduction() {
         // start to build client & server configs
-        await webpackCompile([clientConfig, serverConfig]);
+        await webpackCompile([this.clientConfig, this.serverConfig]);
 
         // copy index.template.html to dist/lavas
-        let templatePath = this.getTemplatePath(clientConfig.resolve.alias);
-        let distTemplatePath = distLavasPath(this.config.webpack.base.output.path, TEMPLATE_HTML);
-        await fs.copy(templatePath, distTemplatePath);
+        await Promise.all(this.entries.map(async entryName => {
+            let templatePath = this.getTemplatePath(entryName);
+            let distTemplatePath = distLavasPath(this.config.webpack.base.output.path, `${entryName}/${TEMPLATE_HTML}`);
+            await fs.copy(templatePath, distTemplatePath);
+        }));
+
     }
 
     async build(clientConfig, serverConfig) {
@@ -69,10 +75,14 @@ export default class Renderer {
         this.setWebpackEntries();
 
         if (this.env === 'production') {
-            // TODO
-            await this.buildInProduction(clientConfig, serverConfig);
+            await this.buildInProduction();
         }
         else {
+
+            await Promise.all(this.entries.map(async entryName => {
+                this.templates[entryName] = await fs.readFile(this.getTemplatePath(entryName), 'utf-8');
+            }));
+
             // get client manifest
             this.getClientManifest(async (err, manifest) => {
                 this.clientManifest = manifest;
@@ -97,8 +107,7 @@ export default class Renderer {
 
         // each entry should have an independent client entry
         this.clientConfig.entry = {};
-        this.config.entry.forEach(entryConfig => {
-            let entryName = entryConfig.name;
+        this.entries.forEach(entryName => {
             this.clientConfig.entry[entryName] = [`./entries/${entryName}/entry-client.js`];
         });
 
@@ -207,18 +216,13 @@ export default class Renderer {
 
     /**
      * create renderer
-     *
-     * @param {Object} options options
-     * @param {string} options.templatePath html template
      */
     async createRenderer() {
         if (this.serverBundle && this.clientManifest) {
-            let entryNames = Object.keys(this.clientConfig.entry);
-            await Promise.all(entryNames.map(async entryName => {
+            await Promise.all(this.entries.map(async entryName => {
                 let first = !this.renderer[entryName];
-                let template = await fs.readFile(this.getTemplatePath(entryName), 'utf-8');
                 this.renderer[entryName] = createBundleRenderer(this.serverBundle, {
-                    template,
+                    template: this.templates[entryName],
                     clientManifest: this.clientManifest[entryName],
                     runInNewContext: false
                 });

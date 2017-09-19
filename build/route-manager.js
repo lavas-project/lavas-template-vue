@@ -76,18 +76,16 @@ export default class RouteManager {
     /**
      * find html according to current route
      *
-     * @param {Object} route route
+     * @param {string} entryName entryName
      * @return {Promise}
      */
-    async getStaticHtml(route) {
-        if (route && route.htmlPath) {
-            let entry = this.prerenderCache.get(route.name);
-            if (!entry) {
-                entry = await readFile(route.htmlPath, 'utf8');
-                this.prerenderCache.set(route.name, entry);
-            }
-            return entry;
+    async getStaticHtml(entryName) {
+        let entry = this.prerenderCache.get(entryName);
+        if (!entry) {
+            entry = await readFile(route.htmlPath, 'utf8');
+            this.prerenderCache.set(entryName, entry);
         }
+        return entry;
     }
 
     /**
@@ -119,39 +117,11 @@ export default class RouteManager {
         return entryPath;
     }
 
-    extractModules() {
-        let routes = this.routes;
-        let modules = Object.keys(this.config.module).map(name => {
-            let module = this.config.module[name];
-            let pattern = module.routes;
-
-            // set default pagename to index
-            name = name === 'default' ? 'index' : name;
-            module.pagename = name;
-
-            // add routes matched specific pattern to routeList
-            if (pattern instanceof RegExp) {
-                module.routeList = routes.filter(r => pattern.test(r.path));
-            }
-            else if (Array.isArray(pattern)) {
-                module.routeList = routes.filter(r => pattern.includes(r.path));
-            }
-            else if (typeof pattern === 'string') {
-                module.routeList = routes.filter(r => pattern === r.path);
-            }
-            return module;
-        });
-        return modules;
-    }
-
     /**
      * create a webpack config and compile with it
      *
      */
     async buildMultiEntries() {
-        // extract modules base on config
-        let modules = this.extractModules();
-
         let {shortcuts: {assetsDir, ssr}, base} = this.config.webpack;
 
         // create mpa config based on client config
@@ -161,12 +131,6 @@ export default class RouteManager {
         // set context and clear entries
         mpaConfig.entry = {};
         mpaConfig.context = this.config.globals.rootDir;
-
-        // remove vue-ssr-client plugin
-        if (ssr) {
-            // TODO: what if vue-ssr-client-plugin is not the last one in plugins array?
-            mpaConfig.plugins.pop();
-        }
 
         /**
          * for each module needs prerendering, we will:
@@ -338,7 +302,8 @@ export default class RouteManager {
     }
 
     /**
-     * generate routes content
+     * generate routes content which will be injected into routes.js
+     * based on nested routes
      *
      * @param {Array} routes route list
      * @return {string} content
@@ -380,7 +345,6 @@ export default class RouteManager {
      *
      */
     async writeRoutesSourceFile() {
-
         await Promise.all(this.config.entry.map(async entryConfig => {
             let entryName = entryConfig.name;
 
@@ -410,47 +374,6 @@ export default class RouteManager {
             let then = Date.now() / 1000 - 10;
             await utimes(routesFilePath, then, then);
         }));
-
-        /* this.routes =
-        [ { path: '/404',
-            component: 'pages/404.vue',
-            name: '404',
-            hash: '15054639573994f4adcbf8c6f66dcfc8a3282ac2bf10a',
-            pathRegExp: /^\/404\/?/ },
-          { path: '/500',
-            component: 'pages/500.vue',
-            name: '500',
-            hash: '1505463957399cee631121c2ec9232f3a2f028ad5c89b',
-            pathRegExp: /^\/500\/?/ },
-          { path: '/rewrite/detail/:id',
-            component: 'pages/detail/_id.vue',
-            name: 'detail-id',
-            hash: '1505463957399ac8e138a7c5d3d9236e8143027097887',
-            pathRegExp: /^\/rewrite\/detail\/[^\/]+\/?/ },
-          { path: '/',
-            component: 'pages/index.vue',
-            name: 'index',
-            hash: '15054639573996a992d5529f459a44fee58c733255e86',
-            pathRegExp: /^\/\/?/ } ]
-         */
-        // let routesContent = this.generateRoutesContent(this.routes);
-        // // write contents into .lavas/routes.js
-        // let routesFilePath = join(this.targetDir, './routes.js');
-        // await outputFile(
-        //     routesFilePath,
-        //     template(await readFile(routesTemplate, 'utf8'))({
-        //         routes: this.flatRoutes,
-        //         routesContent
-        //     }),
-        //     'utf8'
-        // );
-
-        /**
-         * hack for watchpack, solve the rebuilding problem in dev mode
-         * https://github.com/webpack/watchpack/issues/25#issuecomment-287789288
-         */
-        // let then = Date.now() / 1000 - 10;
-        // await utimes(routesFilePath, then, then);
     }
 
     /**
