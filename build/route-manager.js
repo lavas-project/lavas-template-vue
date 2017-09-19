@@ -141,7 +141,6 @@ export default class RouteManager {
          * 2. create an entry if a skeleton component is provided
          */
         await Promise.all(this.config.entry).map(async entryConfig => {
-            // let {pagename, htmlTemplate, routeList, skeleton, ssr: needSSR} = module;
             let {name: entryName, ssr: needSSR} = entryConfig;
 
             if (!needSSR) {
