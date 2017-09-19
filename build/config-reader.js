@@ -76,15 +76,4 @@ export default class ConfigReader {
     async readConfigFile() {
         return JsonUtil.parse(await readFile(distLavasPath(this.cwd, CONFIG_FILE), 'utf8'));
     }
-
-    /**
-     * write config.json which will be used in prod mode
-     *
-     * @param {Object} config
-     */
-    async writeConfigFile(config) {
-        let configFilePath = distLavasPath(config.webpack.base.output.path, CONFIG_FILE);
-        await ensureFile(configFilePath);
-        await writeFile(configFilePath, JsonUtil.stringify(config), 'utf8');
-    }
 }

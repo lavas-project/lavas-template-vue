@@ -82,10 +82,7 @@ export default class Renderer {
                 let entryName = entryConfig.name;
                 let templatePath = this.getTemplatePath(entryName);
                 let distTemplatePath = distLavasPath(this.config.webpack.base.output.path, `${entryName}/${TEMPLATE_HTML}`);
-                return fs.copy(templatePath, distTemplatePath);
-            }
-            else {
-                return Promise.resolve();
+                await fs.copy(templatePath, distTemplatePath);
             }
         }));
 
@@ -132,7 +129,7 @@ export default class Renderer {
         // each entry should have an independent client entry
         this.clientConfig.entry = {};
         this.config.entry.forEach(entryConfig => {
-            if (this.isProd && entryConfig.ssr) {
+            if (!this.isProd || (this.isProd && entryConfig.ssr)) {
                 let entryName = entryConfig.name;
                 this.clientConfig.entry[entryName] = [`./entries/${entryName}/entry-client.js`];
             }
@@ -149,10 +146,12 @@ export default class Renderer {
      */
     getClientManifest(callback) {
         let clientConfig = this.clientConfig;
-        let entryNames = Object.keys(clientConfig.entry);
 
-        entryNames.forEach(entryName => {
-            clientConfig.entry[entryName] = ['webpack-hot-middleware/client', ...clientConfig.entry[entryName]];
+        this.entries.forEach(entryName => {
+            let entry = clientConfig.entry[entryName];
+            if (entry && Array.isArray(entry)) {
+                entry = ['webpack-hot-middleware/client', ...entry];
+            }
         });
 
         // add custom ssr client plugin
@@ -195,7 +194,7 @@ export default class Renderer {
                 return;
             }
 
-            callback(null, entryNames.reduce((prev, entryName) => {
+            callback(null, this.entries.reduce((prev, entryName) => {
                 prev[entryName] = JSON.parse(
                     devMiddleware.fileSystem.readFileSync(
                         distLavasPath(clientConfig.output.path, `${entryName}/${CLIENT_MANIFEST}`),

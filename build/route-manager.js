@@ -6,30 +6,17 @@
 
 'use strict';
 
-import {
-    utimes,
-    readFile,
-    emptyDir,
-    readJson,
-    outputFile,
-    pathExists
-} from 'fs-extra';
+import {readFile} from 'fs-extra';
 import {join} from 'path';
 import {createHash} from 'crypto';
 import template from 'lodash.template';
-import merge from 'webpack-merge';
-import lruCache from 'lru-cache';
-
-import HtmlWebpackPlugin from 'html-webpack-plugin';
-import SkeletonWebpackPlugin from 'vue-skeleton-webpack-plugin';
 
 import {generateRoutes, matchUrl} from './utils/router';
 import {distLavasPath} from './utils/path';
-import {webpackCompile, writeFileInDev} from './utils/webpack';
+import {writeFileInDev} from './utils/webpack';
 import {ROUTES_FILE, SKELETON_DIRNAME} from './constants';
 
 const routesTemplate = join(__dirname, './templates/routes.tpl');
-const skeletonEntryTemplate = join(__dirname, './templates/entry-skeleton.tpl');
 
 export default class RouteManager {
 
@@ -37,7 +24,6 @@ export default class RouteManager {
         this.config = core.config;
         this.env = core.env;
         this.cwd = core.cwd;
-        this.webpackConfig = core.webpackConfig;
 
         if (this.config) {
             this.targetDir = join(this.config.globals.rootDir, './.lavas');
@@ -46,123 +32,6 @@ export default class RouteManager {
         this.routes = [];
 
         this.flatRoutes = new Set();
-
-        this.prerenderCache = lruCache({
-            max: 1000,
-            maxAge: 1000 * 60 * 15
-        });
-    }
-
-    /**
-     * find html according to current route
-     *
-     * @param {string} entryName entryName
-     * @return {Promise}
-     */
-    async getStaticHtml(entryName) {
-        let entry = this.prerenderCache.get(entryName);
-        if (!entry) {
-            entry = await readFile(join(this.cwd, `${entryName}.html`), 'utf8');
-            this.prerenderCache.set(entryName, entry);
-        }
-        return entry;
-    }
-
-    /**
-     * create an entry file for a skeleton component
-     *
-     * @param {string} entryName entryName
-     * @param {string} skeletonPath used as import
-     * @return {string} entryPath
-     */
-    async createEntryForSkeleton(entryName, skeletonPath) {
-        // .lavas/${entryName}/skeleton.js
-        let entryPath = join(this.targetDir, `${entryName}/skeleton.js`);
-
-        await outputFile(
-            entryPath,
-            template(await readFile(skeletonEntryTemplate, 'utf8'))({
-                skeleton: {
-                    path: skeletonPath
-                }
-            }),
-            'utf8'
-        );
-
-        return entryPath;
-    }
-
-    /**
-     * create a webpack config and compile with it
-     *
-     */
-    async buildMultiEntries() {
-        let rootDir = this.config.globals.rootDir;
-
-        // create mpa config based on client config
-        let mpaConfig = merge(this.webpackConfig.client(this.config));
-        let skeletonEntries = {};
-
-        // set context and clear entries
-        mpaConfig.entry = {};
-        mpaConfig.context = rootDir;
-
-        /**
-         * for each module needs prerendering, we will:
-         * 1. add a html-webpack-plugin to output a relative HTML file
-         * 2. create an entry if a skeleton component is provided
-         */
-        await Promise.all(this.config.entry.map(async entryConfig => {
-            let {name: entryName, ssr: needSSR} = entryConfig;
-
-            if (!needSSR) {
-                // allow user to provide a custom HTML template
-                let htmlTemplatePath = join(rootDir, `entries/${entryName}/client.template.html`);
-                if (!await pathExists(htmlTemplatePath)) {
-                    htmlTemplatePath = join(__dirname, './templates/index.template.html');
-                }
-                let htmlFilename = `${entryName}.html`;
-
-                mpaConfig.entry[entryName] = [`./entries/${entryName}/entry-client.js`];
-
-                // add html webpack plugin
-                mpaConfig.plugins.unshift(new HtmlWebpackPlugin({
-                    filename: htmlFilename,
-                    template: htmlTemplatePath,
-                    inject: true,
-                    minify: {
-                        removeComments: true,
-                        collapseWhitespace: true,
-                        removeAttributeQuotes: true
-                    },
-                    chunksSortMode: 'dependency',
-                    config: this.config // use config in template
-                }));
-
-                let skeletonPath = `@/entries/${entryName}/skeleton.vue`;
-                if (await pathExists(skeletonPath)) {
-                    let entryPath = await this.createEntryForSkeleton(entryName, skeletonPath);
-                    skeletonEntries[entryName] = [entryPath];
-                }
-            }
-        }));
-
-        if (Object.keys(skeletonEntries).length) {
-            let skeletonConfig = merge(this.webpackConfig.server(this.config));
-            // remove vue-ssr-client plugin
-            skeletonConfig.plugins.pop();
-            skeletonConfig.entry = skeletonEntries;
-
-            // add skeleton plugin
-            mpaConfig.plugins.push(new SkeletonWebpackPlugin({
-                webpackConfig: skeletonConfig
-            }));
-        }
-
-        if (Object.keys(mpaConfig.entry).length) {
-            await webpackCompile(mpaConfig);
-            console.log('[Lavas] MPA build completed.');
-        }
     }
 
     /**
