@@ -132,7 +132,7 @@ export default class RouteManager {
          * 1. add a html-webpack-plugin to output a relative HTML file
          * 2. create an entry if a skeleton component is provided
          */
-        await Promise.all(this.config.entry).map(async entryConfig => {
+        await Promise.all(this.config.entry.map(async entryConfig => {
             let {name: entryName, ssr: needSSR} = entryConfig;
 
             if (!needSSR) {
@@ -143,7 +143,7 @@ export default class RouteManager {
                 }
                 let htmlFilename = `${entryName}.html`;
 
-                mpaConfig.entry[entryName] = [join(rootDir, `entries/${entryName}/entry-client.js`)];
+                mpaConfig.entry[entryName] = [`./entries/${entryName}/entry-client.js`];
 
                 // add html webpack plugin
                 mpaConfig.plugins.unshift(new HtmlWebpackPlugin({
@@ -159,13 +159,13 @@ export default class RouteManager {
                     config: this.config // use config in template
                 }));
 
-                let skeletonPath = join(rootDir, `entries/${entryName}/skeleton.vue`);
+                let skeletonPath = `@/entries/${entryName}/skeleton.vue`;
                 if (await pathExists(skeletonPath)) {
                     let entryPath = await this.createEntryForSkeleton(entryName, skeletonPath);
                     skeletonEntries[entryName] = [entryPath];
                 }
             }
-        });
+        }));
 
         if (Object.keys(skeletonEntries).length) {
             let skeletonConfig = merge(this.webpackConfig.server(this.config));
