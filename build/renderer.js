@@ -57,11 +57,14 @@ export default class Renderer {
     async createWithBundle() {
         this.serverBundle = await import(distLavasPath(this.cwd, SERVER_BUNDLE));
 
-        await Promise.all(this.entries.map(async entryName => {
+        await Promise.all(this.config.entry.map(async entry => {
+            let {name: entryName, ssr} = entry;
             let templatePath = distLavasPath(this.cwd, `${entryName}/${TEMPLATE_HTML}`);
             let manifestPath = distLavasPath(this.cwd, `${entryName}/${CLIENT_MANIFEST}`);
-            this.templates[entryName] = await fs.readFile(templatePath, 'utf-8');
-            this.clientManifest[entryName] = await import(manifestPath);
+            if (ssr) {
+                this.templates[entryName] = await fs.readFile(templatePath, 'utf-8');
+                this.clientManifest[entryName] = await fs.readJson(manifestPath);
+            }
         }));
 
         await this.createRenderer();
