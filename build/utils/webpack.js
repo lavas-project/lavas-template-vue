@@ -3,6 +3,7 @@
  * @author lavas
  */
 import webpack from 'webpack';
+import {utimes, outputFile} from 'fs-extra';
 
 /**
  * start to compile with webpack, record the errors & warnings in process
@@ -37,4 +38,15 @@ export function webpackCompile(config) {
             resolve();
         });
     });
+}
+
+export async function writeFileInDev(path, content) {
+    await outputFile(path, content, 'utf8');
+
+    /**
+     * hack for watchpack, solve the rebuilding problem in dev mode
+     * https://github.com/webpack/watchpack/issues/25#issuecomment-287789288
+     */
+    let then = Date.now() / 1000 - 10;
+    await utimes(path, then, then);
 }
