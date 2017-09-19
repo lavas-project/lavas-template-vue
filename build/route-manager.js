@@ -369,7 +369,7 @@ export default class RouteManager {
         // merge with routes' config
         this.mergeWithConfig(this.routes, routesConfig, rewriteRules);
 
-        // write .lavas/routes.js
+        // write routes for each entry
         await this.writeRoutesSourceFile();
 
         console.log('[Lavas] all routes are already generated.');

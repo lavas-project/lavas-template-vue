@@ -71,11 +71,17 @@ export default class Renderer {
         // start to build client & server configs
         await webpackCompile([this.clientConfig, this.serverConfig]);
 
-        // copy index.template.html to dist/lavas
-        await Promise.all(this.entries.map(async entryName => {
-            let templatePath = this.getTemplatePath(entryName);
-            let distTemplatePath = distLavasPath(this.config.webpack.base.output.path, `${entryName}/${TEMPLATE_HTML}`);
-            await fs.copy(templatePath, distTemplatePath);
+        // copy index.template.html to dist/lavas/{entryName}/
+        await Promise.all(this.config.entry.map(async entryConfig => {
+            if (entryConfig.ssr) {
+                let entryName = entryConfig.name;
+                let templatePath = this.getTemplatePath(entryName);
+                let distTemplatePath = distLavasPath(this.config.webpack.base.output.path, `${entryName}/${TEMPLATE_HTML}`);
+                return fs.copy(templatePath, distTemplatePath);
+            }
+            else {
+                return Promise.resolve();
+            }
         }));
 
     }
