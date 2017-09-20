@@ -166,18 +166,44 @@ export default class Builder {
     /**
      * inject routes into service-worker.js.tmpl for later use
      */
-    async injectRoutesToSW() {
-        // add 'routes' to service-worker.tmpl.js
+    async injectEntriesToSW() {
+        // add entryConfig to service-worker.tmpl.js
         let rawTemplate = await readFile(templatesPath('service-worker.js.tmpl'));
         let swTemplateContent = template(rawTemplate, {
             evaluate: /{{([\s\S]+?)}}/g,
             interpolate: /{{=([\s\S]+?)}}/g,
             escape: /{{-([\s\S]+?)}}/g
         })({
-            routes: JSON.stringify(this.routeManager.routes)
+            entryConfig: JsonUtil.stringify(this.config.entry)
         });
         let swTemplateFilePath = templatesPath('service-worker-real.js.tmpl');
         await outputFile(swTemplateFilePath, swTemplateContent);
+    }
+
+    /**
+     * add skeleton routes in development mode
+     *
+     * @param {object} clientConfig webpack client config
+     */
+    addSkeletonRoutes(clientConfig) {
+        let {globals: {rootDir}, entry} = this.config;
+        let entriesWithSkeleton = this.config.entry.filter(async e => {
+            let {name, ssr} = e;
+            let skeletonPath = join(rootDir, `entries/${name}/skeleton.vue`);
+            return !ssr && await pathExists(skeletonPath);
+        });
+        clientConfig.module.rules.push(SkeletonWebpackPlugin.loader({
+            resource: join(rootDir, '.lavas/main/routes'),
+            options: {
+                entry: entriesWithSkeleton.map(e => e.name),
+                // template of importing skeleton component
+                importTemplate: 'import [nameCap] from \'@/entries/[name]/skeleton.vue\';',
+                // template of route path
+                routePathTemplate: '/skeleton-[name]',
+                // position to insert route object in router.js file
+                insertAfter: 'let routes = ['
+            }
+        }));
     }
 
     /**
@@ -189,18 +215,7 @@ export default class Builder {
         let clientConfig = this.webpackConfig.client(this.config);
         let serverConfig = this.webpackConfig.server(this.config);
         // add skeleton routes
-        // clientConfig.module.rules.concat(SkeletonWebpackPlugin.loader({
-        //     resource: resolve('entries/main/router.js'),
-        //     options: {
-        //         entry: Object.keys(utils.getEntries('./src/pages')),
-        //         // template of importing skeleton component
-        //         importTemplate: 'import [nameCap] from \'@/pages/[name]/[nameCap].skeleton.vue\';',
-        //         // template of route path
-        //         routePathTemplate: '/skeleton-[name]',
-        //         // position to insert route object in router.js file
-        //         insertAfter: 'routes: ['
-        //     }
-        // }))
+        // this.addSkeletonRoutes(clientConfig);
         // build bundle renderer
         await this.renderer.build(clientConfig, serverConfig);
 
@@ -216,16 +231,16 @@ export default class Builder {
      * build in production mode
      */
     async buildProd() {
-        let needSSR = this.config.entry.some(e => e.ssr);
-        let needMPA = this.config.entry.some(e => !e.ssr);
+        let ssrExists = this.config.entry.some(e => e.ssr);
+        let mpaExists = this.config.entry.some(e => !e.ssr);
         // clear dist/ first
         await emptyDir(this.config.webpack.base.output.path);
         // inject routes into service-worker.js.tmpl for later use
-        await this.injectRoutesToSW();
+        await this.injectEntriesToSW();
         await this.routeManager.buildRoutes();
 
         // SSR build process
-        if (needSSR) {
+        if (ssrExists) {
             console.log('[Lavas] SSR build starting...');
             // webpack client & server config
             let clientConfig = this.webpackConfig.client(this.config);
@@ -248,9 +263,8 @@ export default class Builder {
         }
 
         // MPA build process
-        if (needMPA) {
+        if (mpaExists) {
             console.log('[Lavas] MPA build starting...');
-            // compile multi entries only in production mode
             await this.buildMultiEntries();
             console.log('[Lavas] MPA build completed.');
         }
