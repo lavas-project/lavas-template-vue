@@ -8,7 +8,7 @@ var entryConfig = [];
 // 把rawEntryConfig中routes转化为正则对象
 for (var i = 0; i < rawEntryConfig.length; i++) {
     if (rawEntryConfig[i].ssr) {
-        let entry = rawEntryConfig[i];
+        var entry = rawEntryConfig[i];
         entry.routes = getRegExp(entry.routes);
         entryConfig.push(entry);
     }
@@ -21,8 +21,8 @@ var ignoreUrlParametersMatching = [<%= ignoreUrlParametersMatching %>];
 // 将super-json转化的正则对象复原
 var getRegExp = function (regExpStr) {
     if (typeof regExpStr === 'string' && regExpStr.indexOf('#!RegExp') === 0) {
-        let match = regExpStr.match(/^#!RegExp(\[.*\])$/);
-        let tmp = JSON.parse(match[1]);
+        var match = regExpStr.match(/^#!RegExp(\[.*\])$/);
+        var tmp = JSON.parse(match[1]);
         return new RegExp(tmp[0], tmp[1]);
     }
 
