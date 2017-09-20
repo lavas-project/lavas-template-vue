@@ -162,15 +162,15 @@ export default class Builder {
     /**
      * inject routes into service-worker.js.tmpl for later use
      */
-    async injectRoutesToSW() {
-        // add 'routes' to service-worker.tmpl.js
+    async injectEntriesToSW() {
+        // add entryConfig to service-worker.tmpl.js
         let rawTemplate = await readFile(join(__dirname, 'templates/service-worker.js.tmpl'));
         let swTemplateContent = template(rawTemplate, {
             evaluate: /{{([\s\S]+?)}}/g,
             interpolate: /{{=([\s\S]+?)}}/g,
             escape: /{{-([\s\S]+?)}}/g
         })({
-            routes: JSON.stringify(this.routeManager.routes)
+            entryConfig: JsonUtil.stringify(this.config.entry)
         });
         let swTemplateFilePath = join(__dirname, 'templates/service-worker-real.js.tmpl');
         await outputFile(swTemplateFilePath, swTemplateContent);
@@ -185,8 +185,8 @@ export default class Builder {
         // build routes' info and source code
         await this.routeManager.buildRoutes();
 
-        // inject routes into service-worker.js.tmpl for later use
-        await this.injectRoutesToSW();
+        // inject entry info into service-worker.js.tmpl for later use
+        await this.injectEntriesToSW();
 
         // webpack client & server config
         let clientConfig = this.webpackConfig.client(this.config);
