@@ -11,14 +11,17 @@ import SkeletonWebpackPlugin from 'vue-skeleton-webpack-plugin';
 
 import {CONFIG_FILE} from './constants';
 import {webpackCompile} from './utils/webpack';
-import {distLavasPath} from './utils/path';
+import {distLavasPath, assetsPath} from './utils/path';
 import * as JsonUtil from './utils/json';
+
+function templatesPath(path) {
+    return join(__dirname, 'templates', path);
+}
 
 export default class Builder {
     constructor(core) {
         this.cwd = core.cwd;
         this.config = core.config;
-        this.isProd = core.isProd;
         this.lavasDir = join(this.config.globals.rootDir, './.lavas');
         this.renderer = core.renderer;
         this.webpackConfig = new WebpackConfig(core.config, core.env);
@@ -33,7 +36,7 @@ export default class Builder {
      * @return {string} entryPath
      */
     async createEntryForSkeleton(entryName, skeletonPath) {
-        const skeletonEntryTemplate = join(__dirname, './templates/entry-skeleton.tpl');
+        const skeletonEntryTemplate = templatesPath('entry-skeleton.tpl');
         // .lavas/${entryName}/skeleton.js
         let entryPath = join(this.lavasDir, `${entryName}/skeleton.js`);
 
@@ -76,7 +79,7 @@ export default class Builder {
                 // allow user to provide a custom HTML template
                 let htmlTemplatePath = join(rootDir, `entries/${entryName}/client.template.html`);
                 if (!await pathExists(htmlTemplatePath)) {
-                    htmlTemplatePath = join(__dirname, './templates/index.template.html');
+                    htmlTemplatePath = templatesPath('index.template.html');
                 }
                 let htmlFilename = `${entryName}.html`;
 
@@ -92,7 +95,9 @@ export default class Builder {
                         collapseWhitespace: true,
                         removeAttributeQuotes: true
                     },
+                    favicon: assetsPath('img/icons/favicon.ico'),
                     chunksSortMode: 'dependency',
+                    chunks: ['manifest', 'vue', 'vendor', entryName],
                     config: this.config // use config in template
                 }));
 
@@ -119,7 +124,6 @@ export default class Builder {
 
         if (Object.keys(mpaConfig.entry).length) {
             await webpackCompile(mpaConfig);
-            console.log('[Lavas] MPA build completed.');
         }
     }
 
@@ -164,7 +168,7 @@ export default class Builder {
      */
     async injectRoutesToSW() {
         // add 'routes' to service-worker.tmpl.js
-        let rawTemplate = await readFile(join(__dirname, 'templates/service-worker.js.tmpl'));
+        let rawTemplate = await readFile(templatesPath('service-worker.js.tmpl'));
         let swTemplateContent = template(rawTemplate, {
             evaluate: /{{([\s\S]+?)}}/g,
             interpolate: /{{=([\s\S]+?)}}/g,
@@ -172,31 +176,62 @@ export default class Builder {
         })({
             routes: JSON.stringify(this.routeManager.routes)
         });
-        let swTemplateFilePath = join(__dirname, 'templates/service-worker-real.js.tmpl');
+        let swTemplateFilePath = templatesPath('service-worker-real.js.tmpl');
         await outputFile(swTemplateFilePath, swTemplateContent);
     }
 
-    async build() {
-        if (this.isProd) {
-            // clear dist/
-            await emptyDir(this.config.webpack.base.output.path);
-        }
-
-        // build routes' info and source code
+    /**
+     * build in development mode
+     */
+    async buildDev() {
         await this.routeManager.buildRoutes();
-
-        // inject routes into service-worker.js.tmpl for later use
-        await this.injectRoutesToSW();
-
         // webpack client & server config
         let clientConfig = this.webpackConfig.client(this.config);
         let serverConfig = this.webpackConfig.server(this.config);
-
+        // add skeleton routes
+        // clientConfig.module.rules.concat(SkeletonWebpackPlugin.loader({
+        //     resource: resolve('entries/main/router.js'),
+        //     options: {
+        //         entry: Object.keys(utils.getEntries('./src/pages')),
+        //         // template of importing skeleton component
+        //         importTemplate: 'import [nameCap] from \'@/pages/[name]/[nameCap].skeleton.vue\';',
+        //         // template of route path
+        //         routePathTemplate: '/skeleton-[name]',
+        //         // position to insert route object in router.js file
+        //         insertAfter: 'routes: ['
+        //     }
+        // }))
         // build bundle renderer
         await this.renderer.build(clientConfig, serverConfig);
 
-        if (this.isProd) {
-            console.log(`[Lavas] write and copy files...`);
+        // use chokidar to rebuild routes
+        // let pagesDir = join(this.config.globals.rootDir, 'pages');
+        // chokidar.watch(pagesDir)
+        //     .on('change', async () => {
+        //         await this.routeManager.buildRoutes();
+        //     });
+    }
+
+    /**
+     * build in production mode
+     */
+    async buildProd() {
+        let needSSR = this.config.entry.some(e => e.ssr);
+        let needMPA = this.config.entry.some(e => !e.ssr);
+        // clear dist/ first
+        await emptyDir(this.config.webpack.base.output.path);
+        // inject routes into service-worker.js.tmpl for later use
+        await this.injectRoutesToSW();
+        await this.routeManager.buildRoutes();
+
+        // SSR build process
+        if (needSSR) {
+            console.log('[Lavas] SSR build starting...');
+            // webpack client & server config
+            let clientConfig = this.webpackConfig.client(this.config);
+            let serverConfig = this.webpackConfig.server(this.config);
+            // build bundle renderer
+            await this.renderer.build(clientConfig, serverConfig);
             await Promise.all([
                 /**
                  * when running online server, renderer needs to use template and
@@ -206,19 +241,18 @@ export default class Builder {
                  * & assetsDir are required. some props such as globalDir are useless.
                  */
                 this.writeConfigFile(this.config),
-                // compile multi entries only in production mode
-                this.buildMultiEntries(),
-                // copy to /dist
+                // copy some files to /dist
                 this.copyServerModuleToDist()
             ]);
+            console.log('[Lavas] SSR build completed.');
         }
-        // else {
-            // TODO: use chokidar to rebuild routes in dev mode
-            // let pagesDir = join(this.config.globals.rootDir, 'pages');
-            // chokidar.watch(pagesDir)
-            //     .on('change', async () => {
-            //         await this.routeManager.buildRoutes();
-            //     });
-        // }
+
+        // MPA build process
+        if (needMPA) {
+            console.log('[Lavas] MPA build starting...');
+            // compile multi entries only in production mode
+            await this.buildMultiEntries();
+            console.log('[Lavas] MPA build completed.');
+        }
     }
 }
