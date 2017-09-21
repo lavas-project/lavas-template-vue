@@ -83,8 +83,13 @@ export default class LavasCore {
     async build() {
         let spinner = ora();
         spinner.start();
-        await this.builder.build();
-        spinner.succeed(`[Lavas] ${this.env} build is completed.`);
+        if (this.isProd) {
+            await this.builder.buildProd();
+        }
+        else {
+            await this.builder.buildDev();
+        }
+        spinner.succeed(`[Lavas] ${this.env} build completed.`);
     }
 
     /**

@@ -20,6 +20,7 @@ import SWPrecacheWebPlugin from 'sw-precache-webpack-plugin';
 import SWRegisterWebpackPlugin from 'sw-register-webpack-plugin';
 
 import {vueLoaders, styleLoaders} from './utils/loader';
+import {assetsPath} from './utils/path';
 import {LAVAS_DIRNAME_IN_DIST, SERVER_BUNDLE} from './constants';
 
 export default class WebpackConfig {
@@ -27,17 +28,6 @@ export default class WebpackConfig {
         this.config = config;
         this.env = env;
         this.hooks = {};
-    }
-
-    /**
-     * generate a relative path based on config
-     * eg. static/js/[name].[hash].js
-     *
-     * @param {string} sourcePath source path
-     * @return {string} relative path
-     */
-    assetsPath(sourcePath) {
-        return posix.join(this.config.webpack.shortcuts.assetsDir, sourcePath);
     }
 
     /**
@@ -88,7 +78,7 @@ export default class WebpackConfig {
                         loader: 'url-loader',
                         options: {
                             limit: 10000,
-                            name: this.assetsPath('img/[name].[hash:7].[ext]')
+                            name: assetsPath('img/[name].[hash:7].[ext]')
                         }
                     },
                     {
@@ -96,7 +86,7 @@ export default class WebpackConfig {
                         loader: 'url-loader',
                         options: {
                             limit: 10000,
-                            name: this.assetsPath('fonts/[name].[hash:7].[ext]')
+                            name: assetsPath('fonts/[name].[hash:7].[ext]')
                         }
                     }
                 ]
@@ -127,7 +117,7 @@ export default class WebpackConfig {
         if (cssExtract) {
             baseConfig.plugins.unshift(
                 new ExtractTextPlugin({
-                    filename: this.assetsPath('css/[name].[contenthash].css')
+                    filename: assetsPath('css/[name].[contenthash].css')
                 })
             );
         }
@@ -159,8 +149,8 @@ export default class WebpackConfig {
         let baseConfig = this.base(config);
         let clientConfig = merge.strategy(mergeStrategy)(baseConfig, {
             output: {
-                filename: this.assetsPath(baseConfig.output.filename),
-                chunkFilename: this.assetsPath('js/[name].[chunkhash:8].js')
+                filename: assetsPath(baseConfig.output.filename),
+                chunkFilename: assetsPath('js/[name].[chunkhash:8].js')
             },
             module: {
                 rules: styleLoaders({
@@ -226,7 +216,7 @@ export default class WebpackConfig {
 
                 new ManifestJsonWebpackPlugin({
                     config: this.config.manifest,
-                    path: this.assetsPath('manifest.json')
+                    path: assetsPath('manifest.json')
                 })
             ]
         }, client);
