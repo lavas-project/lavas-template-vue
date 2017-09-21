@@ -14,6 +14,7 @@ import VueSSRClientPlugin from './plugins/ssr-client-plugin';
 
 import {distLavasPath, resolveAliasPath} from './utils/path';
 import {webpackCompile} from './utils/webpack';
+import templateUtil from './utils/template';
 import {LAVAS_DIRNAME_IN_DIST, TEMPLATE_HTML, SERVER_BUNDLE, CLIENT_MANIFEST} from './constants';
 
 export default class Renderer {
@@ -33,14 +34,20 @@ export default class Renderer {
     }
 
     /**
-     * resolve template path with webpack alias
+     * return ssr template
      *
      * @param {string} alias webpack alias
      * @param {string} entryName entry name
      * @return {string} resolved path
      */
-    getTemplatePath(entryName) {
-        return join(this.rootDir, `entries/${entryName}/`, TEMPLATE_HTML);
+    getTemplate(entryName) {
+        let templatePath = join(this.rootDir, `entries/${entryName}/${TEMPLATE_HTML}`);
+        if (!fs.pathExistsSync(templatePath)) {
+            throw new Error(`${TEMPLATE_HTML} required for entry: ${entryName}`);
+        }
+        return templateUtil.server(
+            fs.readFileSync(templatePath, 'utf8')
+        );
     }
 
     /**
@@ -80,9 +87,9 @@ export default class Renderer {
         await Promise.all(this.config.entry.map(async entryConfig => {
             if (entryConfig.ssr) {
                 let entryName = entryConfig.name;
-                let templatePath = this.getTemplatePath(entryName);
+                let templateContent = this.getTemplate(entryName);
                 let distTemplatePath = distLavasPath(this.config.webpack.base.output.path, `${entryName}/${TEMPLATE_HTML}`);
-                await fs.copy(templatePath, distTemplatePath);
+                await fs.outputFile(distTemplatePath, templateContent);
             }
         }));
 
@@ -99,9 +106,8 @@ export default class Renderer {
             await this.buildInProduction();
         }
         else {
-
             await Promise.all(this.entries.map(async entryName => {
-                this.templates[entryName] = await fs.readFile(this.getTemplatePath(entryName), 'utf-8');
+                this.templates[entryName] = this.getTemplate(entryName);
             }));
 
             // get client manifest

@@ -9,10 +9,11 @@ import {join} from 'path';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import SkeletonWebpackPlugin from 'vue-skeleton-webpack-plugin';
 
-import {CONFIG_FILE} from './constants';
+import {CONFIG_FILE, TEMPLATE_HTML} from './constants';
 import {webpackCompile} from './utils/webpack';
 import {distLavasPath} from './utils/path';
 import * as JsonUtil from './utils/json';
+import templateUtil from './utils/template';
 
 export default class Builder {
     constructor(core) {
@@ -73,19 +74,22 @@ export default class Builder {
             let {name: entryName, ssr: needSSR} = entryConfig;
 
             if (!needSSR) {
-                // allow user to provide a custom HTML template
-                let htmlTemplatePath = join(rootDir, `entries/${entryName}/client.template.html`);
-                if (!await pathExists(htmlTemplatePath)) {
-                    htmlTemplatePath = join(__dirname, './templates/index.template.html');
-                }
                 let htmlFilename = `${entryName}.html`;
+                // allow user to provide a custom HTML template
+                let customTemplatePath = join(rootDir, `entries/${entryName}/${TEMPLATE_HTML}`);
+                if (!await pathExists(customTemplatePath)) {
+                    throw new Error(`${TEMPLATE_HTML} required for entry: ${name}`);
+                }
+                let clientTemplateContent = templateUtil.client(await readFile(customTemplatePath, 'utf8'));
+                let realTemplatePath = join(rootDir, `.lavas/${entryName}/${TEMPLATE_HTML}`);
+                await outputFile(realTemplatePath, clientTemplateContent);
 
                 mpaConfig.entry[entryName] = [`./entries/${entryName}/entry-client.js`];
 
                 // add html webpack plugin
                 mpaConfig.plugins.unshift(new HtmlWebpackPlugin({
                     filename: htmlFilename,
-                    template: htmlTemplatePath,
+                    template: realTemplatePath,
                     inject: true,
                     minify: {
                         removeComments: true,

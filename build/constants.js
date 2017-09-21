@@ -8,6 +8,6 @@ export const SKELETON_DIRNAME = 'skeletons';
 
 export const CLIENT_MANIFEST = 'vue-ssr-client-manifest.json';
 export const SERVER_BUNDLE = 'vue-ssr-server-bundle.json';
-export const TEMPLATE_HTML = 'index.template.html';
+export const TEMPLATE_HTML = 'index.html.tmpl';
 export const ROUTES_FILE = 'routes.json';
 export const CONFIG_FILE = 'config.json';
