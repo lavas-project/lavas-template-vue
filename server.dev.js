@@ -7,25 +7,13 @@ const LavasCore = require('./lib');
 const Koa = require('koa');
 const app = new Koa();
 
-let env = process.env.NODE_ENV || 'production';
 let port = process.env.PORT || 3000;
 
 let core = new LavasCore(__dirname);
 
-let startLavasPromise;
-
-if (env === 'development') {
-    startLavasPromise = core.init(env, true).then(() => {
-        return core.build();
-    });
-}
-else {
-    startLavasPromise = core.init(env).then(() => {
-        return core.runAfterBuild();
-    });
-}
-
-startLavasPromise.then(() => {
+core.init('development', true).then(() => {
+    return core.build();
+}).then(() => {
     app.use(core.koaMiddleware());
 
     app.listen(port, () => {

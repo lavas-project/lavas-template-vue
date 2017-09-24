@@ -14,7 +14,7 @@ import expressErrorFactory from './middlewares/expressError';
 
 import ora from 'ora';
 
-import composeMiddleware from 'compose-middleware';
+import {compose} from 'compose-middleware';
 import composeKoa from 'koa-compose';
 import c2k from 'koa-connect';
 import serve from 'serve-static';
@@ -108,6 +108,7 @@ export default class LavasCore {
      * @return {Function} koa middleware
      */
     koaMiddleware() {
+        let ssrExists = this.config.entry.some(e => e.ssr);
         // transform express/connect style middleware to koa style
         return composeKoa([
             koaErrorFactory(this),
@@ -118,7 +119,7 @@ export default class LavasCore {
             },
             c2k(privateFileFactory(this)),
             ...this.internalMiddlewares.map(c2k),
-            c2k(ssrFactory(this))
+            ssrExists ? c2k(ssrFactory(this)) : () => {}
         ]);
     }
 
@@ -128,10 +129,11 @@ export default class LavasCore {
      * @return {Function} express middleware
      */
     expressMiddleware() {
-        return composeMiddleware.compose([
+        let ssrExists = this.config.entry.some(e => e.ssr);
+        return compose([
             privateFileFactory(this),
             ...this.internalMiddlewares,
-            ssrFactory(this),
+            ssrExists ? ssrFactory(this) : () => {},
             expressErrorFactory(this)
         ]);
     }

@@ -1,16 +1,20 @@
 import RouteManager from './route-manager';
 import WebpackConfig from './webpack';
 
+import webpack from 'webpack';
 import chokidar from 'chokidar';
 import template from 'lodash.template';
 import {copy, emptyDir, readFile, outputFile, pathExists} from 'fs-extra';
 import {join} from 'path';
 
+import historyMiddleware from 'connect-history-api-fallback';
+import webpackDevMiddleware from 'webpack-dev-middleware';
+import webpackHotMiddleware from 'webpack-hot-middleware';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import SkeletonWebpackPlugin from 'vue-skeleton-webpack-plugin';
 
 import {CONFIG_FILE} from './constants';
-import {webpackCompile} from './utils/webpack';
+import {webpackCompile, enableHotReload} from './utils/webpack';
 import {distLavasPath, assetsPath} from './utils/path';
 import * as JsonUtil from './utils/json';
 
@@ -24,8 +28,11 @@ export default class Builder {
         this.config = core.config;
         this.lavasDir = join(this.config.globals.rootDir, './.lavas');
         this.renderer = core.renderer;
+        this.internalMiddlewares = core.internalMiddlewares;
         this.webpackConfig = new WebpackConfig(core.config, core.env);
         this.routeManager = new RouteManager(this);
+        this.ssrExists = this.config.entry.some(e => e.ssr);
+        this.mpaExists = this.config.entry.some(e => !e.ssr);
     }
 
     /**
@@ -55,8 +62,10 @@ export default class Builder {
     /**
      * create a webpack config and compile with it
      *
+     * @param {boolean} isDev is in development mode?
+     * @return {Object} compiler webpack compiler
      */
-    async buildMultiEntries() {
+    async buildMultiEntries(isDev) {
         let rootDir = this.config.globals.rootDir;
 
         // create mpa config based on client config
@@ -65,6 +74,7 @@ export default class Builder {
 
         // set context and clear entries
         mpaConfig.entry = {};
+        mpaConfig.name = 'mpaClient';
         mpaConfig.context = rootDir;
 
         /**
@@ -123,7 +133,12 @@ export default class Builder {
         }
 
         if (Object.keys(mpaConfig.entry).length) {
-            await webpackCompile(mpaConfig);
+            // enable hotreload in every entry in dev mode
+            if (isDev) {
+                enableHotReload(mpaConfig);
+            }
+            // await webpackCompile(mpaConfig);
+            return webpack(mpaConfig);
         }
     }
 
@@ -210,14 +225,57 @@ export default class Builder {
      * build in development mode
      */
     async buildDev() {
-        await this.routeManager.buildRoutes();
         // webpack client & server config
         let clientConfig = this.webpackConfig.client(this.config);
         let serverConfig = this.webpackConfig.server(this.config);
-        // add skeleton routes
-        // this.addSkeletonRoutes(clientConfig);
-        // build bundle renderer
-        await this.renderer.build(clientConfig, serverConfig);
+
+        await this.routeManager.buildRoutes();
+
+        if (this.ssrExists) {
+            console.log('[Lavas] SSR build starting...');
+            // add skeleton routes
+            // this.addSkeletonRoutes(clientConfig);
+            // build bundle renderer
+            await this.renderer.build(clientConfig, serverConfig);
+            console.log('[Lavas] SSR build completed.');
+        }
+
+        if (this.mpaExists) {
+            console.log('[Lavas] MPA build starting...');
+            let compiler = await this.buildMultiEntries(true);
+            let devMiddleware = webpackDevMiddleware(compiler, {
+                publicPath: clientConfig.output.publicPath,
+                noInfo: true
+            });
+            let hotMiddleware = webpackHotMiddleware(compiler, {
+                heartbeat: 5000
+            });
+
+            // hotreload for html
+            compiler.plugin('compilation', (compilation) => {
+                compilation.plugin('html-webpack-plugin-after-emit', (data, cb) => {
+                    hotMiddleware.publish({
+                        action: 'reload'
+                    });
+                    cb();
+                });
+            });
+
+            // add html history api support
+            this.internalMiddlewares.push(historyMiddleware({
+                htmlAcceptHeaders: ['text/html'],
+                rewrites: [{
+                    from: new RegExp('/rewrite/detail'),
+                    to: '/detail.html'
+                },{
+                    from: new RegExp('/'),
+                    to: '/main.html'
+                }]
+            }));
+            this.internalMiddlewares.push(devMiddleware);
+            this.internalMiddlewares.push(hotMiddleware);
+            console.log('[Lavas] MPA build completed.');
+        }
 
         // use chokidar to rebuild routes
         // let pagesDir = join(this.config.globals.rootDir, 'pages');
@@ -231,8 +289,6 @@ export default class Builder {
      * build in production mode
      */
     async buildProd() {
-        let ssrExists = this.config.entry.some(e => e.ssr);
-        let mpaExists = this.config.entry.some(e => !e.ssr);
         // clear dist/ first
         await emptyDir(this.config.webpack.base.output.path);
         // inject routes into service-worker.js.tmpl for later use
@@ -240,7 +296,7 @@ export default class Builder {
         await this.routeManager.buildRoutes();
 
         // SSR build process
-        if (ssrExists) {
+        if (this.ssrExists) {
             console.log('[Lavas] SSR build starting...');
             // webpack client & server config
             let clientConfig = this.webpackConfig.client(this.config);
@@ -263,7 +319,7 @@ export default class Builder {
         }
 
         // MPA build process
-        if (mpaExists) {
+        if (this.mpaExists) {
             console.log('[Lavas] MPA build starting...');
             await this.buildMultiEntries();
             console.log('[Lavas] MPA build completed.');

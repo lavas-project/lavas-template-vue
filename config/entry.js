@@ -22,7 +22,7 @@ module.exports = [
     },
     {
         name: 'main',
-        ssr: true,
+        ssr: false,
         routes: /^.*$/
     }
 ];
