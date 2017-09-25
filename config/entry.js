@@ -12,17 +12,19 @@ module.exports = [
          * 是否启用 ssr，决定上面那些属性会有效
          *
          */
-        ssr: false,
+        ssr: true,
         /**
          * 这个模块匹配的路径，default 的优先级最低
          *
          * @type {RegExp|string|Array.<RegExp|string>}
          */
         routes: /^\/detail/
+
+        // templateFile: process.env.SF ? 'index.sf.html.tmpl' : 'index.html.tmpl'
     },
     {
         name: 'main',
-        ssr: false,
+        ssr: true,
         routes: /^.*$/
     }
 ];

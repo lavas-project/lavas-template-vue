@@ -97,7 +97,7 @@ export default class Renderer {
 
     async buildDev() {
         await Promise.all(this.entries.map(async entryName => {
-            this.templates[entryName] = await fs.readFile(this.getTemplatePath(entryName), 'utf-8');
+            this.templates[entryName] = this.getTemplate(entryName);
         }));
 
         enableHotReload(this.clientConfig);
@@ -238,6 +238,7 @@ export default class Renderer {
                             template: this.templates[entryName],
                             clientManifest: this.clientManifest[entryName],
                             runInNewContext: false
+                            // inject: false
                         }
                     );
                     if (first) {
