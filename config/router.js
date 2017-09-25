@@ -9,7 +9,7 @@ module.exports = {
 
     // 自定义路由规则
     rewrite: [
-        {from: /^\/(detail.*)$/, to: '/rewrite/$1'},
+        // {from: /^\/(detail.*)$/, to: '/rewrite/$1'},
         // {from: '/detail/:id', to: '/rewrite/detail/:id'}
     ],
 

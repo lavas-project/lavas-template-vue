@@ -12,10 +12,16 @@ const serverTemplatePath = fs.readFileSync(path.resolve(__dirname, '../templates
 const clientTemplatePath = fs.readFileSync(path.resolve(__dirname, '../templates/client.html.tmpl'));
 
 function inner(customTemplate, templatePath) {
+    let useCustomOnlyFlag = false;
     let renderMetaFlag = false;
     let renderManifestFlag = false;
+    let renderEntryFlag = false;
 
     let temp = template(customTemplate)({
+        useCustomOnly: () => {
+            useCustomOnlyFlag = true;
+            return '';
+        },
         renderMeta: () => {
             renderMetaFlag = true;
             return '';
@@ -25,9 +31,14 @@ function inner(customTemplate, templatePath) {
             return '';
         },
         renderEntry: () => {
+            renderEntryFlag = true;
             return '@RENDER_ENTRY@';
         }
     });
+
+    if (useCustomOnlyFlag) {
+        return temp;
+    }
 
     // render server/client template with flags
     let real = template(templatePath)({
@@ -41,8 +52,10 @@ function inner(customTemplate, templatePath) {
     let customBodyAfter = '';
     try {
         customHead = temp.match(/<head>([\w\W]+)<\/head>/)[1];
-        customBodyBefore = temp.match(/<body>([\w\W]+)@RENDER_ENTRY@/)[1];
-        customBodyAfter = temp.match(/@RENDER_ENTRY@([\w\W]+)<\/body>/)[1];
+        if (renderEntryFlag) {
+            customBodyBefore = temp.match(/<body>([\w\W]+)@RENDER_ENTRY@/)[1];
+            customBodyAfter = temp.match(/@RENDER_ENTRY@([\w\W]+)<\/body>/)[1];
+        }
     }
     catch (e) {
         // do nothing
