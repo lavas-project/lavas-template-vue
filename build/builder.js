@@ -35,6 +35,7 @@ export default class Builder {
         this.routeManager = new RouteManager(this);
         this.ssrExists = this.config.entry.some(e => e.ssr);
         this.mpaExists = this.config.entry.some(e => !e.ssr);
+        this.watchers = [];
     }
 
     /**
@@ -63,23 +64,33 @@ export default class Builder {
     }
 
     /**
+     * create html template for entry
+     *
+     * @param {string} sourcePath sourcePath
+     * @param {string} targetPath targetPath
+     */
+    async createHtmlTemplate(sourcePath, targetPath) {
+        let writeFile = this.isDev ? writeFileInDev : outputFile;
+        let clientTemplateContent = templateUtil.client(await readFile(sourcePath, 'utf8'));
+        await writeFile(targetPath, clientTemplateContent);
+    }
+
+    /**
      * use html webpack plugin
      *
      * @param {Object} mpaConfig mpaConfig
      * @param {string} entryName entryName
      */
     async addHtmlPlugin(mpaConfig, entryName) {
-        let writeFile = this.isProd ? outputFile : writeFileInDev;
+        // allow user to provide a custom HTML template
         let rootDir = this.config.globals.rootDir;
         let htmlFilename = `${entryName}.html`;
-        // allow user to provide a custom HTML template
         let customTemplatePath = join(rootDir, `entries/${entryName}/${TEMPLATE_HTML}`);
         if (!await pathExists(customTemplatePath)) {
-            throw new Error(`${TEMPLATE_HTML} required for entry: ${name}`);
+            throw new Error(`${TEMPLATE_HTML} required for entry: ${entryName}`);
         }
-        let clientTemplateContent = templateUtil.client(await readFile(customTemplatePath, 'utf8'));
-        let realTemplatePath = join(rootDir, `.lavas/${entryName}/${TEMPLATE_HTML}`);
-        await writeFile(realTemplatePath, clientTemplateContent);
+        let realTemplatePath = join(this.lavasDir, `${entryName}/${TEMPLATE_HTML}`);
+        await this.createHtmlTemplate(customTemplatePath, realTemplatePath);
 
         // add html webpack plugin
         mpaConfig.plugins.unshift(new HtmlWebpackPlugin({
@@ -96,6 +107,15 @@ export default class Builder {
             chunks: ['manifest', 'vue', 'vendor', entryName],
             config: this.config // use config in template
         }));
+
+        // watch template in development mode
+        if (this.isDev) {
+            let watcher = chokidar.watch(customTemplatePath, {ignoreInitial: true})
+                .on('change', async () => {
+                    await this.createHtmlTemplate(customTemplatePath, realTemplatePath);
+                });
+            this.watchers.push(watcher);
+        }
     }
 
     /**
@@ -261,9 +281,9 @@ export default class Builder {
 
         if (this.mpaExists) {
             console.log('[Lavas] MPA build starting...');
-
             // create mpa config first
             let mpaConfig = await this.createMPAConfig();
+
             // add skeleton routes
             this.addSkeletonRoutes(mpaConfig);
 
@@ -280,6 +300,7 @@ export default class Builder {
             // hot reload for html
             compiler.plugin('compilation', (compilation) => {
                 compilation.plugin('html-webpack-plugin-after-emit', (data, cb) => {
+                    // trigger reload action, which will be used in hot-reload-client.js
                     hotMiddleware.publish({
                         action: 'reload'
                     });
@@ -307,11 +328,15 @@ export default class Builder {
         }
 
         // use chokidar to rebuild routes
-        // let pagesDir = join(this.config.globals.rootDir, 'pages');
-        // chokidar.watch(pagesDir)
-        //     .on('change', async () => {
-        //         await this.routeManager.buildRoutes();
-        //     });
+        let pagesDir = join(this.config.globals.rootDir, 'pages');
+        let watcher = chokidar.watch(pagesDir, {ignoreInitial: true})
+            .on('add', async () => {
+                await this.routeManager.buildRoutes();
+            })
+            .on('unlink', async () => {
+                await this.routeManager.buildRoutes();
+            });
+        this.watchers.push(watcher);
     }
 
     /**
@@ -353,6 +378,14 @@ export default class Builder {
             console.log('[Lavas] MPA build starting...');
             webpackCompile(await this.createMPAConfig());
             console.log('[Lavas] MPA build completed.');
+        }
+    }
+
+    close() {
+        if (this.watchers && this.watchers.length) {
+            this.watchers.forEach(watcher => {
+                watcher.close();
+            });
         }
     }
 }

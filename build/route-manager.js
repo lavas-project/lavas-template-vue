@@ -195,6 +195,7 @@ export default class RouteManager {
      */
     async buildRoutes() {
         const {routes: routesConfig = [], rewrite: rewriteRules = []} = this.config.router;
+        this.flatRoutes = new Set();
 
         console.log('[Lavas] auto compile routes...');
 

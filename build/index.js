@@ -137,4 +137,8 @@ export default class LavasCore {
             expressErrorFactory(this)
         ]);
     }
+
+    close() {
+        this.builder.close();
+    }
 }

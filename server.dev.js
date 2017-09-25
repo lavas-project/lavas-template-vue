@@ -20,5 +20,6 @@ core.init('development', true).then(() => {
         console.log('server started at localhost:' + port);
     });
 }).catch((err) => {
+    core.close();
     console.log(err);
 });

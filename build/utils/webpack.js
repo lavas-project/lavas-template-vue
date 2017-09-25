@@ -3,6 +3,7 @@
  * @author lavas
  */
 import webpack from 'webpack';
+import {join} from 'path';
 import {utimes, outputFile} from 'fs-extra';
 
 /**
@@ -63,16 +64,16 @@ export async function writeFileInDev(path, content) {
  * @param {Object} config webpack config
  */
 export function enableHotReload(config) {
-    let {entry, name = 'client'} = config;
+    let {entry, plugins} = config;
+    let hotReloadClientEntry = join(__dirname, '../hot-reload-client');
 
     Object.keys(entry).forEach(entryName => {
         let currentEntry = entry[entryName];
         if (Array.isArray(currentEntry)) {
-            entry[entryName] = [...currentEntry,
-                `webpack-hot-middleware/client?name=${name}&noInfo=true&reload=true`];
+            entry[entryName] = [...currentEntry, hotReloadClientEntry];
         }
     });
-    config.plugins.push(
+    plugins.push(
         new webpack.HotModuleReplacementPlugin(),
         new webpack.NoEmitOnErrorsPlugin()
     );
