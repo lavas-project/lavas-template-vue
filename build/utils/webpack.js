@@ -69,7 +69,7 @@ export function enableHotReload(config) {
         let currentEntry = entry[entryName];
         if (Array.isArray(currentEntry)) {
             entry[entryName] = [...currentEntry,
-                `webpack-hot-middleware/client?name=${name}&reload=true`];
+                `webpack-hot-middleware/client?name=${name}&noInfo=true&reload=true`];
         }
     });
     config.plugins.push(

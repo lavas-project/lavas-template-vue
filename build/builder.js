@@ -13,10 +13,12 @@ import webpackHotMiddleware from 'webpack-hot-middleware';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import SkeletonWebpackPlugin from 'vue-skeleton-webpack-plugin';
 
-import {CONFIG_FILE} from './constants';
-import {webpackCompile, enableHotReload} from './utils/webpack';
+import {CONFIG_FILE, TEMPLATE_HTML} from './constants';
+import {webpackCompile, enableHotReload, writeFileInDev} from './utils/webpack';
 import {distLavasPath, assetsPath} from './utils/path';
+import {routes2Reg} from './utils/router';
 import * as JsonUtil from './utils/json';
+import templateUtil from './utils/template';
 
 function templatesPath(path) {
     return join(__dirname, 'templates', path);
@@ -42,12 +44,13 @@ export default class Builder {
      * @param {string} skeletonPath used as import
      * @return {string} entryPath
      */
-    async createEntryForSkeleton(entryName, skeletonPath) {
+    async createSkeletonEntry(entryName, skeletonPath) {
         const skeletonEntryTemplate = templatesPath('entry-skeleton.tpl');
         // .lavas/${entryName}/skeleton.js
         let entryPath = join(this.lavasDir, `${entryName}/skeleton.js`);
 
-        await outputFile(
+        let writeFile = this.isProd ? outputFile : writeFileInDev;
+        await writeFile(
             entryPath,
             template(await readFile(skeletonEntryTemplate, 'utf8'))({
                 skeleton: {
@@ -60,12 +63,47 @@ export default class Builder {
     }
 
     /**
+     * use html webpack plugin
+     *
+     * @param {Object} mpaConfig mpaConfig
+     * @param {string} entryName entryName
+     */
+    async addHtmlPlugin(mpaConfig, entryName) {
+        let writeFile = this.isProd ? outputFile : writeFileInDev;
+        let rootDir = this.config.globals.rootDir;
+        let htmlFilename = `${entryName}.html`;
+        // allow user to provide a custom HTML template
+        let customTemplatePath = join(rootDir, `entries/${entryName}/${TEMPLATE_HTML}`);
+        if (!await pathExists(customTemplatePath)) {
+            throw new Error(`${TEMPLATE_HTML} required for entry: ${name}`);
+        }
+        let clientTemplateContent = templateUtil.client(await readFile(customTemplatePath, 'utf8'));
+        let realTemplatePath = join(rootDir, `.lavas/${entryName}/${TEMPLATE_HTML}`);
+        await writeFile(realTemplatePath, clientTemplateContent);
+
+        // add html webpack plugin
+        mpaConfig.plugins.unshift(new HtmlWebpackPlugin({
+            filename: htmlFilename,
+            template: realTemplatePath,
+            inject: true,
+            minify: {
+                removeComments: true,
+                collapseWhitespace: true,
+                removeAttributeQuotes: true
+            },
+            favicon: assetsPath('img/icons/favicon.ico'),
+            chunksSortMode: 'dependency',
+            chunks: ['manifest', 'vue', 'vendor', entryName],
+            config: this.config // use config in template
+        }));
+    }
+
+    /**
      * create a webpack config and compile with it
      *
-     * @param {boolean} isDev is in development mode?
-     * @return {Object} compiler webpack compiler
+     * @return {Object} mpaConfig webpack config for MPA
      */
-    async buildMultiEntries(isDev) {
+    async createMPAConfig() {
         let rootDir = this.config.globals.rootDir;
 
         // create mpa config based on client config
@@ -86,35 +124,17 @@ export default class Builder {
             let {name: entryName, ssr: needSSR} = entryConfig;
 
             if (!needSSR) {
-                // allow user to provide a custom HTML template
-                let htmlTemplatePath = join(rootDir, `entries/${entryName}/client.template.html`);
-                if (!await pathExists(htmlTemplatePath)) {
-                    htmlTemplatePath = templatesPath('index.template.html');
-                }
-                let htmlFilename = `${entryName}.html`;
-
+                // set client entry first
                 mpaConfig.entry[entryName] = [`./entries/${entryName}/entry-client.js`];
 
-                // add html webpack plugin
-                mpaConfig.plugins.unshift(new HtmlWebpackPlugin({
-                    filename: htmlFilename,
-                    template: htmlTemplatePath,
-                    inject: true,
-                    minify: {
-                        removeComments: true,
-                        collapseWhitespace: true,
-                        removeAttributeQuotes: true
-                    },
-                    favicon: assetsPath('img/icons/favicon.ico'),
-                    chunksSortMode: 'dependency',
-                    chunks: ['manifest', 'vue', 'vendor', entryName],
-                    config: this.config // use config in template
-                }));
+                // add html-webpack-plugin
+                await this.addHtmlPlugin(mpaConfig, entryName);
 
+                // if skeleton provided, we need to create an entry
                 let skeletonPath = join(rootDir, `entries/${entryName}/skeleton.vue`);
                 let skeletonImportPath = `@/entries/${entryName}/skeleton.vue`;
                 if (await pathExists(skeletonPath)) {
-                    let entryPath = await this.createEntryForSkeleton(entryName, skeletonImportPath);
+                    let entryPath = await this.createSkeletonEntry(entryName, skeletonImportPath);
                     skeletonEntries[entryName] = [entryPath];
                 }
             }
@@ -132,14 +152,12 @@ export default class Builder {
             }));
         }
 
-        if (Object.keys(mpaConfig.entry).length) {
-            // enable hotreload in every entry in dev mode
-            if (isDev) {
-                enableHotReload(mpaConfig);
-            }
-            // await webpackCompile(mpaConfig);
-            return webpack(mpaConfig);
+        // enable hotreload in every entry in dev mode
+        if (this.isDev) {
+            enableHotReload(mpaConfig);
         }
+        // await webpackCompile(mpaConfig);
+        return mpaConfig;
     }
 
     /**
@@ -202,20 +220,19 @@ export default class Builder {
      */
     addSkeletonRoutes(clientConfig) {
         let {globals: {rootDir}, entry} = this.config;
-        let entriesWithSkeleton = this.config.entry.filter(async e => {
+        // only pages in MPA need skeleton
+        let entriesWithSkeleton = entry.filter(async e => {
             let {name, ssr} = e;
             let skeletonPath = join(rootDir, `entries/${name}/skeleton.vue`);
             return !ssr && await pathExists(skeletonPath);
         });
+
         clientConfig.module.rules.push(SkeletonWebpackPlugin.loader({
-            resource: join(rootDir, '.lavas/main/routes'),
+            resource: entriesWithSkeleton.map(e => join(rootDir, `.lavas/${e.name}/routes`)),
             options: {
                 entry: entriesWithSkeleton.map(e => e.name),
-                // template of importing skeleton component
                 importTemplate: 'import [nameCap] from \'@/entries/[name]/skeleton.vue\';',
-                // template of route path
                 routePathTemplate: '/skeleton-[name]',
-                // position to insert route object in router.js file
                 insertAfter: 'let routes = ['
             }
         }));
@@ -225,16 +242,18 @@ export default class Builder {
      * build in development mode
      */
     async buildDev() {
+        this.isDev = true;
         // webpack client & server config
         let clientConfig = this.webpackConfig.client(this.config);
         let serverConfig = this.webpackConfig.server(this.config);
 
         await this.routeManager.buildRoutes();
 
+        // // add skeleton routes
+        // this.addSkeletonRoutes(clientConfig);
+
         if (this.ssrExists) {
             console.log('[Lavas] SSR build starting...');
-            // add skeleton routes
-            // this.addSkeletonRoutes(clientConfig);
             // build bundle renderer
             await this.renderer.build(clientConfig, serverConfig);
             console.log('[Lavas] SSR build completed.');
@@ -242,7 +261,14 @@ export default class Builder {
 
         if (this.mpaExists) {
             console.log('[Lavas] MPA build starting...');
-            let compiler = await this.buildMultiEntries(true);
+
+            // create mpa config first
+            let mpaConfig = await this.createMPAConfig();
+            // add skeleton routes
+            this.addSkeletonRoutes(mpaConfig);
+
+            // create a compiler based on mpa config
+            let compiler = webpack(mpaConfig);
             let devMiddleware = webpackDevMiddleware(compiler, {
                 publicPath: clientConfig.output.publicPath,
                 noInfo: true
@@ -251,7 +277,7 @@ export default class Builder {
                 heartbeat: 5000
             });
 
-            // hotreload for html
+            // hot reload for html
             compiler.plugin('compilation', (compilation) => {
                 compilation.plugin('html-webpack-plugin-after-emit', (data, cb) => {
                     hotMiddleware.publish({
@@ -261,17 +287,20 @@ export default class Builder {
                 });
             });
 
-            // add html history api support
+            // TODO: add html history api support
+            let mpaEntries = this.config.entry.filter(e => !e.ssr);
             this.internalMiddlewares.push(historyMiddleware({
                 htmlAcceptHeaders: ['text/html'],
-                rewrites: [{
-                    from: new RegExp('/rewrite/detail'),
-                    to: '/detail.html'
-                },{
-                    from: new RegExp('/'),
-                    to: '/main.html'
-                }]
+                rewrites: mpaEntries.map(entry => {
+                    let {name, routes} = entry;
+                    return {
+                        from: routes2Reg(routes),
+                        to: `/${name}.html`
+                    };
+                })
             }));
+
+            // add dev & hot-reload middlewares
             this.internalMiddlewares.push(devMiddleware);
             this.internalMiddlewares.push(hotMiddleware);
             console.log('[Lavas] MPA build completed.');
@@ -289,6 +318,7 @@ export default class Builder {
      * build in production mode
      */
     async buildProd() {
+        this.isProd = true;
         // clear dist/ first
         await emptyDir(this.config.webpack.base.output.path);
         // inject routes into service-worker.js.tmpl for later use
@@ -321,7 +351,7 @@ export default class Builder {
         // MPA build process
         if (this.mpaExists) {
             console.log('[Lavas] MPA build starting...');
-            await this.buildMultiEntries();
+            webpackCompile(await this.createMPAConfig());
             console.log('[Lavas] MPA build completed.');
         }
     }

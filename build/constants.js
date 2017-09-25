@@ -9,5 +9,5 @@ export const ASSETS_DIRNAME_IN_DIST= 'static';
 
 export const CLIENT_MANIFEST = 'vue-ssr-client-manifest.json';
 export const SERVER_BUNDLE = 'vue-ssr-server-bundle.json';
-export const TEMPLATE_HTML = 'index.template.html';
+export const TEMPLATE_HTML = 'index.html.tmpl';
 export const CONFIG_FILE = 'config.json';
