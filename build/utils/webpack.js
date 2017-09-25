@@ -40,6 +40,12 @@ export function webpackCompile(config) {
     });
 }
 
+/**
+ * write files to disk in dev mode
+ *
+ * @param {string} path file path
+ * @param {string} content file content
+ */
 export async function writeFileInDev(path, content) {
     await outputFile(path, content, 'utf8');
 
@@ -49,4 +55,25 @@ export async function writeFileInDev(path, content) {
      */
     let then = Date.now() / 1000 - 10;
     await utimes(path, then, then);
+}
+
+/**
+ * add support for hot reload, such as adding plugins and modifying every entry
+ *
+ * @param {Object} config webpack config
+ */
+export function enableHotReload(config) {
+    let {entry, name = 'client'} = config;
+
+    Object.keys(entry).forEach(entryName => {
+        let currentEntry = entry[entryName];
+        if (Array.isArray(currentEntry)) {
+            entry[entryName] = [...currentEntry,
+                `webpack-hot-middleware/client?name=${name}&noInfo=true&reload=true`];
+        }
+    });
+    config.plugins.push(
+        new webpack.HotModuleReplacementPlugin(),
+        new webpack.NoEmitOnErrorsPlugin()
+    );
 }

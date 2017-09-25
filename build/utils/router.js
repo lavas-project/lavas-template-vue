@@ -5,6 +5,18 @@
 import {resolve, dirname, basename} from 'path';
 import glob from 'glob';
 
+export function routes2Reg(routes) {
+    let reg;
+    if (typeof routes === 'string') {
+        reg = new RegExp('^' + routes.replace(/\/:[^\/]*/g, '/[^\/]+') + '\/?');
+    }
+    else if (routes instanceof RegExp) {
+        return routes;
+    }
+
+    return reg;
+}
+
 export function matchUrl (routes, url) {
     if (Array.isArray(routes)) {
         return routes.some(route => matchUrl(route, url));

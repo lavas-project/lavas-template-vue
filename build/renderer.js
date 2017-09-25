@@ -13,8 +13,9 @@ import {createBundleRenderer} from 'vue-server-renderer';
 import VueSSRClientPlugin from './plugins/ssr-client-plugin';
 
 import {distLavasPath, resolveAliasPath} from './utils/path';
-import {webpackCompile} from './utils/webpack';
+import {webpackCompile, enableHotReload} from './utils/webpack';
 import templateUtil from './utils/template';
+
 import {LAVAS_DIRNAME_IN_DIST, TEMPLATE_HTML, SERVER_BUNDLE, CLIENT_MANIFEST} from './constants';
 
 export default class Renderer {
@@ -62,7 +63,7 @@ export default class Renderer {
     }
 
     async createWithBundle() {
-        this.serverBundle = await import(distLavasPath(this.cwd, SERVER_BUNDLE));
+        this.serverBundle = await fs.readFile(distLavasPath(this.cwd, SERVER_BUNDLE));
 
         await Promise.all(this.config.entry.map(async entry => {
             let {name: entryName, ssr} = entry;
@@ -70,14 +71,14 @@ export default class Renderer {
             let manifestPath = distLavasPath(this.cwd, `${entryName}/${CLIENT_MANIFEST}`);
             if (ssr) {
                 this.templates[entryName] = await fs.readFile(templatePath, 'utf-8');
-                this.clientManifest[entryName] = await fs.readJson(manifestPath);
+                this.clientManifest[entryName] = await fs.readFile(manifestPath);
             }
         }));
 
         await this.createRenderer();
     }
 
-    async buildInProduction() {
+    async buildProd() {
         this.addSSRClientPlugin();
 
         // start to build client & server configs
@@ -92,7 +93,98 @@ export default class Renderer {
                 await fs.outputFile(distTemplatePath, templateContent);
             }
         }));
+    }
 
+    async buildDev() {
+        await Promise.all(this.entries.map(async entryName => {
+            this.templates[entryName] = await fs.readFile(this.getTemplatePath(entryName), 'utf-8');
+        }));
+
+        enableHotReload(this.clientConfig);
+
+        // add custom ssr client plugin
+        this.addSSRClientPlugin();
+
+        let clientCompiler = webpack(this.clientConfig);
+
+        // dev middleware
+        let devMiddleware = webpackDevMiddleware(clientCompiler, {
+            publicPath: this.config.webpack.base.output.publicPath,
+            noInfo: true
+        });
+        this.devFs = devMiddleware.fileSystem;
+        clientCompiler.outputFileSystem = this.devFs;
+
+        this.internalMiddlewares.push(devMiddleware);
+
+        // hot middleware
+        let hotMiddleware = webpackHotMiddleware(clientCompiler, {
+            heartbeat: 5000
+        });
+
+        this.internalMiddlewares.push(hotMiddleware);
+
+        clientCompiler.plugin('done', async stats => {
+            stats = stats.toJson();
+            stats.errors.forEach(err => console.error(err));
+            stats.warnings.forEach(err => console.warn(err));
+
+            if (stats.errors.length) {
+                for (let error of stats.errors) {
+                    console.error(error);
+                }
+                return;
+            }
+            await this.refreshFiles();
+        });
+
+        let serverCompiler = webpack(this.serverConfig);
+        this.mfs = new MFS();
+        serverCompiler.outputFileSystem = this.mfs;
+
+        serverCompiler.watch({}, async (err, stats) => {
+            if (err) {
+                throw err;
+            }
+            stats = stats.toJson();
+            if (stats.errors.length) {
+                // print all errors
+                for (let error of stats.errors) {
+                    console.error(error);
+                }
+                return;
+            }
+            await this.refreshFiles();
+        });
+    }
+
+    async refreshFiles() {
+        let changed = false;
+        console.log('[Lavas] refresh ssr bundle & manifest.');
+        this.clientManifest = this.entries.reduce((prev, entryName) => {
+            let clientManifestPath = distLavasPath(this.clientConfig.output.path, `${entryName}/${CLIENT_MANIFEST}`);
+            if (this.devFs.existsSync(clientManifestPath)) {
+                let clientManifestContent = this.devFs.readFileSync(clientManifestPath, 'utf-8');
+                // if (prev[entryName] && prev[entryName] !== clientManifestContent) {
+                    prev[entryName] = JSON.parse(clientManifestContent);
+                //     changed = true;
+                // }
+            }
+            return prev;
+        }, {});
+
+        let serverBundlePath = distLavasPath(this.serverConfig.output.path, SERVER_BUNDLE);
+        if (this.mfs.existsSync(serverBundlePath)) {
+            let serverBundleContent = this.mfs.readFileSync(serverBundlePath, 'utf8');
+            // if (this.serverBundle !== serverBundleContent) {
+                this.serverBundle = JSON.parse(serverBundleContent);
+                // changed = true;
+            // }
+        }
+
+        // if (changed) {
+        await this.createRenderer();
+        // }
     }
 
     async build(clientConfig, serverConfig) {
@@ -103,24 +195,10 @@ export default class Renderer {
         this.setWebpackEntries();
 
         if (this.isProd) {
-            await this.buildInProduction();
+            await this.buildProd();
         }
         else {
-            await Promise.all(this.entries.map(async entryName => {
-                this.templates[entryName] = this.getTemplate(entryName);
-            }));
-
-            // get client manifest
-            this.getClientManifest(async (err, manifest) => {
-                this.clientManifest = manifest;
-                await this.createRenderer();
-            });
-
-            // get server bundle
-            this.getServerBundle(async (err, serverBundle) => {
-                this.serverBundle = serverBundle;
-                await this.createRenderer();
-            });
+            await this.buildDev();
         }
     }
 
@@ -134,6 +212,7 @@ export default class Renderer {
 
         // each entry should have an independent client entry
         this.clientConfig.entry = {};
+        this.clientConfig.name = 'client';
         this.config.entry.forEach(entryConfig => {
             if (!this.isProd || (this.isProd && entryConfig.ssr)) {
                 let entryName = entryConfig.name;
@@ -146,122 +225,24 @@ export default class Renderer {
     }
 
     /**
-     * get client manifest, and add middlewares to Koa instance
-     *
-     * @param {Function} callback callback
-     */
-    getClientManifest(callback) {
-        let clientConfig = this.clientConfig;
-
-        this.entries.forEach(entryName => {
-            let entry = clientConfig.entry[entryName];
-            if (entry && Array.isArray(entry)) {
-                entry = ['webpack-hot-middleware/client', ...entry];
-            }
-        });
-
-        // add custom ssr client plugin
-        this.addSSRClientPlugin();
-        // add other plugins in dev mode
-        clientConfig.plugins.push(
-            new webpack.HotModuleReplacementPlugin(),
-            new webpack.NoEmitOnErrorsPlugin()
-        );
-
-        // init client compiler
-        let clientCompiler = webpack(clientConfig);
-
-        // dev middleware
-        let devMiddleware = webpackDevMiddleware(clientCompiler, {
-            publicPath: this.config.webpack.base.output.publicPath,
-            noInfo: true
-        });
-
-        this.internalMiddlewares.push(devMiddleware);
-
-        // hot middleware
-        let hotMiddleware = webpackHotMiddleware(clientCompiler, {
-            heartbeat: 5000
-        });
-
-        this.internalMiddlewares.push(hotMiddleware);
-
-        clientCompiler.plugin('done', stats => {
-            stats = stats.toJson();
-            stats.errors.forEach(err => console.error(err));
-            stats.warnings.forEach(err => console.warn(err));
-
-            if (stats.errors.length) {
-                // print all errors
-                for (let error of stats.errors) {
-                    console.error(error);
-                }
-
-                return;
-            }
-
-            callback(null, this.entries.reduce((prev, entryName) => {
-                prev[entryName] = JSON.parse(
-                    devMiddleware.fileSystem.readFileSync(
-                        distLavasPath(clientConfig.output.path, `${entryName}/${CLIENT_MANIFEST}`),
-                        'utf-8'
-                    )
-                );
-                return prev;
-            }, {}));
-        });
-
-    }
-
-    /**
-     * get server bundle
-     *
-     * @param {Function} callback callback
-     */
-    getServerBundle(callback) {
-        let serverConfig = this.serverConfig;
-
-        // watch and update server renderer
-        const serverCompiler = webpack(serverConfig);
-        const mfs = new MFS();
-        serverCompiler.outputFileSystem = mfs;
-        serverCompiler.watch({}, (err, stats) => {
-
-            if (err) {
-                throw err;
-            }
-            stats = stats.toJson();
-            if (stats.errors.length) {
-                // print all errors
-                for (let error of stats.errors) {
-                    console.error(error);
-                }
-
-                return;
-            }
-
-            let rawContent = mfs.readFileSync(
-                distLavasPath(serverConfig.output.path, SERVER_BUNDLE), 'utf8');
-
-            callback(null, JSON.parse(rawContent));
-        });
-    }
-
-    /**
      * create renderer
      */
     async createRenderer() {
         if (this.serverBundle && this.clientManifest) {
             await Promise.all(this.entries.map(async entryName => {
-                let first = !this.renderer[entryName];
-                this.renderer[entryName] = createBundleRenderer(this.serverBundle, {
-                    template: this.templates[entryName],
-                    clientManifest: this.clientManifest[entryName],
-                    runInNewContext: false
-                });
-
-                if (first) {
-                    this.resolve(this.renderer[entryName]);
+                if (this.clientManifest[entryName]) {
+                    let first = !this.renderer[entryName];
+                    this.renderer[entryName] = createBundleRenderer(
+                        this.serverBundle,
+                        {
+                            template: this.templates[entryName],
+                            clientManifest: this.clientManifest[entryName],
+                            runInNewContext: false
+                        }
+                    );
+                    if (first) {
+                        this.resolve(this.renderer[entryName]);
+                    }
                 }
             }));
         }

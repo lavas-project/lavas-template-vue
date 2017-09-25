@@ -20,6 +20,10 @@ export default {
 @import '~normalize.css';
 
 .skeleton-wrapper
+    position fixed
+    top 0
+    bottom 0
+    width 100%
 
     .skeleton-header
         height 52px

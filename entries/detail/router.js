@@ -13,8 +13,8 @@ Vue.use(Router);
 
 export function createRouter() {
     return new Router({
-        mode: 'hash',
-        base: '/detail/',
+        mode: 'history',
+        base: '/',
         routes
     });
 }
