@@ -14,7 +14,7 @@ Vue.use(Router);
 export function createRouter() {
     return new Router({
         mode: 'hash',
-        base: '/base/',
+        base: '/detail/',
         routes
     });
 }

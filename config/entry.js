@@ -18,11 +18,11 @@ module.exports = [
          *
          * @type {RegExp|string|Array.<RegExp|string>}
          */
-        routes: /^\/rewrite\/detail/
+        routes: /^\/detail/
     },
     {
         name: 'main',
-        ssr: true,
+        ssr: false,
         routes: /^.*$/
     }
 ];
