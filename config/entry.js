@@ -18,9 +18,12 @@ module.exports = [
          *
          * @type {RegExp|string|Array.<RegExp|string>}
          */
-        routes: /^\/detail/
-
-        // templateFile: process.env.SF ? 'index.sf.html.tmpl' : 'index.html.tmpl'
+        routes: /^\/detail/,
+        /**
+         * 使用的模板文件名，默认为index.html.tmpl
+         * @type {string}
+         */
+        templateFile: process.env.MODE === 'sf' ? 'index.sf.html.tmpl' : 'index.html.tmpl'
     },
     {
         name: 'main',
