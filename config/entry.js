@@ -12,7 +12,9 @@ module.exports = [
          * 是否启用 ssr，决定上面那些属性会有效
          *
          */
-        ssr: true,
+        ssr: false,
+        base: '/',
+        mode: 'history',
         /**
          * 这个模块匹配的路径，default 的优先级最低
          *
@@ -27,7 +29,9 @@ module.exports = [
     },
     {
         name: 'main',
-        ssr: true,
+        ssr: false,
+        mode: 'history',
+        base: '/',
         routes: /^.*$/
     }
 ];

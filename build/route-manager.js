@@ -16,7 +16,7 @@ import {distLavasPath} from './utils/path';
 import {writeFileInDev} from './utils/webpack';
 import {ROUTES_FILE, SKELETON_DIRNAME} from './constants';
 
-const routesTemplate = join(__dirname, './templates/routes.tpl');
+const routerTemplate = join(__dirname, './templates/router.tpl');
 
 export default class RouteManager {
 
@@ -167,7 +167,7 @@ export default class RouteManager {
     async writeRoutesSourceFile() {
         let writeFile = this.isDev ? writeFileInDev : outputFile;
         await Promise.all(this.config.entry.map(async entryConfig => {
-            let entryName = entryConfig.name;
+            let {name: entryName, mode = 'history', base = '/'} = entryConfig;
 
             let entryRoutes = this.routes.filter(route => route.entryName === entryName);
             let entryFlatRoutes = new Set();
@@ -177,11 +177,15 @@ export default class RouteManager {
                 }
             });
 
-            let routesFilePath = join(this.lavasDir, `${entryName}/routes.js`);
+            let routesFilePath = join(this.lavasDir, `${entryName}/router.js`);
             let routesContent = this.generateRoutesContent(entryRoutes);
 
-            let routesFileContent = template(await readFile(routesTemplate, 'utf8'))({
+            let routesFileContent = template(await readFile(routerTemplate, 'utf8'))({
                 routes: entryFlatRoutes,
+                router: {
+                    mode,
+                    base
+                },
                 routesContent
             });
             await writeFile(routesFilePath, routesFileContent);

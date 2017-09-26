@@ -112,7 +112,7 @@ export default class LavasCore {
         // transform express/connect style middleware to koa style
         return composeKoa([
             koaErrorFactory(this),
-            async function (ctx, next) {
+            async (ctx, next) => {
                 // koa defaults to 404 when it sees that status is unset
                 ctx.status = 200;
                 await next();
