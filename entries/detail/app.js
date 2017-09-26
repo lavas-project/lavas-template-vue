@@ -4,7 +4,7 @@
  */
 
 import Vue from 'vue';
-import {createRouter} from './router';
+import {createRouter} from '@/.lavas/detail/router';
 import {createStore} from '@/core/store';
 import App from './App.vue';
 

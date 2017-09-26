@@ -13,6 +13,8 @@ module.exports = [
          *
          */
         ssr: false,
+        base: '/',
+        mode: 'history',
         /**
          * 这个模块匹配的路径，default 的优先级最低
          *
@@ -28,6 +30,8 @@ module.exports = [
     {
         name: 'main',
         ssr: false,
+        mode: 'history',
+        base: '/',
         routes: /^.*$/
     }
 ];

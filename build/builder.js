@@ -26,6 +26,7 @@ function templatesPath(path) {
 
 export default class Builder {
     constructor(core) {
+        this.core = core;
         this.cwd = core.cwd;
         this.config = core.config;
         this.lavasDir = join(this.config.globals.rootDir, './.lavas');
@@ -197,11 +198,12 @@ export default class Builder {
     async copyServerModuleToDist() {
         let distPath = this.config.build.path;
 
+        // TODO: delete after moving lib to lavas-core
         let libDir = join(this.cwd, 'lib');
         let distLibDir = join(distPath, 'lib');
 
-        let serverDir = join(this.cwd, 'server.dev.js');
-        let distServerDir = join(distPath, 'server.js');
+        let serverDir = join(this.cwd, 'server.prod.js');
+        let distServerDir = join(distPath, 'server.prod.js');
 
         let nodeModulesDir = join(this.cwd, 'node_modules');
         let distNodeModulesDir = join(distPath, 'node_modules');
@@ -259,6 +261,44 @@ export default class Builder {
         }));
     }
 
+    setWatchers() {
+        // use chokidar to rebuild routes
+        let pagesDir = join(this.config.globals.rootDir, 'pages');
+        let pagesDirWatcher = chokidar.watch(pagesDir, {ignoreInitial: true})
+            .on('add', async () => {
+                await this.routeManager.buildRoutes();
+            })
+            .on('unlink', async () => {
+                await this.routeManager.buildRoutes();
+            });
+        this.watchers.push(pagesDirWatcher);
+
+        // TODO: watch files provides by user
+        if (this.config.build.watch) {
+            let userWatcher = chokidar.watch(this.config.build.watch, {ignoreInitial: true})
+                .on('change', async () => {
+                    await this.routeManager.buildRoutes();
+                    if (this.ssrExists) {
+                        this.renderer.refreshFiles();
+                    }
+                });
+            this.watchers.push(userWatcher);
+        }
+
+        // watch config directory, rebuild whole process
+        let configDir = join(this.config.globals.rootDir, 'config');
+        let configWatcher = chokidar.watch(configDir, {ignoreInitial: true})
+            .on('change', async () => {
+                console.log('[Lavas] config changed...');
+                this.close();
+                this.config = await this.core.configReader.read();
+                console.log(this.config);
+                // await this.core.init('development', true);
+                // await this.core.build();
+            });
+        this.watchers.push(configWatcher);
+    }
+
     /**
      * build in development mode
      */
@@ -269,9 +309,6 @@ export default class Builder {
         let serverConfig = this.webpackConfig.server();
 
         await this.routeManager.buildRoutes();
-
-        // // add skeleton routes
-        // this.addSkeletonRoutes(clientConfig);
 
         if (this.ssrExists) {
             console.log('[Lavas] SSR build starting...');
@@ -314,8 +351,8 @@ export default class Builder {
 
             /**
              * add html history api support:
-             * mpa: use connect-history-api-fallback middleware
-             * ssr: ssr middleware will handle it
+             * in mpa, we use connect-history-api-fallback middleware
+             * in ssr, ssr middleware will handle it instead
              */
             if (!this.ssrExists) {
                 let mpaEntries = this.config.entry.filter(e => !e.ssr);
@@ -337,16 +374,7 @@ export default class Builder {
             console.log('[Lavas] MPA build completed.');
         }
 
-        // use chokidar to rebuild routes
-        let pagesDir = join(this.config.globals.rootDir, 'pages');
-        let watcher = chokidar.watch(pagesDir, {ignoreInitial: true})
-            .on('add', async () => {
-                await this.routeManager.buildRoutes();
-            })
-            .on('unlink', async () => {
-                await this.routeManager.buildRoutes();
-            });
-        this.watchers.push(watcher);
+        this.setWatchers();
     }
 
     /**
@@ -396,6 +424,7 @@ export default class Builder {
             this.watchers.forEach(watcher => {
                 watcher.close();
             });
+            this.watchers = [];
         }
     }
 }

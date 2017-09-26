@@ -4,7 +4,7 @@
  */
 
 import {join} from 'path';
-import fs from 'fs-extra';
+import {pathExists, readFile, readJson, outputFile} from 'fs-extra';
 import webpack from 'webpack';
 import MFS from 'memory-fs';
 import webpackDevMiddleware from 'webpack-dev-middleware';
@@ -41,14 +41,14 @@ export default class Renderer {
      * @param {string} entryName entry name
      * @return {string} resolved path
      */
-    getTemplate(entryName) {
+    async getTemplate(entryName) {
         let templateName = this.getTemplateName(entryName);
         let templatePath = join(this.rootDir, `entries/${entryName}/${templateName}`);
-        if (!fs.pathExistsSync(templatePath)) {
+        if (!await pathExists(templatePath)) {
             throw new Error(`${templateName} required for entry: ${entryName}`);
         }
         return templateUtil.server(
-            fs.readFileSync(templatePath, 'utf8')
+            await readFile(templatePath, 'utf8')
         );
     }
 
@@ -79,16 +79,19 @@ export default class Renderer {
         );
     }
 
+    /**
+     * create renderer with built serverBundle & clientManifest in production mode
+     */
     async createWithBundle() {
-        this.serverBundle = await fs.readFile(distLavasPath(this.cwd, SERVER_BUNDLE));
+        this.serverBundle = await readJson(distLavasPath(this.cwd, SERVER_BUNDLE));
 
         await Promise.all(this.config.entry.map(async entry => {
             let {name: entryName, ssr} = entry;
             let templatePath = distLavasPath(this.cwd, `${entryName}/${this.getTemplateName(entryName)}`);
             let manifestPath = distLavasPath(this.cwd, `${entryName}/${CLIENT_MANIFEST}`);
             if (ssr) {
-                this.templates[entryName] = await fs.readFile(templatePath, 'utf-8');
-                this.clientManifest[entryName] = await fs.readFile(manifestPath);
+                this.templates[entryName] = await readFile(templatePath, 'utf-8');
+                this.clientManifest[entryName] = await readJson(manifestPath);
             }
         }));
 
@@ -105,12 +108,12 @@ export default class Renderer {
         await Promise.all(this.config.entry.map(async entryConfig => {
             if (entryConfig.ssr) {
                 let entryName = entryConfig.name;
-                let templateContent = this.getTemplate(entryName);
+                let templateContent = await this.getTemplate(entryName);
                 let distTemplatePath = distLavasPath(
                     this.config.build.path,
                     `${entryName}/${this.getTemplateName(entryName)}`
                 );
-                await fs.outputFile(distTemplatePath, templateContent);
+                await outputFile(distTemplatePath, templateContent);
             }
         }));
     }
@@ -119,7 +122,7 @@ export default class Renderer {
         let lavasDir = join(this.rootDir, './.lavas');
 
         await Promise.all(this.entries.map(async entryName => {
-            this.templates[entryName] = this.getTemplate(entryName);
+            this.templates[entryName] = await this.getTemplate(entryName);
         }));
 
         await enableHotReload(lavasDir, this.clientConfig, true);

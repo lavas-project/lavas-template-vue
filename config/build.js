@@ -10,7 +10,7 @@ const path = require('path');
 module.exports = {
 
     /**
-     * 编译之后的路径，默认为 dist
+     * build output path
      *
      * @type {string}
      */
@@ -74,14 +74,22 @@ module.exports = {
     plugins: [],
 
     /**
-     * node externals 白名单
+     * node externals
      *
      * @type {Array.<string|RegExp>}
      */
     nodeExternalsWhitelist: [],
 
     /**
-     * 扩展 webpack 的配置
+     * in development mode, we can watch some paths to files, dirs or glob patterns,
+     * rebuild when these files changed
+     *
+     * @type {string|Array.<string>}
+     */
+    watch: null,
+
+    /**
+     * extend function to modify webpack config
      *
      * ```javascript
      * function extend(config, {isClient}) {

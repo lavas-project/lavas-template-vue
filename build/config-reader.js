@@ -55,7 +55,9 @@ export default class ConfigReader {
             name = paths.pop();
 
             // load config
-            cur[name] = await import(join(configDir, filepath));
+            let configPath = join(configDir, filepath);
+            delete require.cache[configPath];
+            cur[name] = await import(configPath);
         }));
 
         let temp = config.env || {};
