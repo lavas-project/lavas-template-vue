@@ -386,7 +386,7 @@ export default class Builder {
         // MPA build process
         if (this.mpaExists) {
             console.log('[Lavas] MPA build starting...');
-            webpackCompile(await this.createMPAConfig());
+            await webpackCompile(await this.createMPAConfig());
             console.log('[Lavas] MPA build completed.');
         }
     }

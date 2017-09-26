@@ -3,6 +3,7 @@
         <h2 class="gray--text">LAVAS</h2>
         <h4 class="gray--text">[ˈlɑ:vəz]</h4>
         <router-link to="/detail/1">detail</router-link>
+        <a href="/detail/#/detail/1">real detail</a>
     </div>
 </template>
 

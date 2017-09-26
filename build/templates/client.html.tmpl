@@ -25,18 +25,12 @@
             <link rel="preload" href="<%= '\<%= cssFilePath %\>' %>" as="style">
         <%= "\<% } %\>" %>
 
-        {{{ renderResourceHints() }}}
-        {{{ renderStyles() }}}
-
         <!-- @CUSTOM_HEAD@ -->
     </head>
     <body>
         <!-- @CUSTOM_BODY_BEFORE@ -->
 
         <div id="app"></div>
-
-        {{{ renderScripts() }}}
-        {{{ renderState() }}}
 
         <!-- @CUSTOM_BODY_AFTER@ -->
     </body>
