@@ -6,7 +6,7 @@
 
 'use strict';
 
-import {readFile} from 'fs-extra';
+import {readFile, outputFile} from 'fs-extra';
 import {join} from 'path';
 import {createHash} from 'crypto';
 import template from 'lodash.template';
@@ -20,13 +20,12 @@ const routesTemplate = join(__dirname, './templates/routes.tpl');
 
 export default class RouteManager {
 
-    constructor(core) {
-        this.config = core.config;
-        this.env = core.env;
-        this.cwd = core.cwd;
+    constructor(config = {}, env) {
+        this.config = config;
+        this.isDev = env === 'development';
 
         if (this.config) {
-            this.targetDir = join(this.config.globals.rootDir, './.lavas');
+            this.lavasDir = join(this.config.globals.rootDir, './.lavas');
         }
 
         this.routes = [];
@@ -82,15 +81,15 @@ export default class RouteManager {
             // add to set
             this.flatRoutes.add(route);
 
-            // find route in config
-            let routeConfig = routesConfig.find(({pattern}) => {
-                return pattern instanceof RegExp ?
-                    pattern.test(route.path) : pattern === route.name;
-            });
-
             // rewrite route path with rules
             route.path = this.rewriteRoutePath(rewriteRules, route.path);
             route.fullPath = parentPath ? `${parentPath}/${route.path}` : route.path;
+
+            // find route in config
+            let routeConfig = routesConfig.find(({pattern}) => {
+                return pattern instanceof RegExp ?
+                    pattern.test(route.fullPath) : pattern === route.fullPath;
+            });
 
             // map entry to every route
             let entry = this.config.entry.find(
@@ -131,8 +130,7 @@ export default class RouteManager {
 
             // merge recursively
             if (route.children && route.children.length) {
-                this.mergeWithConfig(route.children,
-                    routeConfig && routeConfig.children, rewriteRules, route.fullPath);
+                this.mergeWithConfig(route.children, routesConfig, rewriteRules, route.fullPath);
             }
         });
     }
@@ -167,6 +165,7 @@ export default class RouteManager {
      *
      */
     async writeRoutesSourceFile() {
+        let writeFile = this.isDev ? writeFileInDev : outputFile;
         await Promise.all(this.config.entry.map(async entryConfig => {
             let entryName = entryConfig.name;
 
@@ -178,14 +177,14 @@ export default class RouteManager {
                 }
             });
 
-            let routesFilePath = join(this.targetDir, `${entryName}/routes.js`);
+            let routesFilePath = join(this.lavasDir, `${entryName}/routes.js`);
             let routesContent = this.generateRoutesContent(entryRoutes);
 
             let routesFileContent = template(await readFile(routesTemplate, 'utf8'))({
                 routes: entryFlatRoutes,
                 routesContent
             });
-            await writeFileInDev(routesFilePath, routesFileContent);
+            await writeFile(routesFilePath, routesFileContent);
         }));
     }
 
@@ -200,7 +199,7 @@ export default class RouteManager {
         console.log('[Lavas] auto compile routes...');
 
         // generate routes according to pages dir
-        this.routes = await generateRoutes(join(this.targetDir, '../pages'));
+        this.routes = await generateRoutes(join(this.lavasDir, '../pages'));
 
         // merge with routes' config
         this.mergeWithConfig(this.routes, routesConfig, rewriteRules);

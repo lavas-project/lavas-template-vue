@@ -24,15 +24,6 @@ module.exports = {
     publicPath: '/',
 
     /**
-     * 是否需要 bundle 分析报告
-     *
-     * 默认是布尔类型，如果是 Object，择作为 analyzer 的参数
-     *
-     * @type {boolean|Object}
-     */
-    bundleAnalyzerReport: false,
-
-    /**
      * if extract css files
      *
      * @type {boolean}
@@ -59,6 +50,14 @@ module.exports = {
      * @type {boolean}
      */
     jsSourceMap: true,
+
+    /**
+     * if need analyzer, https://github.com/th0r/webpack-bundle-analyzer
+     * default false, if this variable is an Object, then analyzer will be opened
+     *
+     * @type {boolean|Object}
+     */
+    bundleAnalyzerReport: false,
 
     /**
      * alias for webpack

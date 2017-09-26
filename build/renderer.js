@@ -89,18 +89,20 @@ export default class Renderer {
             if (entryConfig.ssr) {
                 let entryName = entryConfig.name;
                 let templateContent = this.getTemplate(entryName);
-                let distTemplatePath = distLavasPath(this.config.webpack.base.output.path, `${entryName}/${TEMPLATE_HTML}`);
+                let distTemplatePath = distLavasPath(this.config.build.path, `${entryName}/${TEMPLATE_HTML}`);
                 await fs.outputFile(distTemplatePath, templateContent);
             }
         }));
     }
 
     async buildDev() {
+        let lavasDir = join(this.rootDir, './.lavas');
+
         await Promise.all(this.entries.map(async entryName => {
-            this.templates[entryName] = await fs.readFile(this.getTemplatePath(entryName), 'utf-8');
+            this.templates[entryName] = this.getTemplate(entryName);
         }));
 
-        enableHotReload(this.clientConfig);
+        await enableHotReload(lavasDir, this.clientConfig, true);
 
         // add custom ssr client plugin
         this.addSSRClientPlugin();
@@ -109,7 +111,7 @@ export default class Renderer {
 
         // dev middleware
         let devMiddleware = webpackDevMiddleware(clientCompiler, {
-            publicPath: this.config.webpack.base.output.publicPath,
+            publicPath: this.clientConfig.output.publicPath,
             noInfo: true
         });
         this.devFs = devMiddleware.fileSystem;
@@ -164,11 +166,12 @@ export default class Renderer {
         this.clientManifest = this.entries.reduce((prev, entryName) => {
             let clientManifestPath = distLavasPath(this.clientConfig.output.path, `${entryName}/${CLIENT_MANIFEST}`);
             if (this.devFs.existsSync(clientManifestPath)) {
+
                 let clientManifestContent = this.devFs.readFileSync(clientManifestPath, 'utf-8');
-                // if (prev[entryName] && prev[entryName] !== clientManifestContent) {
-                    prev[entryName] = JSON.parse(clientManifestContent);
-                //     changed = true;
-                // }
+                if (prev[entryName] && JSON.stringify(prev[entryName]) !== clientManifestContent) {
+                    changed = true;
+                }
+                prev[entryName] = JSON.parse(clientManifestContent);
             }
             return prev;
         }, {});
@@ -176,15 +179,15 @@ export default class Renderer {
         let serverBundlePath = distLavasPath(this.serverConfig.output.path, SERVER_BUNDLE);
         if (this.mfs.existsSync(serverBundlePath)) {
             let serverBundleContent = this.mfs.readFileSync(serverBundlePath, 'utf8');
-            // if (this.serverBundle !== serverBundleContent) {
-                this.serverBundle = JSON.parse(serverBundleContent);
-                // changed = true;
-            // }
+            if (this.serverBundle && JSON.stringify(this.serverBundle) !== serverBundleContent) {
+                changed = true;
+            }
+            this.serverBundle = JSON.parse(serverBundleContent);
         }
 
-        // if (changed) {
-        await this.createRenderer();
-        // }
+        if (changed) {
+            await this.createRenderer();
+        }
     }
 
     async build(clientConfig, serverConfig) {
@@ -212,7 +215,7 @@ export default class Renderer {
 
         // each entry should have an independent client entry
         this.clientConfig.entry = {};
-        this.clientConfig.name = 'client';
+        this.clientConfig.name = 'ssrclient';
         this.config.entry.forEach(entryConfig => {
             if (!this.isProd || (this.isProd && entryConfig.ssr)) {
                 let entryName = entryConfig.name;

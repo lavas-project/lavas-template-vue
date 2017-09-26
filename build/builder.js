@@ -32,7 +32,7 @@ export default class Builder {
         this.renderer = core.renderer;
         this.internalMiddlewares = core.internalMiddlewares;
         this.webpackConfig = new WebpackConfig(core.config, core.env);
-        this.routeManager = new RouteManager(this);
+        this.routeManager = new RouteManager(core.config, core.env);
         this.ssrExists = this.config.entry.some(e => e.ssr);
         this.mpaExists = this.config.entry.some(e => !e.ssr);
         this.watchers = [];
@@ -50,7 +50,7 @@ export default class Builder {
         // .lavas/${entryName}/skeleton.js
         let entryPath = join(this.lavasDir, `${entryName}/skeleton.js`);
 
-        let writeFile = this.isProd ? outputFile : writeFileInDev;
+        let writeFile = this.isDev ? writeFileInDev : outputFile;
         await writeFile(
             entryPath,
             template(await readFile(skeletonEntryTemplate, 'utf8'))({
@@ -127,12 +127,12 @@ export default class Builder {
         let rootDir = this.config.globals.rootDir;
 
         // create mpa config based on client config
-        let mpaConfig = this.webpackConfig.client(this.config);
+        let mpaConfig = this.webpackConfig.client();
         let skeletonEntries = {};
 
         // set context and clear entries
         mpaConfig.entry = {};
-        mpaConfig.name = 'mpaClient';
+        mpaConfig.name = 'mpaclient';
         mpaConfig.context = rootDir;
 
         /**
@@ -161,7 +161,8 @@ export default class Builder {
         }));
 
         if (Object.keys(skeletonEntries).length) {
-            let skeletonConfig = this.webpackConfig.server(this.config);
+            // when ssr skeleton, we need to extract css from js
+            let skeletonConfig = this.webpackConfig.server({cssExtract: true});
             // remove vue-ssr-client plugin
             skeletonConfig.plugins.pop();
             skeletonConfig.entry = skeletonEntries;
@@ -174,7 +175,7 @@ export default class Builder {
 
         // enable hotreload in every entry in dev mode
         if (this.isDev) {
-            enableHotReload(mpaConfig);
+            await enableHotReload(this.lavasDir, mpaConfig, true);
         }
         // await webpackCompile(mpaConfig);
         return mpaConfig;
@@ -186,7 +187,7 @@ export default class Builder {
      * @param {Object} config
      */
     async writeConfigFile(config) {
-        let configFilePath = distLavasPath(config.webpack.base.output.path, CONFIG_FILE);
+        let configFilePath = distLavasPath(config.build.path, CONFIG_FILE);
         await outputFile(configFilePath, JsonUtil.stringify(config));
     }
 
@@ -194,7 +195,7 @@ export default class Builder {
      * copy server relatived files into dist when build
      */
     async copyServerModuleToDist() {
-        let distPath = this.config.webpack.base.output.path;
+        let distPath = this.config.build.path;
 
         let libDir = join(this.cwd, 'lib');
         let distLibDir = join(distPath, 'lib');
@@ -264,8 +265,8 @@ export default class Builder {
     async buildDev() {
         this.isDev = true;
         // webpack client & server config
-        let clientConfig = this.webpackConfig.client(this.config);
-        let serverConfig = this.webpackConfig.server(this.config);
+        let clientConfig = this.webpackConfig.client();
+        let serverConfig = this.webpackConfig.server();
 
         await this.routeManager.buildRoutes();
 
@@ -293,8 +294,11 @@ export default class Builder {
                 publicPath: clientConfig.output.publicPath,
                 noInfo: true
             });
+            this.fileSystem = devMiddleware.fileSystem;
+
             let hotMiddleware = webpackHotMiddleware(compiler, {
-                heartbeat: 5000
+                heartbeat: 5000,
+                log: () => {}
             });
 
             // hot reload for html
@@ -308,18 +312,24 @@ export default class Builder {
                 });
             });
 
-            // TODO: add html history api support
-            let mpaEntries = this.config.entry.filter(e => !e.ssr);
-            this.internalMiddlewares.push(historyMiddleware({
-                htmlAcceptHeaders: ['text/html'],
-                rewrites: mpaEntries.map(entry => {
-                    let {name, routes} = entry;
-                    return {
-                        from: routes2Reg(routes),
-                        to: `/${name}.html`
-                    };
-                })
-            }));
+            /**
+             * add html history api support:
+             * mpa: use connect-history-api-fallback middleware
+             * ssr: ssr middleware will handle it
+             */
+            if (!this.ssrExists) {
+                let mpaEntries = this.config.entry.filter(e => !e.ssr);
+                this.internalMiddlewares.push(historyMiddleware({
+                    htmlAcceptHeaders: ['text/html'],
+                    rewrites: mpaEntries.map(entry => {
+                        let {name, routes} = entry;
+                        return {
+                            from: routes2Reg(routes),
+                            to: `/${name}.html`
+                        };
+                    })
+                }));
+            }
 
             // add dev & hot-reload middlewares
             this.internalMiddlewares.push(devMiddleware);
@@ -345,7 +355,7 @@ export default class Builder {
     async buildProd() {
         this.isProd = true;
         // clear dist/ first
-        await emptyDir(this.config.webpack.base.output.path);
+        await emptyDir(this.config.build.path);
         // inject routes into service-worker.js.tmpl for later use
         await this.injectEntriesToSW();
         await this.routeManager.buildRoutes();
@@ -354,8 +364,8 @@ export default class Builder {
         if (this.ssrExists) {
             console.log('[Lavas] SSR build starting...');
             // webpack client & server config
-            let clientConfig = this.webpackConfig.client(this.config);
-            let serverConfig = this.webpackConfig.server(this.config);
+            let clientConfig = this.webpackConfig.client();
+            let serverConfig = this.webpackConfig.server();
             // build bundle renderer
             await this.renderer.build(clientConfig, serverConfig);
             await Promise.all([

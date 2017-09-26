@@ -4,7 +4,8 @@
  */
 import webpack from 'webpack';
 import {join} from 'path';
-import {utimes, outputFile} from 'fs-extra';
+import {utimes, outputFile, readFile} from 'fs-extra';
+import template from 'lodash.template';
 
 /**
  * start to compile with webpack, record the errors & warnings in process
@@ -61,18 +62,32 @@ export async function writeFileInDev(path, content) {
 /**
  * add support for hot reload, such as adding plugins and modifying every entry
  *
+ * @param {string} dir directory for hot-reload.js
  * @param {Object} config webpack config
+ * @param {boolean} subscribeReload whether subscribe reload action
  */
-export function enableHotReload(config) {
-    let {entry, plugins} = config;
-    let hotReloadClientEntry = join(__dirname, '../hot-reload-client');
+export async function enableHotReload(dir, config, subscribeReload = false) {
+    let {entry, plugins, name: compilerName} = config;
 
+    let hotReloadEntryTemplate = join(__dirname, '../templates/entry-hot-reload.tpl');
+    let hotReloadEntryPath = join(dir, `${compilerName}-hot-reload.js`);
+    let templateContent = template(await readFile(hotReloadEntryTemplate, 'utf8'))({
+        compilerName,
+        subscribeReload
+    });
+
+    // generate .lavas/xxx-hot-reload.js
+    await writeFileInDev(hotReloadEntryPath, templateContent);
+
+    // add hot-reload entry in every entry
     Object.keys(entry).forEach(entryName => {
         let currentEntry = entry[entryName];
         if (Array.isArray(currentEntry)) {
-            entry[entryName] = [...currentEntry, hotReloadClientEntry];
+            entry[entryName] = [hotReloadEntryPath, ...currentEntry];
         }
     });
+
+    // add relative plugins
     plugins.push(
         new webpack.HotModuleReplacementPlugin(),
         new webpack.NoEmitOnErrorsPlugin()
