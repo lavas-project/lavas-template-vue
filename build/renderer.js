@@ -42,13 +42,30 @@ export default class Renderer {
      * @return {string} resolved path
      */
     getTemplate(entryName) {
-        let templatePath = join(this.rootDir, `entries/${entryName}/${TEMPLATE_HTML}`);
+        let templateName = this.getTemplateName(entryName);
+        let templatePath = join(this.rootDir, `entries/${entryName}/${templateName}`);
         if (!fs.pathExistsSync(templatePath)) {
-            throw new Error(`${TEMPLATE_HTML} required for entry: ${entryName}`);
+            throw new Error(`${templateName} required for entry: ${entryName}`);
         }
         return templateUtil.server(
             fs.readFileSync(templatePath, 'utf8')
         );
+    }
+
+    /**
+     * get template name from entry config
+     *
+     * @param {string} entryName entryName
+     * @return {string} template name
+     */
+    getTemplateName(entryName) {
+        let entryConfig = this.config.entry.find(entry => entry.name === entryName);
+        if (entryConfig && entryConfig.templateFile) {
+            return entryConfig.templateFile;
+        }
+        else {
+            return TEMPLATE_HTML;
+        }
     }
 
     /**
@@ -67,7 +84,7 @@ export default class Renderer {
 
         await Promise.all(this.config.entry.map(async entry => {
             let {name: entryName, ssr} = entry;
-            let templatePath = distLavasPath(this.cwd, `${entryName}/${TEMPLATE_HTML}`);
+            let templatePath = distLavasPath(this.cwd, `${entryName}/${this.getTemplateName(entryName)}`);
             let manifestPath = distLavasPath(this.cwd, `${entryName}/${CLIENT_MANIFEST}`);
             if (ssr) {
                 this.templates[entryName] = await fs.readFile(templatePath, 'utf-8');
@@ -89,7 +106,10 @@ export default class Renderer {
             if (entryConfig.ssr) {
                 let entryName = entryConfig.name;
                 let templateContent = this.getTemplate(entryName);
-                let distTemplatePath = distLavasPath(this.config.build.path, `${entryName}/${TEMPLATE_HTML}`);
+                let distTemplatePath = distLavasPath(
+                    this.config.build.path,
+                    `${entryName}/${this.getTemplateName(entryName)}`
+                );
                 await fs.outputFile(distTemplatePath, templateContent);
             }
         }));
@@ -240,7 +260,8 @@ export default class Renderer {
                         {
                             template: this.templates[entryName],
                             clientManifest: this.clientManifest[entryName],
-                            runInNewContext: false
+                            runInNewContext: false,
+                            inject: false
                         }
                     );
                     if (first) {
