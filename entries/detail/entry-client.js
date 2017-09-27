@@ -11,6 +11,9 @@ import {createApp} from './app';
 import ProgressBar from '@/core/components/ProgressBar.vue';
 import {middlewareSeries} from '@/core/utils';
 import {getClientContext} from '@/core/context-client';
+import LavasLink from '@/.lavas/LavasLink';
+
+Vue.component(LavasLink.name, LavasLink);
 
 // 全局的进度条，在组件中可通过 $loading 访问
 let loading = Vue.prototype.$loading = new Vue(ProgressBar).$mount();

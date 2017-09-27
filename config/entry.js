@@ -14,7 +14,7 @@ module.exports = [
          */
         ssr: false,
         base: '/',
-        mode: 'history',
+        mode: 'hash',
         /**
          * 这个模块匹配的路径，default 的优先级最低
          *
@@ -30,7 +30,7 @@ module.exports = [
     {
         name: 'main',
         ssr: false,
-        mode: 'history',
+        mode: 'hash',
         base: '/',
         routes: /^.*$/
     }

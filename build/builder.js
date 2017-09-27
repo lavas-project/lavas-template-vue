@@ -192,6 +192,13 @@ export default class Builder {
         await outputFile(configFilePath, JsonUtil.stringify(config));
     }
 
+    async writeLavasLink() {
+        let lavasLinkTemplate = await readFile(templatesPath('LavasLink.js.tmpl'), 'utf8');
+        await outputFile(join(this.lavasDir, 'LavasLink.js'), template(lavasLinkTemplate)({
+            entryConfig: JsonUtil.stringify(this.config.entry)
+        }));
+    }
+
     /**
      * copy server relatived files into dist when build
      */
@@ -309,6 +316,7 @@ export default class Builder {
         let serverConfig = this.webpackConfig.server();
 
         await this.routeManager.buildRoutes();
+        await this.writeLavasLink();
 
         if (this.ssrExists) {
             console.log('[Lavas] SSR build starting...');
@@ -387,6 +395,7 @@ export default class Builder {
         // inject routes into service-worker.js.tmpl for later use
         await this.injectEntriesToSW();
         await this.routeManager.buildRoutes();
+        await this.writeLavasLink();
 
         // SSR build process
         if (this.ssrExists) {
