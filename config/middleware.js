@@ -5,7 +5,6 @@
 
 'use strict';
 
-// 中间件的配置，需要支持路径（middlewares文件夹内路径）
 module.exports = {
 
     /**

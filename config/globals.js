@@ -10,14 +10,14 @@ const path = require('path');
 module.exports = {
 
     /**
-     * 项目根目录
+     * root directory of this project
      *
      * @type {string}
      */
     rootDir: path.join(__dirname, '..'),
 
     /**
-     * 中间件的目录
+     * the directory where the middlewares located
      *
      * @type {string}
      */

@@ -89,14 +89,16 @@ module.exports = {
     watch: null,
 
     /**
-     * extend function to modify webpack config
+     * extend function to modify webpack config, the config in function parameters is webpack config
+     *
+     * example:
      *
      * ```javascript
      * function extend(config, {isClient}) {
      * }
      * ```
      *
-     * 函数参数中的 config 是 webpack 的配置
+     * @type {Function}
      */
     extend: null
 };
