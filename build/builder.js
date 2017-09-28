@@ -336,7 +336,7 @@ export default class Builder {
              * the relative ISSUE: https://github.com/vuejs-templates/webpack/issues/751#issuecomment-309955295
              *
              * before the problem solved, there's no page reload
-             * when the html-webpack-plugin template changes
+             * when the html-webpack-plugin template changes in webpack 3.x
              */
             compiler.plugin('compilation', (compilation) => {
                 compilation.plugin('html-webpack-plugin-after-emit', (data, cb) => {

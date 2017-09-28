@@ -1,5 +1,5 @@
 import 'eventsource-polyfill';
-import hotClient from 'webpack-hot-middleware/client?name=<%- compilerName %>&noInfo=false&reload=true';
+import hotClient from 'webpack-hot-middleware/client?name=<%- compilerName %>&noInfo=true&reload=true';
 
 <% if (subscribeReload) { %>
     hotClient.subscribe(payload => {
