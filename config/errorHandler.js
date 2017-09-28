@@ -26,6 +26,8 @@ module.exports = {
         500: {
             target: '/500'
         }
-    }
+    },
+
+    errorPath: '/error'
 
 };
