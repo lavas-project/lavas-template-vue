@@ -194,8 +194,9 @@ export default class Builder {
     }
 
     async writeLavasLink() {
+        let writeFile = this.isDev ? writeFileInDev : outputFile;
         let lavasLinkTemplate = await readFile(templatesPath('LavasLink.js.tmpl'), 'utf8');
-        await outputFile(join(this.lavasDir, 'LavasLink.js'), template(lavasLinkTemplate)({
+        await writeFile(join(this.lavasDir, 'LavasLink.js'), template(lavasLinkTemplate)({
             entryConfig: JsonUtil.stringify(this.config.entry)
         }));
     }

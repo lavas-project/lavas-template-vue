@@ -34,7 +34,7 @@ module.exports = [
          *
          * @type {string}
          */
-        mode: 'hash',
+        mode: 'history',
 
         /**
          * the RegExp of this entry's routes
