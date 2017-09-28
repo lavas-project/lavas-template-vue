@@ -9,6 +9,10 @@ import entryConf from '@/config/entry';
 import {stringify} from 'querystring';
 import {middlewareSeries, urlJoin} from './utils';
 import {getServerContext} from './context-server';
+import Vue from 'vue';
+import LavasLink from '@/.lavas/LavasLink';
+
+Vue.component(LavasLink.name, LavasLink);
 
 const isDev = process.env.NODE_ENV !== 'production';
 

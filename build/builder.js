@@ -157,7 +157,7 @@ export default class Builder {
                 let skeletonImportPath = `@/entries/${entryName}/skeleton.vue`;
                 if (await pathExists(skeletonPath)) {
                     let entryPath = await this.createSkeletonEntry(entryName, skeletonImportPath);
-                    // skeletonEntries[entryName] = [entryPath];
+                    skeletonEntries[entryName] = [entryPath];
                 }
             }
         }));
@@ -191,6 +191,13 @@ export default class Builder {
     async writeConfigFile(config) {
         let configFilePath = distLavasPath(config.build.path, CONFIG_FILE);
         await outputFile(configFilePath, JsonUtil.stringify(config));
+    }
+
+    async writeLavasLink() {
+        let lavasLinkTemplate = await readFile(templatesPath('LavasLink.js.tmpl'), 'utf8');
+        await outputFile(join(this.lavasDir, 'LavasLink.js'), template(lavasLinkTemplate)({
+            entryConfig: JsonUtil.stringify(this.config.entry)
+        }));
     }
 
     /**
@@ -292,6 +299,7 @@ export default class Builder {
         let hotMiddleware;
 
         await this.routeManager.buildRoutes();
+        await this.writeLavasLink();
 
         if (this.ssrExists) {
             console.log('[Lavas] SSR build starting...');
@@ -329,15 +337,15 @@ export default class Builder {
              * before the problem solved, there's no page reload
              * when the html-webpack-plugin template changes
              */
-            // compiler.plugin('compilation', (compilation) => {
-            //     compilation.plugin('html-webpack-plugin-after-emit', (data, cb) => {
-            //         // trigger reload action, which will be used in hot-reload-client.js
-            //         hotMiddleware.publish({
-            //             action: 'reload'
-            //         });
-            //         cb();
-            //     });
-            // });
+            compiler.plugin('compilation', (compilation) => {
+                compilation.plugin('html-webpack-plugin-after-emit', (data, cb) => {
+                    // trigger reload action, which will be used in hot-reload-client.js
+                    hotMiddleware.publish({
+                        action: 'reload'
+                    });
+                    cb();
+                });
+            });
 
             /**
              * add html history api support:
@@ -411,6 +419,7 @@ export default class Builder {
         // inject routes into service-worker.js.tmpl for later use
         await this.injectEntriesToSW();
         await this.routeManager.buildRoutes();
+        await this.writeLavasLink();
 
         // SSR build process
         if (this.ssrExists) {

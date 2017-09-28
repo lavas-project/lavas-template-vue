@@ -72,7 +72,7 @@ export default class LavasCore {
                 this.internalMiddlewares.push(serve(this.cwd));
             }
             // gzip compression
-            // this.internalMiddlewares.push(compression());
+            this.internalMiddlewares.push(compression());
             // serve favicon
             let faviconPath = join(this.cwd, 'static/img/icons', 'favicon.ico');
             this.internalMiddlewares.push(favicon(faviconPath));
