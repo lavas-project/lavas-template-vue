@@ -31,6 +31,8 @@ export default class RouteManager {
         this.routes = [];
 
         this.flatRoutes = new Set();
+
+        this.errorRoute;
     }
 
     /**
@@ -85,18 +87,26 @@ export default class RouteManager {
             route.path = this.rewriteRoutePath(rewriteRules, route.path);
             route.fullPath = parentPath ? `${parentPath}/${route.path}` : route.path;
 
+            // find error route
+            if (route.fullPath === this.config.errorHandler.errorPath) {
+                route.path = '*';
+                route.fullPath = '*';
+                this.errorRoute = route;
+            }
+            // map entry to every route
+            else {
+                let entry = this.config.entry.find(
+                    entryConfig => matchUrl(entryConfig.routes, route.fullPath));
+                if (entry) {
+                    route.entryName = entry.name;
+                }
+            }
+
             // find route in config
             let routeConfig = routesConfig.find(({pattern}) => {
                 return pattern instanceof RegExp ?
                     pattern.test(route.fullPath) : pattern === route.fullPath;
             });
-
-            // map entry to every route
-            let entry = this.config.entry.find(
-                entryConfig => matchUrl(entryConfig.routes, route.fullPath));
-            if (entry) {
-                route.entryName = entry.name;
-            }
 
             // mixin with config, rewrites path, add lazyLoading, meta
             if (routeConfig) {
@@ -126,7 +136,9 @@ export default class RouteManager {
              * turn route fullpath into regexp
              * eg. /detail/:id => /^\/detail\/[^\/]+\/?$/
              */
-            route.pathRegExp = new RegExp(`^${route.path.replace(/\/:[^\/]*/g, '/[^\/]+')}\/?`);
+            route.pathRegExp = route.path === '*'
+                ? /^.*$/
+                : new RegExp(`^${route.path.replace(/\/:[^\/]*/g, '/[^\/]+')}\/?`);
 
             // merge recursively
             if (route.children && route.children.length) {
@@ -176,6 +188,10 @@ export default class RouteManager {
                     entryFlatRoutes.add(flatRoute)
                 }
             });
+
+            // add error route
+            entryRoutes.push(this.errorRoute);
+            entryFlatRoutes.add(this.errorRoute);
 
             let routesFilePath = join(this.lavasDir, `${entryName}/router.js`);
             let routesContent = this.generateRoutesContent(entryRoutes);
