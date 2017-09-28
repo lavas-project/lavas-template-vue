@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import Router from 'vue-router';
-<% routes.forEach(function(route) { %>
+<% router.routes.forEach(function(route) { %>
     <% if (route.lazyLoading) { %>
 let _<%- route.hash %> = () => import(<% if (route.chunkname) { %>/* webpackChunkName: "<%- route.chunkname %>" */ <% } %>'@/<%- route.component %>');
     <% } else { %>

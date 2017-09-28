@@ -181,10 +181,10 @@ export default class RouteManager {
             let routesContent = this.generateRoutesContent(entryRoutes);
 
             let routesFileContent = template(await readFile(routerTemplate, 'utf8'))({
-                routes: entryFlatRoutes,
                 router: {
                     mode,
-                    base
+                    base,
+                    routes: entryFlatRoutes
                 },
                 routesContent
             });

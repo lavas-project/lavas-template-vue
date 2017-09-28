@@ -61,5 +61,5 @@ module.exports = {
      *
      * @type {string}
      */
-    theme_color: '#278fef'
+    theme_color: '#678fef'
 };
