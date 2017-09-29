@@ -28,7 +28,6 @@ export default class WebpackConfig {
         this.env = env;
         this.isProd = this.env === 'production';
         this.isDev = this.env === 'development';
-        this.hooks = {};
     }
 
     /**
@@ -144,6 +143,7 @@ export default class WebpackConfig {
      */
     client(buildConfig = {}) {
         let {globals, build, manifest} = this.config;
+
         /* eslint-disable fecs-one-var-per-line */
         let {cssSourceMap, cssMinimize, cssExtract,
             jsSourceMap, bundleAnalyzerReport, extend} = Object.assign({}, build, buildConfig);

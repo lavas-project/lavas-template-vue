@@ -25,13 +25,15 @@ export default class ConfigReader {
     async read() {
         // add buildVersion
         const config = {
+            globals: {
+                rootDir: this.cwd
+            },
             buildVersion: Date.now()
         };
         let configDir = join(this.cwd, 'config');
         let files = glob.sync(
             '**/*.js', {
                 cwd: configDir
-                // ignore: '*.recommend.js'
             }
         );
 
@@ -54,9 +56,9 @@ export default class ConfigReader {
 
             name = paths.pop();
 
-            // load config
+            // load config, delete cache first
             let configPath = join(configDir, filepath);
-            delete require.cache[configPath];
+            delete require.cache[require.resolve(configPath)];
             cur[name] = await import(configPath);
         }));
 

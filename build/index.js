@@ -19,6 +19,7 @@ import composeKoa from 'koa-compose';
 import c2k from 'koa-connect';
 import serve from 'serve-static';
 import favicon from 'serve-favicon';
+import compression from 'compression';
 
 import {join} from 'path';
 
@@ -70,6 +71,8 @@ export default class LavasCore {
             if (this.isProd) {
                 this.internalMiddlewares.push(serve(this.cwd));
             }
+            // gzip compression
+            this.internalMiddlewares.push(compression());
             // serve favicon
             let faviconPath = join(this.cwd, 'static/img/icons', 'favicon.ico');
             this.internalMiddlewares.push(favicon(faviconPath));
@@ -138,7 +141,7 @@ export default class LavasCore {
         ]);
     }
 
-    close() {
-        this.builder.close();
+    async close() {
+        await this.builder.close();
     }
 }

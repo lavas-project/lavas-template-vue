@@ -2,6 +2,7 @@ import RouteManager from './route-manager';
 import WebpackConfig from './webpack';
 
 import webpack from 'webpack';
+import MFS from 'memory-fs';
 import chokidar from 'chokidar';
 import template from 'lodash.template';
 import {copy, emptyDir, readFile, outputFile, pathExists} from 'fs-extra';
@@ -37,6 +38,8 @@ export default class Builder {
         this.ssrExists = this.config.entry.some(e => e.ssr);
         this.mpaExists = this.config.entry.some(e => !e.ssr);
         this.watchers = [];
+        this.devMiddleware = null;
+        this.devFs = new MFS();
     }
 
     /**
@@ -111,11 +114,9 @@ export default class Builder {
 
         // watch template in development mode
         if (this.isDev) {
-            let watcher = chokidar.watch(customTemplatePath, {ignoreInitial: true})
-                .on('change', async () => {
-                    await this.createHtmlTemplate(customTemplatePath, realTemplatePath);
-                });
-            this.watchers.push(watcher);
+            this.addWatcher(customTemplatePath, 'change', async () => {
+                await this.createHtmlTemplate(customTemplatePath, realTemplatePath);
+            });
         }
     }
 
@@ -269,42 +270,23 @@ export default class Builder {
         }));
     }
 
-    setWatchers() {
-        // use chokidar to rebuild routes
-        let pagesDir = join(this.config.globals.rootDir, 'pages');
-        let pagesDirWatcher = chokidar.watch(pagesDir, {ignoreInitial: true})
-            .on('add', async () => {
-                await this.routeManager.buildRoutes();
-            })
-            .on('unlink', async () => {
-                await this.routeManager.buildRoutes();
-            });
-        this.watchers.push(pagesDirWatcher);
-
-        // TODO: watch files provides by user
-        if (this.config.build.watch) {
-            let userWatcher = chokidar.watch(this.config.build.watch, {ignoreInitial: true})
-                .on('change', async () => {
-                    await this.routeManager.buildRoutes();
-                    if (this.ssrExists) {
-                        this.renderer.refreshFiles();
-                    }
-                });
-            this.watchers.push(userWatcher);
+    /**
+     * set chokidar watchers, following directories and files will be watched:
+     * /pages, /config, /entries/[entry]/index.html.tmpl
+     *
+     * @param {string|Array.<string>} paths
+     * @param {string|Array.<string>} events
+     * @param {Function} callback callback
+     */
+    addWatcher(paths, events, callback) {
+        if (!Array.isArray(events)) {
+            events = [events];
         }
-
-        // watch config directory, rebuild whole process
-        let configDir = join(this.config.globals.rootDir, 'config');
-        let configWatcher = chokidar.watch(configDir, {ignoreInitial: true})
-            .on('change', async () => {
-                console.log('[Lavas] config changed...');
-                this.close();
-                this.config = await this.core.configReader.read();
-                console.log(this.config);
-                // await this.core.init('development', true);
-                // await this.core.build();
-            });
-        this.watchers.push(configWatcher);
+        let watcher = chokidar.watch(paths, {ignoreInitial: true});
+        events.forEach(event => {
+            watcher.on(event, callback);
+        });
+        this.watchers.push(watcher);
     }
 
     /**
@@ -315,6 +297,7 @@ export default class Builder {
         // webpack client & server config
         let clientConfig = this.webpackConfig.client();
         let serverConfig = this.webpackConfig.server();
+        let hotMiddleware;
 
         await this.routeManager.buildRoutes();
         await this.writeLavasLink();
@@ -336,18 +319,25 @@ export default class Builder {
 
             // create a compiler based on mpa config
             let compiler = webpack(mpaConfig);
-            let devMiddleware = webpackDevMiddleware(compiler, {
+            compiler.outputFileSystem = this.devFs;
+            this.devMiddleware = webpackDevMiddleware(compiler, {
                 publicPath: clientConfig.output.publicPath,
                 noInfo: true
             });
-            this.fileSystem = devMiddleware.fileSystem;
 
-            let hotMiddleware = webpackHotMiddleware(compiler, {
+            hotMiddleware = webpackHotMiddleware(compiler, {
                 heartbeat: 5000,
                 log: () => {}
             });
 
-            // hot reload for html
+            /**
+             * TODO: hot reload for html
+             * html-webpack-plugin has a problem with webpack 3.x.
+             * the relative ISSUE: https://github.com/vuejs-templates/webpack/issues/751#issuecomment-309955295
+             *
+             * before the problem solved, there's no page reload
+             * when the html-webpack-plugin template changes in webpack 3.x
+             */
             compiler.plugin('compilation', (compilation) => {
                 compilation.plugin('html-webpack-plugin-after-emit', (data, cb) => {
                     // trigger reload action, which will be used in hot-reload-client.js
@@ -365,25 +355,59 @@ export default class Builder {
              */
             if (!this.ssrExists) {
                 let mpaEntries = this.config.entry.filter(e => !e.ssr);
-                this.internalMiddlewares.push(historyMiddleware({
-                    htmlAcceptHeaders: ['text/html'],
-                    rewrites: mpaEntries.map(entry => {
+                let rewrites = mpaEntries
+                    .map(entry => {
                         let {name, routes} = entry;
                         return {
                             from: routes2Reg(routes),
                             to: `/${name}.html`
                         };
-                    })
+                    });
+                /**
+                 * we should put this middleware in front of dev middleware since
+                 * it will rewrite req.url to xxx.html based on options.rewrites
+                 */
+                this.internalMiddlewares.push(historyMiddleware({
+                    htmlAcceptHeaders: ['text/html'],
+                    disableDotRule: false, // ignore paths with dot inside
+                    // verbose: true,
+                    rewrites
                 }));
             }
 
             // add dev & hot-reload middlewares
-            this.internalMiddlewares.push(devMiddleware);
+            this.internalMiddlewares.push(this.devMiddleware);
             this.internalMiddlewares.push(hotMiddleware);
             console.log('[Lavas] MPA build completed.');
         }
 
-        this.setWatchers();
+        // use chokidar to rebuild routes
+        let pagesDir = join(this.config.globals.rootDir, 'pages');
+        this.addWatcher(pagesDir, ['add', 'unlink'], async () => {
+            await this.routeManager.buildRoutes();
+        });
+
+        // TODO: watch files provides by user
+        if (this.config.build.watch) {
+            this.addWatcher(this.config.build.watch, 'change', async () => {
+                await this.routeManager.buildRoutes();
+                if (this.ssrExists) {
+                    this.renderer.refreshFiles();
+                }
+            });
+        }
+
+        // watch config directory, rebuild whole process
+        let configDir = join(this.config.globals.rootDir, 'config');
+        this.addWatcher(configDir, 'change', async () => {
+            console.log('[Lavas] config changed, start rebuilding...');
+            await this.close();
+            this.config = await this.core.configReader.read();
+            this.webpackConfig.config = this.config;
+            this.routeManager.config = this.config;
+            await this.buildDev();
+            console.log('[Lavas] rebuild finish.');
+        });
     }
 
     /**
@@ -429,12 +453,23 @@ export default class Builder {
         }
     }
 
-    close() {
+    /**
+     * close watchers and some middlewares before rebuild
+     *
+     */
+    async close() {
+        // close chokidar watchers
         if (this.watchers && this.watchers.length) {
             this.watchers.forEach(watcher => {
                 watcher.close();
             });
             this.watchers = [];
+        }
+        // close devMiddlewares
+        if (this.devMiddleware) {
+            await new Promise(resolve => {
+                this.devMiddleware.close(() => resolve());
+            });
         }
     }
 }

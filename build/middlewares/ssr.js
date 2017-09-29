@@ -48,7 +48,8 @@ export default function (core) {
 
         if (!needSSR) {
             console.log(`[Lavas] route middleware: static ${url}`);
-            res.end(await getStaticHtml(builder && builder.fileSystem, cwd, entryName));
+            let devFs = builder && builder.devMiddleware && builder.devMiddleware.fileSystem;
+            res.end(await getStaticHtml(devFs, cwd, entryName));
         }
         else {
             console.log(`[Lavas] route middleware: ssr ${url}`);
