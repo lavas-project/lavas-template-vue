@@ -18,11 +18,7 @@ export default function (core) {
             await next();
         }
         catch (err) {
-            // console.log('[Lavas] error middleware catch error: ', err);
-
-            if (err == null) {
-                return;
-            }
+            console.log('[Lavas] error middleware catch error: ', err);
 
             if (ctx.headerSent || !ctx.writable) {
                 err.headerSent = true;
@@ -43,9 +39,7 @@ export default function (core) {
             ctx.res._headers = {};
 
             // redirect to the corresponding url
-            if (errPath) {
-                ctx.redirect(errPath);
-            }
+            ctx.redirect(errPath);
 
             ctx.res.end();
         }

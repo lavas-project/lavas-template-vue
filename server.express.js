@@ -22,3 +22,10 @@ core.init('development', true).then(() => {
 }).catch((err) => {
     console.log(err);
 });
+
+// catch promise error
+process.on('unhandledRejection', (err, promise) => {
+    console.log('in unhandledRejection')
+    console.log(err);
+    // cannot redirect without ctx!
+});

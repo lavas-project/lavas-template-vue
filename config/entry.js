@@ -19,7 +19,7 @@ module.exports = [
          *
          * @type {boolean}
          */
-        ssr: false,
+        ssr: true,
 
         /**
          * vue-router base url
@@ -52,7 +52,7 @@ module.exports = [
     },
     {
         name: 'main',
-        ssr: false,
+        ssr: true,
         mode: 'history',
         base: '/',
         routes: /^.*$/

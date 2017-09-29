@@ -14,11 +14,7 @@ export default function (core) {
     const errPath = core.config.errorHandler.errorPath;
 
     return async (err, req, res, next) => {
-        // console.log('[Lavas] error middleware catch error: ', err);
-
-        if (err == null) {
-            return;
-        }
+        console.log('[Lavas] error middleware catch error: ', err);
 
         if (errPath === req.url) {
             // if already in error procedure, then end this request immediately, avoid infinite loop
