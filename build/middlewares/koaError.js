@@ -39,7 +39,7 @@ export default function (core) {
             ctx.res._headers = {};
 
             // redirect to the corresponding url
-            ctx.redirect(errPath);
+            ctx.redirect(`${errPath}?error=${encodeURIComponent('Internal Error')}`);
 
             ctx.res.end();
         }

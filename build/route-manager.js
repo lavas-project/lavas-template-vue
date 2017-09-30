@@ -89,8 +89,6 @@ export default class RouteManager {
 
             // find error route
             if (route.fullPath === this.config.errorHandler.errorPath) {
-                route.path = '*';
-                route.fullPath = '*';
                 this.errorRoute = route;
             }
             // map entry to every route
@@ -154,8 +152,8 @@ export default class RouteManager {
      * @param {Array} routes route list
      * @return {string} content
      */
-    generateRoutesContent(routes) {
-        return routes.reduce((prev, cur) => {
+    generateRoutesContent(routes, errorRoute) {
+        let commonRoutes = routes.reduce((prev, cur) => {
             let childrenContent = '';
             if (cur.children) {
                 childrenContent = `children: [
@@ -170,6 +168,16 @@ export default class RouteManager {
                 ${childrenContent}
             },`;
         }, '');
+
+        if (errorRoute) {
+            return commonRoutes + `{
+                path: '*',
+                alias: '${errorRoute.path}'
+            }`;
+        }
+        else {
+            return commonRoutes;
+        }
     }
 
     /**
@@ -194,7 +202,7 @@ export default class RouteManager {
             entryFlatRoutes.add(this.errorRoute);
 
             let routesFilePath = join(this.lavasDir, `${entryName}/router.js`);
-            let routesContent = this.generateRoutesContent(entryRoutes);
+            let routesContent = this.generateRoutesContent(entryRoutes, this.errorRoute);
 
             let routesFileContent = template(await readFile(routerTemplate, 'utf8'))({
                 router: {
