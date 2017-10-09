@@ -1,3 +1,8 @@
+/**
+ * @file builder.js
+ * @author lavas
+ */
+
 import RouteManager from './route-manager';
 import WebpackConfig from './webpack';
 
@@ -28,18 +33,22 @@ function templatesPath(path) {
 export default class Builder {
     constructor(core) {
         this.core = core;
+        this.env = core.env;
         this.cwd = core.cwd;
-        this.config = core.config;
-        this.lavasDir = join(this.config.globals.rootDir, './.lavas');
+        this.lavasDir = join(core.config.globals.rootDir, './.lavas');
         this.renderer = core.renderer;
-        this.internalMiddlewares = core.internalMiddlewares;
-        this.webpackConfig = new WebpackConfig(core.config, core.env);
-        this.routeManager = new RouteManager(core.config, core.env);
-        this.ssrExists = this.config.entry.some(e => e.ssr);
-        this.mpaExists = this.config.entry.some(e => !e.ssr);
         this.watchers = [];
         this.devMiddleware = null;
-        this.devFs = new MFS();
+        this.sharedCache = {};
+        this.init(core.config);
+    }
+
+    init(config) {
+        this.config = config;
+        this.webpackConfig = new WebpackConfig(config, this.env);
+        this.routeManager = new RouteManager(config, this.env);
+        this.ssrExists = config.entry.some(e => e.ssr);
+        this.mpaExists = config.entry.some(e => !e.ssr);
     }
 
     /**
@@ -108,6 +117,7 @@ export default class Builder {
             },
             favicon: assetsPath('img/icons/favicon.ico'),
             chunksSortMode: 'dependency',
+            cache: false,
             chunks: ['manifest', 'vue', 'vendor', entryName],
             config: this.config // use config in template
         }));
@@ -157,7 +167,7 @@ export default class Builder {
                 let skeletonImportPath = `@/entries/${entryName}/skeleton.vue`;
                 if (await pathExists(skeletonPath)) {
                     let entryPath = await this.createSkeletonEntry(entryName, skeletonImportPath);
-                    skeletonEntries[entryName] = [entryPath];
+                    // skeletonEntries[entryName] = [entryPath];
                 }
             }
         }));
@@ -179,7 +189,7 @@ export default class Builder {
         if (this.isDev) {
             await enableHotReload(this.lavasDir, mpaConfig, true);
         }
-        // await webpackCompile(mpaConfig);
+
         return mpaConfig;
     }
 
@@ -193,6 +203,9 @@ export default class Builder {
         await outputFile(configFilePath, JsonUtil.stringify(config));
     }
 
+    /**
+     * write LavasLink component
+     */
     async writeLavasLink() {
         let writeFile = this.isDev ? writeFileInDev : outputFile;
         let lavasLinkTemplate = await readFile(templatesPath('LavasLink.js.tmpl'), 'utf8');
@@ -290,6 +303,17 @@ export default class Builder {
     }
 
     /**
+     * rebuild in development mode
+     */
+    async rebuild() {
+        console.log('[Lavas] config changed, start rebuilding...');
+
+        this.init(await this.core.configReader.read());
+        this.core.internalMiddlewares = [];
+        this.core.emit('rebuild');
+    }
+
+    /**
      * build in development mode
      */
     async buildDev() {
@@ -319,7 +343,9 @@ export default class Builder {
 
             // create a compiler based on mpa config
             let compiler = webpack(mpaConfig);
-            compiler.outputFileSystem = this.devFs;
+            // compiler.cache = this.sharedCache;
+            // compiler.outputFileSystem = new MFS();
+
             this.devMiddleware = webpackDevMiddleware(compiler, {
                 publicPath: clientConfig.output.publicPath,
                 noInfo: true
@@ -329,7 +355,6 @@ export default class Builder {
                 heartbeat: 5000,
                 log: () => {}
             });
-
             /**
              * TODO: hot reload for html
              * html-webpack-plugin has a problem with webpack 3.x.
@@ -367,7 +392,7 @@ export default class Builder {
                  * we should put this middleware in front of dev middleware since
                  * it will rewrite req.url to xxx.html based on options.rewrites
                  */
-                this.internalMiddlewares.push(historyMiddleware({
+                this.core.internalMiddlewares.push(historyMiddleware({
                     htmlAcceptHeaders: ['text/html'],
                     disableDotRule: false, // ignore paths with dot inside
                     // verbose: true,
@@ -376,9 +401,25 @@ export default class Builder {
             }
 
             // add dev & hot-reload middlewares
-            this.internalMiddlewares.push(this.devMiddleware);
-            this.internalMiddlewares.push(hotMiddleware);
-            console.log('[Lavas] MPA build completed.');
+            this.core.internalMiddlewares.push(this.devMiddleware);
+            this.core.internalMiddlewares.push(hotMiddleware);
+
+            // wait until webpack building finished
+            await new Promise(resolve => {
+                this.devMiddleware.waitUntilValid(() => {
+                    console.log('[Lavas] MPA build completed.');
+
+                    // publish reload event to old client
+                    if (this.oldHotMiddleware) {
+                        this.oldHotMiddleware.publish({
+                            action: 'reload'
+                        });
+                    }
+                    // save current hotMiddleware
+                    this.oldHotMiddleware = hotMiddleware;
+                    resolve();
+                });
+            });
         }
 
         // use chokidar to rebuild routes
@@ -387,26 +428,17 @@ export default class Builder {
             await this.routeManager.buildRoutes();
         });
 
-        // TODO: watch files provides by user
+        // watch files provides by user
         if (this.config.build.watch) {
             this.addWatcher(this.config.build.watch, 'change', async () => {
-                await this.routeManager.buildRoutes();
-                if (this.ssrExists) {
-                    this.renderer.refreshFiles();
-                }
+                await this.rebuild();
             });
         }
 
         // watch config directory, rebuild whole process
         let configDir = join(this.config.globals.rootDir, 'config');
         this.addWatcher(configDir, 'change', async () => {
-            console.log('[Lavas] config changed, start rebuilding...');
-            await this.close();
-            this.config = await this.core.configReader.read();
-            this.webpackConfig.config = this.config;
-            this.routeManager.config = this.config;
-            await this.buildDev();
-            console.log('[Lavas] rebuild finish.');
+            await this.rebuild();
         });
     }
 
@@ -465,7 +497,7 @@ export default class Builder {
             });
             this.watchers = [];
         }
-        // close devMiddlewares
+        // close devMiddleware
         if (this.devMiddleware) {
             await new Promise(resolve => {
                 this.devMiddleware.close(() => resolve());

@@ -22,9 +22,11 @@ import favicon from 'serve-favicon';
 import compression from 'compression';
 
 import {join} from 'path';
+import EventEmitter from 'events';
 
-export default class LavasCore {
+export default class LavasCore extends EventEmitter {
     constructor(cwd = process.cwd()) {
+        super();
         this.cwd = cwd;
     }
 
@@ -38,45 +40,23 @@ export default class LavasCore {
         this.env = env;
         this.isProd = this.env === 'production';
         this.configReader = new ConfigReader(this.cwd, this.env);
-        this.internalMiddlewares = [];
 
         /**
-         * in a build process, we need to:
-         * 1. read config by scan a directory
-         * 2. validate the config
-         * 3. create a webpack config for later use
-         *
-         * but for online server after build, we just:
-         * 1. read config.json directly
+         * in a build process, we need to read config by scan a directory,
+         * but for online server after build, we just read config.json directly
          */
         if (isInBuild) {
             // scan directory
             this.config = await this.configReader.read();
-            this.renderer = new Renderer(this);
-            this.builder = new Builder(this);
         }
         else {
             // read config from config.json
             this.config = await this.configReader.readConfigFile();
         }
 
-        /**
-         * only in prod build process we don't need to use middlewares
-         */
-        if (!(isInBuild && this.isProd)) {
-            /**
-             * add static files middleware only in prod mode,
-             * we already have webpack-dev-middleware in dev mode
-             */
-            if (this.isProd) {
-                this.internalMiddlewares.push(serve(this.cwd));
-            }
-            // gzip compression
-            this.internalMiddlewares.push(compression());
-            // serve favicon
-            let faviconPath = join(this.cwd, 'static/img/icons', 'favicon.ico');
-            this.internalMiddlewares.push(favicon(faviconPath));
-        }
+        this.internalMiddlewares = [];
+        this.renderer = new Renderer(this);
+        this.builder = new Builder(this);
     }
 
     /**
@@ -85,14 +65,35 @@ export default class LavasCore {
      */
     async build() {
         let spinner = ora();
+
         spinner.start();
         if (this.isProd) {
             await this.builder.buildProd();
         }
         else {
+            this.setupInternalMiddlewares();
             await this.builder.buildDev();
         }
         spinner.succeed(`[Lavas] ${this.env} build completed.`);
+    }
+
+    /**
+     * setup some internal middlewares
+     *
+     */
+    setupInternalMiddlewares() {
+        // gzip compression
+        this.internalMiddlewares.push(compression());
+        // serve favicon
+        let faviconPath = join(this.cwd, 'static/img/icons', 'favicon.ico');
+        this.internalMiddlewares.push(favicon(faviconPath));
+        if (this.isProd) {
+            /**
+             * add static files middleware only in prod mode,
+             * we already have webpack-dev-middleware in dev mode
+             */
+            this.internalMiddlewares.push(serve(this.cwd));
+        }
     }
 
     /**
@@ -100,6 +101,7 @@ export default class LavasCore {
      *
      */
     async runAfterBuild() {
+        this.setupInternalMiddlewares();
         this.renderer = new Renderer(this);
         // create with bundle & manifest
         await this.renderer.createWithBundle();
@@ -143,5 +145,6 @@ export default class LavasCore {
 
     async close() {
         await this.builder.close();
+        console.log('[Lavas] lavas closed.');
     }
 }

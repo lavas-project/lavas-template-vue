@@ -5,24 +5,35 @@
 
 const LavasCore = require('./lib');
 const Koa = require('koa');
-const app = new Koa();
 
 let port = process.env.PORT || 3000;
-
 let core = new LavasCore(__dirname);
+let app;
+let server;
 
-core.init('development', true).then(() => {
-    return core.build();
-}).then(() => {
-    app.use(core.koaMiddleware());
+function startDevServer() {
+    app = new Koa();
+    core.build()
+        .then(() => {
+            app.use(core.koaMiddleware());
 
-    app.listen(port, () => {
-        console.log('server started at localhost:' + port);
+            server = app.listen(port, () => {
+                console.log('server started at localhost:' + port);
+            });
+        }).catch((err) => {
+            console.log(err);
+        });
+}
+
+core.on('rebuild', () => {
+    core.close().then(() => {
+        server.close();
+        startDevServer();
     });
-}).catch((err) => {
-    core.close();
-    console.log(err);
 });
+
+core.init('development', true)
+    .then(() => startDevServer());
 
 // catch promise error
 process.on('unhandledRejection', (err, promise) => {
