@@ -2,10 +2,10 @@
  * @file index.js
  * @author lavas
  */
-import RouteManager from './route-manager';
+
 import Renderer from './renderer';
-import WebpackConfig from './webpack';
 import ConfigReader from './config-reader';
+import Builder from './builder';
 
 import privateFileFactory from './middlewares/privateFile';
 import ssrFactory from './middlewares/ssr';
@@ -13,17 +13,15 @@ import koaErrorFactory from './middlewares/koaError';
 import expressErrorFactory from './middlewares/expressError';
 
 import ora from 'ora';
-import chokidar from 'chokidar';
 
-import composeMiddleware from 'compose-middleware';
+import {compose} from 'compose-middleware';
 import composeKoa from 'koa-compose';
 import c2k from 'koa-connect';
 import serve from 'serve-static';
 import favicon from 'serve-favicon';
+import compression from 'compression';
 
-import {copy, emptyDir, readFile, writeFile} from 'fs-extra';
 import {join} from 'path';
-import template from 'lodash.template';
 
 export default class LavasCore {
     constructor(cwd = process.cwd()) {
@@ -40,6 +38,7 @@ export default class LavasCore {
         this.env = env;
         this.isProd = this.env === 'production';
         this.configReader = new ConfigReader(this.cwd, this.env);
+        this.internalMiddlewares = [];
 
         /**
          * in a build process, we need to:
@@ -53,7 +52,8 @@ export default class LavasCore {
         if (isInBuild) {
             // scan directory
             this.config = await this.configReader.read();
-            this.webpackConfig = new WebpackConfig(this.config, this.env);
+            this.renderer = new Renderer(this);
+            this.builder = new Builder(this);
         }
         else {
             // read config from config.json
@@ -64,7 +64,6 @@ export default class LavasCore {
          * only in prod build process we don't need to use middlewares
          */
         if (!(isInBuild && this.isProd)) {
-            this.internalMiddlewares = [];
             /**
              * add static files middleware only in prod mode,
              * we already have webpack-dev-middleware in dev mode
@@ -72,14 +71,12 @@ export default class LavasCore {
             if (this.isProd) {
                 this.internalMiddlewares.push(serve(this.cwd));
             }
+            // gzip compression
+            this.internalMiddlewares.push(compression());
             // serve favicon
             let faviconPath = join(this.cwd, 'static/img/icons', 'favicon.ico');
             this.internalMiddlewares.push(favicon(faviconPath));
         }
-
-        // init renderer & routeManager
-        this.renderer = new Renderer(this);
-        this.routeManager = new RouteManager(this);
     }
 
     /**
@@ -89,52 +86,13 @@ export default class LavasCore {
     async build() {
         let spinner = ora();
         spinner.start();
-
-        // clear dist/
-        await emptyDir(this.config.webpack.base.output.path);
-
-        // build routes' info and source code
-        await this.routeManager.buildRoutes();
-
-        // inject routes into service-worker.js.tmpl for later use
-        await this._injectRoutesToSW();
-
-        // webpack client & server config
-        let clientConfig = this.webpackConfig.client(this.config);
-        let serverConfig = this.webpackConfig.server(this.config);
-
-        // build bundle renderer
-        await this.renderer.build(clientConfig, serverConfig);
-
         if (this.isProd) {
-            console.log(`[Lavas] write and copy files...`);
-            await Promise.all([
-                /**
-                 * when running online server, renderer needs to use template and
-                 * replace some variables such as meta, config in it. so we need
-                 * to store some props in config.json.
-                 * TODO: not all the props in config is needed. for now, only manifest
-                 * & assetsDir are required. some props such as globalDir are useless.
-                 */
-                this.configReader.writeConfigFile(this.config),
-                // compile multi entries only in production mode
-                this.routeManager.buildMultiEntries(),
-                // store routes info in routes.json for later use
-                this.routeManager.writeRoutesFile(),
-                // copy to /dist
-                this._copyServerModuleToDist()
-            ]);
+            await this.builder.buildProd();
         }
-        // else {
-            // TODO: use chokidar to rebuild routes in dev mode
-            // let pagesDir = join(this.config.globals.rootDir, 'pages');
-            // chokidar.watch(pagesDir)
-            //     .on('change', async () => {
-            //         await this.routeManager.buildRoutes();
-            //     });
-        // }
-
-        spinner.succeed(`[Lavas] ${this.env} build is completed.`);
+        else {
+            await this.builder.buildDev();
+        }
+        spinner.succeed(`[Lavas] ${this.env} build completed.`);
     }
 
     /**
@@ -142,12 +100,9 @@ export default class LavasCore {
      *
      */
     async runAfterBuild() {
-        await Promise.all([
-            // create with routes.json
-            this.routeManager.createWithRoutesFile(),
-            // create with bundle & manifest
-            this.renderer.createWithBundle()
-        ]);
+        this.renderer = new Renderer(this);
+        // create with bundle & manifest
+        await this.renderer.createWithBundle();
     }
 
     /**
@@ -156,17 +111,18 @@ export default class LavasCore {
      * @return {Function} koa middleware
      */
     koaMiddleware() {
+        let ssrExists = this.config.entry.some(e => e.ssr);
         // transform express/connect style middleware to koa style
         return composeKoa([
             koaErrorFactory(this),
-            async function (ctx, next) {
+            async (ctx, next) => {
                 // koa defaults to 404 when it sees that status is unset
                 ctx.status = 200;
                 await next();
             },
             c2k(privateFileFactory(this)),
             ...this.internalMiddlewares.map(c2k),
-            c2k(ssrFactory(this))
+            ssrExists ? c2k(ssrFactory(this)) : () => {}
         ]);
     }
 
@@ -176,54 +132,16 @@ export default class LavasCore {
      * @return {Function} express middleware
      */
     expressMiddleware() {
-        return composeMiddleware.compose([
+        let ssrExists = this.config.entry.some(e => e.ssr);
+        return compose([
             privateFileFactory(this),
             ...this.internalMiddlewares,
-            ssrFactory(this),
+            ssrExists ? ssrFactory(this) : () => {},
             expressErrorFactory(this)
         ]);
     }
 
-    /**
-     * copy server relatived files into dist when build
-     */
-    async _copyServerModuleToDist() {
-        let distPath = this.config.webpack.base.output.path;
-
-        let libDir = join(this.cwd, 'lib');
-        let distLibDir = join(distPath, 'lib');
-
-        let serverDir = join(this.cwd, 'server.dev.js');
-        let distServerDir = join(distPath, 'server.js');
-
-        let nodeModulesDir = join(this.cwd, 'node_modules');
-        let distNodeModulesDir = join(distPath, 'node_modules');
-
-        let jsonDir = join(this.cwd, 'package.json');
-        let distJsonDir = join(distPath, 'package.json');
-
-        await Promise.all([
-            copy(libDir, distLibDir),
-            copy(serverDir, distServerDir),
-            copy(nodeModulesDir, distNodeModulesDir),
-            copy(jsonDir, distJsonDir)
-        ]);
-    }
-
-    /**
-     * inject routes into service-worker.js.tmpl for later use
-     */
-    async _injectRoutesToSW() {
-        // add 'routes' to service-worker.tmpl.js
-        let rawTemplate = await readFile(join(__dirname, 'templates/service-worker.js.tmpl'));
-        let swTemplateContent = template(rawTemplate, {
-            evaluate: /{{([\s\S]+?)}}/g,
-            interpolate: /{{=([\s\S]+?)}}/g,
-            escape: /{{-([\s\S]+?)}}/g
-        })({
-            routes: JSON.stringify(this.routeManager.routes)
-        });
-        let swTemplateFilePath = join(__dirname, 'templates/service-worker-real.js.tmpl');
-        await writeFile(swTemplateFilePath, swTemplateContent);
+    async close() {
+        await this.builder.close();
     }
 }

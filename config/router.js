@@ -7,9 +7,18 @@
 
 module.exports = {
 
-    // 自定义路由规则
+    /**
+     * route rewrite rules
+     *
+     * example:
+     * ```javascript
+     * [{from: '/from/detail/:id', to: '/to/detial/:id'}]
+     * ```
+     *
+     * @type {Array.<Object>}
+     */
     rewrite: [
-        {from: /^\/(detail.*)$/, to: '/rewrite/$1'},
+        // {from: /^\/(detail.*)$/, to: '/rewrite/$1'},
         // {from: '/detail/:id', to: '/rewrite/detail/:id'}
     ],
 

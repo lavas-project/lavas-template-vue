@@ -6,7 +6,6 @@
 'use strict';
 
 module.exports = {
-    // presets: [require.resolve('babel-preset-vue-app')],
     babelrc: false,
     cacheDirectory: false
 };

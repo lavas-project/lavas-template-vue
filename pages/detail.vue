@@ -1,10 +1,11 @@
 <template>
     <div>
-        500
+        Parent Route Detail
+        <router-view></router-view>
     </div>
 </template>
 <script>
 export default {
-    name: 'internalError'
+    name: 'detail'
 };
 </script>

@@ -7,15 +7,8 @@
 
 module.exports = {
 
-    webpack: {
-        base: {
-            output: {
-                filename: 'js/[name].[hash:8].js'
-            }
-        },
-        shortcuts: {
-            cssExtract: true
-        }
+    build: {
+        cssExtract: false
     }
 
 };

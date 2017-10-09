@@ -10,7 +10,7 @@ const path = require('path');
 module.exports = {
 
     /**
-     * 编译之后的路径，默认为 dist
+     * build output path
      *
      * @type {string}
      */
@@ -22,15 +22,6 @@ module.exports = {
      * @type {string}
      */
     publicPath: '/',
-
-    /**
-     * 是否需要 bundle 分析报告
-     *
-     * 默认是布尔类型，如果是 Object，择作为 analyzer 的参数
-     *
-     * @type {boolean|Object}
-     */
-    bundleAnalyzerReport: false,
 
     /**
      * if extract css files
@@ -61,6 +52,14 @@ module.exports = {
     jsSourceMap: true,
 
     /**
+     * if need analyzer, https://github.com/th0r/webpack-bundle-analyzer
+     * default false, if this variable is an Object, then analyzer will be opened
+     *
+     * @type {boolean|Object}
+     */
+    bundleAnalyzerReport: false,
+
+    /**
      * alias for webpack
      *
      * @type {Object.<string, string>}
@@ -75,21 +74,31 @@ module.exports = {
     plugins: [],
 
     /**
-     * node externals 白名单
+     * node externals
      *
      * @type {Array.<string|RegExp>}
      */
     nodeExternalsWhitelist: [],
 
     /**
-     * 扩展 webpack 的配置
+     * in development mode, we can watch some paths to files, dirs or glob patterns,
+     * rebuild when these files changed
+     *
+     * @type {string|Array.<string>}
+     */
+    watch: null,
+
+    /**
+     * extend function to modify webpack config, the config in function parameters is webpack config
+     *
+     * example:
      *
      * ```javascript
      * function extend(config, {isClient}) {
      * }
      * ```
      *
-     * 函数参数中的 config 是 webpack 的配置
+     * @type {Function}
      */
     extend: null
 };

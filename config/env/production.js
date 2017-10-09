@@ -7,10 +7,8 @@
 
 module.exports = {
 
-    webpack: {
-        shortcuts: {
-            cssExtract: true
-        }
+    build: {
+        cssExtract: true
     }
 
 };

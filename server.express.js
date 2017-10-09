@@ -7,22 +7,13 @@ const LavasCore = require('./lib');
 const express = require('express');
 const app = express();
 
+let port = process.env.PORT || 3000;
+
 let core = new LavasCore(__dirname);
 
-let startLavasPromise;
-
-if (env === 'development') {
-    startLavasPromise = core.init(env, true).then(() => {
-        return core.build();
-    });
-}
-else {
-    startLavasPromise = core.init(env).then(() => {
-        return core.runAfterBuild();
-    });
-}
-
-startLavasPromise.then(() => {
+core.init('development', true).then(() => {
+    return core.build();
+}).then(() => {
     app.use(core.expressMiddleware());
 
     app.listen(port, () => {
@@ -30,4 +21,11 @@ startLavasPromise.then(() => {
     });
 }).catch((err) => {
     console.log(err);
+});
+
+// catch promise error
+process.on('unhandledRejection', (err, promise) => {
+    console.log('in unhandledRejection')
+    console.log(err);
+    // cannot redirect without ctx!
 });

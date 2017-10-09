@@ -106,6 +106,3 @@ function getModuleNamespace(storeData, paths) {
 
     return getModuleNamespace(nsModule, paths);
 }
-
-
-

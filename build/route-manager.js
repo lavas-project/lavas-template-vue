@@ -6,234 +6,33 @@
 
 'use strict';
 
-import {
-    utimes,
-    readFile,
-    writeFile,
-    emptyDir,
-    readJson,
-    outputFile,
-    outputJson
-} from 'fs-extra';
+import {readFile, outputFile} from 'fs-extra';
 import {join} from 'path';
 import {createHash} from 'crypto';
 import template from 'lodash.template';
-import merge from 'webpack-merge';
-import lruCache from 'lru-cache';
 
-import HtmlWebpackPlugin from 'html-webpack-plugin';
-import SkeletonWebpackPlugin from 'vue-skeleton-webpack-plugin';
-
-import {generateRoutes} from './utils/router';
+import {generateRoutes, matchUrl} from './utils/router';
 import {distLavasPath} from './utils/path';
-import {webpackCompile} from './utils/webpack';
+import {writeFileInDev} from './utils/webpack';
 import {ROUTES_FILE, SKELETON_DIRNAME} from './constants';
 
-const routesTemplate = join(__dirname, './templates/routes.tpl');
-const skeletonEntryTemplate = join(__dirname, './templates/entry-skeleton.tpl');
+const routerTemplate = join(__dirname, './templates/router.tpl');
 
 export default class RouteManager {
 
-    constructor(core) {
-        this.config = core.config;
-        this.env = core.env;
-        this.cwd = core.cwd;
-        this.webpackConfig = core.webpackConfig;
+    constructor(config = {}, env) {
+        this.config = config;
+        this.isDev = env === 'development';
 
         if (this.config) {
-            this.targetDir = join(this.config.globals.rootDir, './.lavas');
+            this.lavasDir = join(this.config.globals.rootDir, './.lavas');
         }
 
         this.routes = [];
 
         this.flatRoutes = new Set();
 
-        this.prerenderCache = lruCache({
-            max: 1000,
-            maxAge: 1000 * 60 * 15
-        });
-    }
-
-    /**
-     * find matched route
-     *
-     * @param {string} path route path
-     * @param {Array} routes routes
-     * @return {Object} matchedRoute
-     */
-    findMatchedRoute(path, routes = this.routes) {
-        let matchedRoute = routes.find(route => route.pathRegExp.test(path));
-        if (matchedRoute && matchedRoute.children) {
-            let matched = matchedRoute.pathRegExp.match(path);
-            if (matched && matched[0]) {
-                matchedRoute = this.findMatchedRoute(
-                    path.substring(matched[0].length), matchedRoute.children);
-            }
-        }
-        return matchedRoute;
-    }
-
-    /**
-     * find html according to current route
-     *
-     * @param {Object} route route
-     * @return {Promise}
-     */
-    async getStaticHtml(route) {
-        if (route && route.htmlPath) {
-            let entry = this.prerenderCache.get(route.name);
-            if (!entry) {
-                entry = await readFile(route.htmlPath, 'utf8');
-                this.prerenderCache.set(route.name, entry);
-            }
-            return entry;
-        }
-    }
-
-    /**
-     * create an entry file for a skeleton component
-     *
-     * @param {string} pagename pagename
-     * @param {string} skeletonPath used as import
-     * @return {string} entryPath
-     */
-    async createEntryForSkeleton(pagename, skeletonPath) {
-
-        // .lavas/skeletons
-        let skeletonsDir = join(this.targetDir, SKELETON_DIRNAME);
-        await emptyDir(skeletonsDir);
-
-        // eg. .lavas/skeletons/detail-entry-skeleton.js
-        let entryPath = join(skeletonsDir, `./${pagename}-entry-skeleton.js`);
-
-        await writeFile(
-            entryPath,
-            template(await readFile(skeletonEntryTemplate, 'utf8'))({
-                skeleton: {
-                    path: skeletonPath
-                }
-            }),
-            'utf8'
-        );
-
-        return entryPath;
-    }
-
-    extractModules() {
-        let routes = this.routes;
-        let modules = Object.keys(this.config.module).map(name => {
-            let module = this.config.module[name];
-            let pattern = module.routes;
-
-            // set default pagename to index
-            name = name === 'default' ? 'index' : name;
-            module.pagename = name;
-
-            // add routes matched specific pattern to routeList
-            if (pattern instanceof RegExp) {
-                module.routeList = routes.filter(r => pattern.test(r.path));
-            }
-            else if (Array.isArray(pattern)) {
-                module.routeList = routes.filter(r => pattern.includes(r.path));
-            }
-            else if (typeof pattern === 'string') {
-                module.routeList = routes.filter(r => pattern === r.path);
-            }
-            return module;
-        });
-        return modules;
-    }
-
-    /**
-     * create a webpack config and compile with it
-     *
-     */
-    async buildMultiEntries() {
-        // extract modules base on config
-        let modules = this.extractModules();
-
-        let {shortcuts: {assetsDir, ssr}, base} = this.config.webpack;
-
-        // create mpa config based on client config
-        let mpaConfig = merge(this.webpackConfig.client(this.config));
-        let skeletonEntries = {};
-
-        // set context and clear entries
-        mpaConfig.entry = {};
-        mpaConfig.context = this.config.globals.rootDir;
-
-        // remove vue-ssr-client plugin
-        if (ssr) {
-            // TODO: what if vue-ssr-client-plugin is not the last one in plugins array?
-            mpaConfig.plugins.pop();
-        }
-
-        /**
-         * for each module needs prerendering, we will:
-         * 1. add a html-webpack-plugin to output a relative HTML file
-         * 2. create an entry if a skeleton component is provided
-         */
-        await Promise.all(modules.map(async module => {
-            let {pagename, htmlTemplate, routeList, skeleton, ssr: needSSR} = module;
-
-            if (!needSSR) {
-
-                // allow user to provide a custom HTML template
-                let htmlTemplatePath = htmlTemplate
-                    || join(__dirname, './templates/index.template.html');
-                let htmlFilename = `${pagename}.html`;
-
-                routeList.forEach(route => {
-                    // save the path of HTML file which will be used in prerender searching process
-                    route.htmlPath = join(base.output.path, htmlFilename);
-                    // set static flag on every route in list
-                    route.static = true;
-                });
-
-                mpaConfig.entry[pagename] = ['./core/entry-client.js'];
-
-                // add html webpack plugin
-                mpaConfig.plugins.unshift(new HtmlWebpackPlugin({
-                    filename: htmlFilename,
-                    template: htmlTemplatePath,
-                    inject: true,
-                    minify: {
-                        removeComments: true,
-                        collapseWhitespace: true,
-                        removeAttributeQuotes: true
-                    },
-                    // we already use serve-favicon middleware
-                    // favicon: join(assetsDir, 'img/icons/favicon.ico'),
-                    chunksSortMode: 'dependency',
-                    config: this.config
-                }));
-
-                if (skeleton) {
-                    let entryPath = await this.createEntryForSkeleton(pagename, skeleton);
-                    skeletonEntries[pagename] = [entryPath];
-                }
-            }
-        }));
-
-        if (Object.keys(skeletonEntries).length) {
-            let skeletonConfig = merge(this.webpackConfig.server(this.config));
-            // remove vue-ssr-client plugin
-            if (ssr) {
-                // TODO: what if vue-ssr-server-plugin is not the last one in plugins array?
-                skeletonConfig.plugins.pop();
-            }
-            skeletonConfig.entry = skeletonEntries;
-
-            // add skeleton plugin
-            mpaConfig.plugins.push(new SkeletonWebpackPlugin({
-                webpackConfig: skeletonConfig
-            }));
-        }
-
-        if (Object.keys(mpaConfig.entry).length) {
-            await webpackCompile(mpaConfig);
-            console.log('[Lavas] MPA build completed.');
-        }
+        this.errorRoute;
     }
 
     /**
@@ -271,7 +70,7 @@ export default class RouteManager {
      * @param {Array} routes routes
      * @param {Array} routesConfig config
      */
-    mergeWithConfig(routes, routesConfig = [], rewriteRules = []) {
+    mergeWithConfig(routes, routesConfig = [], rewriteRules = [], parentPath = '') {
         /**
          * in dev mode, we need to add timestamp to every route's hash as prefix.
          * otherwise when we change the code in page.vue, route's hash remains the same,
@@ -284,14 +83,30 @@ export default class RouteManager {
             // add to set
             this.flatRoutes.add(route);
 
+            // rewrite route path with rules
+            route.path = this.rewriteRoutePath(rewriteRules, route.path);
+            route.fullPath = parentPath ? `${parentPath}/${route.path}` : route.path;
+
+            // find error route
+            if (route.fullPath === this.config.errorHandler.errorPath) {
+                this.errorRoute = route;
+            }
+            // map entry to every route
+            else {
+                let entry = this.config.entry.find(
+                    entryConfig => matchUrl(entryConfig.routes, route.fullPath)
+                );
+
+                if (entry) {
+                    route.entryName = entry.name;
+                }
+            }
+
             // find route in config
             let routeConfig = routesConfig.find(({pattern}) => {
                 return pattern instanceof RegExp ?
-                    pattern.test(route.path) : pattern === route.name;
+                    pattern.test(route.fullPath) : pattern === route.fullPath;
             });
-
-            // rewrite route path with rules
-            route.path = this.rewriteRoutePath(rewriteRules, route.path);
 
             // mixin with config, rewrites path, add lazyLoading, meta
             if (routeConfig) {
@@ -321,28 +136,30 @@ export default class RouteManager {
              * turn route fullpath into regexp
              * eg. /detail/:id => /^\/detail\/[^\/]+\/?$/
              */
-            route.pathRegExp = new RegExp(`^${route.path.replace(/\/:[^\/]*/g, '/[^\/]+')}\/?`);
+            route.pathRegExp = route.path === '*'
+                ? /^.*$/
+                : new RegExp(`^${route.path.replace(/\/:[^\/]*/g, '/[^\/]+')}\/?`);
 
             // merge recursively
             if (route.children && route.children.length) {
-                this.mergeWithConfig(route.children,
-                    routeConfig && routeConfig.children, rewriteRules);
+                this.mergeWithConfig(route.children, routesConfig, rewriteRules, route.fullPath);
             }
         });
     }
 
     /**
-     * generate routes content
+     * generate routes content which will be injected into routes.js
+     * based on nested routes
      *
      * @param {Array} routes route list
      * @return {string} content
      */
-    generateRoutesContent(routes) {
-        return routes.reduce((prev, cur) => {
+    generateRoutesContent(routes, recursive) {
+        let commonRoutes = routes.reduce((prev, cur) => {
             let childrenContent = '';
             if (cur.children) {
                 childrenContent = `children: [
-                    ${this.generateRoutesContent(cur.children)}
+                    ${this.generateRoutesContent(cur.children, true)}
                 ]`;
             }
             return prev + `{
@@ -353,46 +170,58 @@ export default class RouteManager {
                 ${childrenContent}
             },`;
         }, '');
+
+        // Call `this.$router.replace({name: xxx})` when path of 'xxx' contains '*' will throw error
+        // see https://github.com/vuejs/vue-router/issues/724
+
+        // Solution:
+        // 1. Get errorRoute from last position
+        // 2. Add alias to route.js
+        let errorRoute = routes[routes.length - 1];
+        if (!recursive && errorRoute) {
+            return commonRoutes + `{
+                path: '*',
+                alias: '${errorRoute.path}'
+            }`;
+        }
+
+        return commonRoutes;
     }
 
     /**
-     * write dist/routes.json which will be used in prod mode
-     *
-     */
-    async writeRoutesFile() {
-        // write contents into dist/lavas/routes.json
-        let routesFilePath = distLavasPath(this.config.webpack.base.output.path, ROUTES_FILE);
-        await outputJson(
-            routesFilePath,
-            this.routes,
-            'utf8'
-        );
-    }
-
-    /**
-     * write .lavas/routes.js
+     * write routes.js for each entry
      *
      */
     async writeRoutesSourceFile() {
-        let routesContent = this.generateRoutesContent(this.routes);
+        let writeFile = this.isDev ? writeFileInDev : outputFile;
+        await Promise.all(this.config.entry.map(async entryConfig => {
+            let {name: entryName, mode = 'history', base = '/'} = entryConfig;
 
-        // write contents into .lavas/routes.js
-        let routesFilePath = join(this.targetDir, './routes.js');
-        await outputFile(
-            routesFilePath,
-            template(await readFile(routesTemplate, 'utf8'))({
-                routes: this.flatRoutes,
+            let entryRoutes = this.routes.filter(route => route.entryName === entryName);
+            let entryFlatRoutes = new Set();
+            this.flatRoutes.forEach(flatRoute => {
+                if (flatRoute.entryName === entryName) {
+                    entryFlatRoutes.add(flatRoute)
+                }
+            });
+
+            // add error route
+            entryRoutes.push(this.errorRoute);
+            entryFlatRoutes.add(this.errorRoute);
+
+            let routesFilePath = join(this.lavasDir, `${entryName}/router.js`);
+            let routesContent = this.generateRoutesContent(entryRoutes);
+
+            let routesFileContent = template(await readFile(routerTemplate, 'utf8'))({
+                router: {
+                    mode,
+                    base,
+                    routes: entryFlatRoutes
+                },
                 routesContent
-            }),
-            'utf8'
-        );
-
-        /**
-         * hack for watchpack, solve the rebuilding problem in dev mode
-         * https://github.com/webpack/watchpack/issues/25#issuecomment-287789288
-         */
-        let then = Date.now() / 1000 - 10;
-        await utimes(routesFilePath, then, then);
+            });
+            await writeFile(routesFilePath, routesFileContent);
+        }));
     }
 
     /**
@@ -401,31 +230,19 @@ export default class RouteManager {
      */
     async buildRoutes() {
         const {routes: routesConfig = [], rewrite: rewriteRules = []} = this.config.router;
+        this.flatRoutes = new Set();
 
         console.log('[Lavas] auto compile routes...');
 
-        // generate routes according to pages dir but ignore skeleton components
-        this.routes = await generateRoutes(
-            join(this.targetDir, '../pages'),
-            {ignore: '*.skeleton.vue'}
-        );
+        // generate routes according to pages dir
+        this.routes = await generateRoutes(join(this.lavasDir, '../pages'));
 
         // merge with routes' config
         this.mergeWithConfig(this.routes, routesConfig, rewriteRules);
 
-        // write .lavas/routes.js
+        // write routes for each entry
         await this.writeRoutesSourceFile();
 
         console.log('[Lavas] all routes are already generated.');
-    }
-
-    /**
-     * create routes based on routes.json
-     *
-     */
-    async createWithRoutesFile() {
-        let routesFilePath = distLavasPath(this.cwd, ROUTES_FILE);
-        this.routes = await readJson(routesFilePath);
-        this.mergeWithConfig(this.routes);
     }
 }

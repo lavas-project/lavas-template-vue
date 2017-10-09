@@ -3,14 +3,21 @@
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
-import {createApp} from './app';
 import middleware from './middleware';
 import middConf from '@/config/middleware';
+import entryConf from '@/config/entry';
 import {stringify} from 'querystring';
 import {middlewareSeries, urlJoin} from './utils';
 import {getServerContext} from './context-server';
+import Vue from 'vue';
+import LavasLink from '@/.lavas/LavasLink';
+
+Vue.component(LavasLink.name, LavasLink);
 
 const isDev = process.env.NODE_ENV !== 'production';
+
+// import app.js from all modules
+const apps = getAllApps();
 
 // This exported function will be called by `bundleRenderer`.
 // This is where we perform data-prefetching to determine the
@@ -19,9 +26,16 @@ const isDev = process.env.NODE_ENV !== 'production';
 // return a Promise that resolves to the app instance.
 export default function (context) {
     return new Promise((resolve, reject) => {
-        let {app, router, store} = createApp();
 
         let url = context.url;
+        let createApp = apps[context.entryName].createApp;
+
+        if (!createApp || typeof createApp !== 'function') {
+            return reject();
+        }
+
+        let {app, router, store} = createApp();
+
         let fullPath = router.resolve(url).route.fullPath;
 
         if (fullPath !== url) {
@@ -152,4 +166,20 @@ function createNext(context) {
         });
         context.res.end();
     };
+}
+
+function getAllApps() {
+    let apps = {};
+    let context = require.context('../entries', true, /^.*\/app\.js$/);
+
+    context.keys().forEach(filename => {
+        let match = filename.match(/\/(.+)\/app\.js$/);
+
+        if (match) {
+            let entry = match[1];
+            apps[entry] = context(filename);
+        }
+    });
+
+    return apps;
 }

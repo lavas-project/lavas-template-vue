@@ -10,34 +10,22 @@
  * @return {Function} koa middleware
  */
 export default function (core) {
-    const errConfig = core.config.errorHandler;
 
-    errConfig.statusCode = errConfig.statusCode || [];
-
-    const errPaths = new Set([errConfig.target]);
-
-    // add all paths to errPaths set
-    Object.keys(errConfig.statusCode).forEach(key => {
-        errPaths.add(errConfig.statusCode[key].target);
-    });
+    const errPath = core.config.errorHandler.errorPath;
 
     return async (ctx, next) => {
         try {
             await next();
         }
         catch (err) {
-            // console.log('[Lavas] error middleware catch error: ', err);
-
-            if (err == null) {
-                return;
-            }
+            console.log('[Lavas] error middleware catch error: ', err);
 
             if (ctx.headerSent || !ctx.writable) {
                 err.headerSent = true;
                 return;
             }
 
-            if (errPaths.has(ctx.path)) {
+            if (errPath === ctx.path) {
                 // if already in error procedure, then end this request immediately, avoid infinite loop
                 ctx.res.end();
                 return;
@@ -50,14 +38,9 @@ export default function (core) {
             // clear headers
             ctx.res._headers = {};
 
-            // get the right target url
-            let target = errConfig.target;
-            if (errConfig.statusCode[err.status]) {
-                target = errConfig.statusCode[err.status].target;
-            }
-
             // redirect to the corresponding url
-            ctx.redirect(target);
+            ctx.redirect(`${errPath}?error=${encodeURIComponent('Internal Error')}`);
+
             ctx.res.end();
         }
     };

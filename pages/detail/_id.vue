@@ -1,27 +1,26 @@
 <template>
     <div class="detail-wrapper">
+        Children Route ID
         <article class="detail-content text-xs-center">
             <header class="detail-title text-xs-center">
                 Detail {{$route.params.id}}
             </header>
-            <router-link :to="{
+            <lavas-link :to="{
                 name: 'detail-id',
                 params: {
                     id: Number($route.params.id) + 1
                 }
             }">
                 Detail {{Number($route.params.id) + 1}}
-            </router-link>
+            </lavas-link>
             <p>
             Progressive Web Apps are user experiences that have the reach of the web, and are:
 Reliable - Load instantly and never show the downasaur, even in uncertain network conditions.
 Fast - Respond quickly to user interactions with silky smooth animations and no janky scrolling.
             </p>
-            <router-link :to="{
-                name: 'index',
-            }">
+            <lavas-link to="/">
                 Back to home
-            </router-link>
+            </lavas-link>
         </article>
     </div>
 </template>

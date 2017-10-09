@@ -3,15 +3,26 @@
 var precacheConfig = <%= precacheConfig %>;
 var cacheName = 'sw-precache-<%= version %>-<%= cacheId %>-' + (self.registration ? self.registration.scope : '');
 var firstRegister = 1; // 默认1是首次安装SW， 0是SW更新
-var rawRoutes = {{= routes }}; // 记录所有前端渲染页面的路由规则
-var routes = [];
-// 把routes.path转化为正则
-// 如 /detail/:id => /^\/detail\/[^\/]+\/?$/
-for (var i = 0; i < rawRoutes.length; i++) {
-    if (rawRoutes[i].pagename) {
-        rawRoutes[i].pathRegExp =
-            new RegExp('^' + rawRoutes[i].path.replace(/\/:[^\/]*/g, '/[^\/]+') + '\/?');
-        routes.push(rawRoutes[i]);
+var rawEntryConfig = {{= entryConfig }}; // 记录所有前端渲染页面的路由规则
+
+// 将super-json转化的正则对象复原
+var getRegExp = function (regExpStr) {
+    if (typeof regExpStr === 'string' && regExpStr.indexOf('#!RegExp') === 0) {
+        var match = regExpStr.match(/^#!RegExp(\[.*\])$/);
+        var tmp = JSON.parse(match[1]);
+        return new RegExp(tmp[0], tmp[1]);
+    }
+
+    return regExpStr;
+}
+
+var entryConfig = [];
+// 把rawEntryConfig中routes转化为正则对象
+for (var i = 0; i < rawEntryConfig.length; i++) {
+    if (rawEntryConfig[i].ssr) {
+        var entry = rawEntryConfig[i];
+        entry.routes = getRegExp(entry.routes);
+        entryConfig.push(entry);
     }
 }
 
@@ -101,14 +112,14 @@ var stripIgnoredUrlParameters = function (originalUrl,
     return url.toString();
 };
 
-// 根据routers.json获取pagename，从而寻找入口
+// 根据entryConfig获取MPA页面配置，从而找寻入口
 // 如：/detail/123 => /detail.html
 var findEntryHtml = function (originalUrl) {
     var url = new URL(originalUrl);
 
-    for (var i = 0; i < routes.length; i++) {
-        if (routes[i].pathRegExp.test(url.pathname)) {
-            url.pathname = '/' + routes[i].pagename + '.html';
+    for (var i = 0; i < entryConfig.length; i++) {
+        if (entryConfig[i].routes.test(url.pathname)) {
+            url.pathname = '/' + entryConfig[i].name + '.html';
             break;
         }
     }

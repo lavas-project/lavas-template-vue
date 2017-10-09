@@ -1,4 +1,6 @@
-<% routes.forEach(function(route) { %>
+import Vue from 'vue';
+import Router from 'vue-router';
+<% router.routes.forEach(function(route) { %>
     <% if (route.lazyLoading) { %>
 let _<%- route.hash %> = () => import(<% if (route.chunkname) { %>/* webpackChunkName: "<%- route.chunkname %>" */ <% } %>'@/<%- route.component %>');
     <% } else { %>
@@ -10,4 +12,12 @@ let routes = [
     <%= routesContent %>
 ];
 
-export {routes};
+Vue.use(Router);
+
+export function createRouter() {
+    return new Router({
+        mode: '<%- router.mode %>',
+        base: '<%- router.base %>',
+        routes
+    });
+}
