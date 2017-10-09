@@ -94,7 +94,9 @@ export default class RouteManager {
             // map entry to every route
             else {
                 let entry = this.config.entry.find(
-                    entryConfig => matchUrl(entryConfig.routes, route.fullPath));
+                    entryConfig => matchUrl(entryConfig.routes, route.fullPath)
+                );
+
                 if (entry) {
                     route.entryName = entry.name;
                 }
@@ -152,12 +154,12 @@ export default class RouteManager {
      * @param {Array} routes route list
      * @return {string} content
      */
-    generateRoutesContent(routes, errorRoute) {
+    generateRoutesContent(routes, recursive) {
         let commonRoutes = routes.reduce((prev, cur) => {
             let childrenContent = '';
             if (cur.children) {
                 childrenContent = `children: [
-                    ${this.generateRoutesContent(cur.children)}
+                    ${this.generateRoutesContent(cur.children, true)}
                 ]`;
             }
             return prev + `{
@@ -169,15 +171,21 @@ export default class RouteManager {
             },`;
         }, '');
 
-        if (errorRoute) {
+        // Call `this.$router.replace({name: xxx})` when path of 'xxx' contains '*' will throw error
+        // see https://github.com/vuejs/vue-router/issues/724
+
+        // Solution:
+        // 1. Get errorRoute from last position
+        // 2. Add alias to route.js
+        let errorRoute = routes[routes.length - 1];
+        if (!recursive && errorRoute) {
             return commonRoutes + `{
                 path: '*',
                 alias: '${errorRoute.path}'
             }`;
         }
-        else {
-            return commonRoutes;
-        }
+
+        return commonRoutes;
     }
 
     /**
@@ -202,7 +210,7 @@ export default class RouteManager {
             entryFlatRoutes.add(this.errorRoute);
 
             let routesFilePath = join(this.lavasDir, `${entryName}/router.js`);
-            let routesContent = this.generateRoutesContent(entryRoutes, this.errorRoute);
+            let routesContent = this.generateRoutesContent(entryRoutes);
 
             let routesFileContent = template(await readFile(routerTemplate, 'utf8'))({
                 router: {
