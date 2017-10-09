@@ -18,7 +18,15 @@ export default function (core) {
             await next();
         }
         catch (err) {
-            console.log('[Lavas] error middleware catch error: ', err);
+            let errorMsg = 'Internal Server Error';
+            if (err.status !== 404) {
+                console.log('[Lavas] error middleware catch error:');
+                console.log(err);
+            }
+            else {
+                errorMsg = `${ctx.req.url} not found`;
+                console.log(errorMsg);
+            }
 
             if (ctx.headerSent || !ctx.writable) {
                 err.headerSent = true;
@@ -31,15 +39,11 @@ export default function (core) {
                 return;
             }
 
-            if (err.status !== 404) {
-                console.error(err);
-            }
-
             // clear headers
             ctx.res._headers = {};
 
             // redirect to the corresponding url
-            ctx.redirect(`${errPath}?error=${encodeURIComponent('Internal Error')}`);
+            ctx.redirect(`${errPath}?error=${encodeURIComponent(errorMsg)}`);
 
             ctx.res.end();
         }

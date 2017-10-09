@@ -14,7 +14,15 @@ export default function (core) {
     const errPath = core.config.errorHandler.errorPath;
 
     return async (err, req, res, next) => {
-        console.log('[Lavas] error middleware catch error: ', err);
+        let errorMsg = 'Internal Server Error';
+        if (err.status !== 404) {
+            console.log('[Lavas] error middleware catch error:');
+            console.log(err);
+        }
+        else {
+            errorMsg = `${req.url} not found`;
+            console.log(errorMsg);
+        }
 
         if (errPath === req.url) {
             // if already in error procedure, then end this request immediately, avoid infinite loop
@@ -22,14 +30,12 @@ export default function (core) {
             return;
         }
 
-        if (err.status !== 404) {
-            console.error(err);
-        }
-
         // redirect to the corresponding url
+        let target = `${errPath}?error=${encodeURIComponent(errorMsg)}`;
         if (errPath) {
             res.writeHead(301, {Location: target});
         }
+
         res.end();
     };
 }

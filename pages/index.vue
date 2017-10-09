@@ -3,6 +3,10 @@
         <h2 class="gray--text">LAVAS</h2>
         <h4 class="gray--text">[ˈlɑ:vəz]</h4>
         <lavas-link to="/detail/1">detail</lavas-link>
+        <div class="error-handle">
+            <lavas-link to="/list">list(entry not exists)</lavas-link>
+            <lavas-link to="/detail/abc/def">detail/abc/def(route not exists)</lavas-link>
+        </div>
     </div>
 </template>
 
@@ -35,4 +39,10 @@ h2
     margin-top 50%
     font-size 46px
     font-weight 500
+
+.error-handle
+    margin-top 100px
+
+    a
+        display block
 </style>

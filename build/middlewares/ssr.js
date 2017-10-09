@@ -44,6 +44,11 @@ export default function (core) {
     return async function (req, res, next) {
         let url = req.url;
         let matchedEntry = config.entry.find(entryConfig => matchUrl(entryConfig.routes, url));
+        if (!matchedEntry) {
+            next(new Error(`${url} not found`));
+            return;
+        }
+
         let {ssr: needSSR, name: entryName} = matchedEntry;
 
         if (!needSSR) {

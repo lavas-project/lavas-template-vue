@@ -154,12 +154,12 @@ export default class RouteManager {
      * @param {Array} routes route list
      * @return {string} content
      */
-    generateRoutesContent(routes, recursive) {
-        let commonRoutes = routes.reduce((prev, cur) => {
+    generateRoutesContent(routes) {
+        return routes.reduce((prev, cur) => {
             let childrenContent = '';
             if (cur.children) {
                 childrenContent = `children: [
-                    ${this.generateRoutesContent(cur.children, true)}
+                    ${this.generateRoutesContent(cur.children)}
                 ]`;
             }
             return prev + `{
@@ -177,15 +177,15 @@ export default class RouteManager {
         // Solution:
         // 1. Get errorRoute from last position
         // 2. Add alias to route.js
-        let errorRoute = routes[routes.length - 1];
-        if (!recursive && errorRoute) {
-            return commonRoutes + `{
-                path: '*',
-                alias: '${errorRoute.path}'
-            }`;
-        }
+        // let errorRoute = routes[routes.length - 1];
+        // if (!recursive && errorRoute) {
+        //     return commonRoutes + `{
+        //         path: '*',
+        //         alias: '${errorRoute.path}'
+        //     }`;
+        // }
 
-        return commonRoutes;
+        // return commonRoutes;
     }
 
     /**
