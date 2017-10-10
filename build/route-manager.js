@@ -154,14 +154,28 @@ export default class RouteManager {
      * @param {Array} routes route list
      * @return {string} content
      */
-    generateRoutesContent(routes) {
-        return routes.reduce((prev, cur) => {
+    generateRoutesContent(routes, recursive) {
+        let commonRoutes = routes.reduce((prev, cur, index) => {
+            if (!recursive && index === routes.length - 1) {
+                // Call `this.$router.replace({name: xxx})` when path of 'xxx' contains '*' will throw error
+                // see https://github.com/vuejs/vue-router/issues/724
+                // Solution: write a normal path and add alias with '*'
+                return prev + `{
+                    path: '${cur.path}',
+                    name: '${cur.name}',
+                    component: _${cur.hash},
+                    meta: ${JSON.stringify(cur.meta || {})},
+                    alias: '*'
+                },`;
+            }
+
             let childrenContent = '';
             if (cur.children) {
                 childrenContent = `children: [
-                    ${this.generateRoutesContent(cur.children)}
+                    ${this.generateRoutesContent(cur.children, true)}
                 ]`;
             }
+
             return prev + `{
                 path: '${cur.path}',
                 name: '${cur.name}',
@@ -171,21 +185,7 @@ export default class RouteManager {
             },`;
         }, '');
 
-        // Call `this.$router.replace({name: xxx})` when path of 'xxx' contains '*' will throw error
-        // see https://github.com/vuejs/vue-router/issues/724
-
-        // Solution:
-        // 1. Get errorRoute from last position
-        // 2. Add alias to route.js
-        // let errorRoute = routes[routes.length - 1];
-        // if (!recursive && errorRoute) {
-        //     return commonRoutes + `{
-        //         path: '*',
-        //         alias: '${errorRoute.path}'
-        //     }`;
-        // }
-
-        // return commonRoutes;
+        return commonRoutes;
     }
 
     /**
