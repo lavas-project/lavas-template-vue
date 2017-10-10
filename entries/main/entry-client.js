@@ -90,7 +90,6 @@ router.beforeEach(async (to, from, next) => {
     let matched = await router.getMatchedComponents(to);
 
     if (!matched.length) {
-        // TODO HERE
         // can't find matched component, use href jump
         window.location.href = toPath;
         return next();
@@ -107,10 +106,6 @@ router.beforeEach(async (to, from, next) => {
 router.beforeResolve((to, from, next) => {
     let matched = router.getMatchedComponents(to);
     let prevMatched = router.getMatchedComponents(from);
-    // if (matched.length === 0) {
-    //     console.log('redirect to /error')
-    //     return next('/error');
-    // }
 
     // [a, b]
     // [a, b, c, d]
