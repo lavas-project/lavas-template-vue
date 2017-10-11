@@ -106,6 +106,7 @@ router.beforeEach(async (to, from, next) => {
 router.beforeResolve((to, from, next) => {
     let matched = router.getMatchedComponents(to);
     let prevMatched = router.getMatchedComponents(from);
+
     // [a, b]
     // [a, b, c, d]
     // => [c, d]
