@@ -19,7 +19,7 @@ module.exports = {
      */
     rewrite: [
         // {from: /^\/(detail.*)$/, to: '/rewrite/$1'},
-        // {from: '/detail/:id', to: '/rewrite/detail/:id'}
+        // {from: '/detail', to: '/rewrite'}
     ],
 
     routes: [

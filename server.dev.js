@@ -5,6 +5,7 @@
 
 const LavasCore = require('./lib');
 const Koa = require('koa');
+const stoppable = require('stoppable');
 
 let port = process.env.PORT || 3000;
 let core = new LavasCore(__dirname);
@@ -17,17 +18,24 @@ function startDevServer() {
         .then(() => {
             app.use(core.koaMiddleware());
 
-            server = app.listen(port, () => {
+            /**
+             * server.close() only stop accepting new connections,
+             * we need to close existing connections with help of stoppable
+             */
+            server = stoppable(app.listen(port, () => {
                 console.log('server started at localhost:' + port);
-            });
+            }));
         }).catch((err) => {
             console.log(err);
         });
 }
 
+/**
+ * every time lavas rebuild, stop current server first and restart
+ */
 core.on('rebuild', () => {
     core.close().then(() => {
-        server.close();
+        server.stop();
         startDevServer();
     });
 });

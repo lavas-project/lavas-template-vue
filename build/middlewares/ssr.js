@@ -14,12 +14,19 @@ const STATIC_HTML_CACHE = lruCache({
 });
 
 /**
- * find html according to current route
+ * find html content according to current entry
  *
+ * @param {string} fileSystem fileSystem
+ * @param {string} cwd cwd
  * @param {string} entryName entryName
- * @return {Promise}
+ * @param {boolean} enableCache enable cache
+ * @return {string} html content
  */
-async function getStaticHtml(fileSystem, cwd, entryName) {
+async function getStaticHtml(fileSystem, cwd, entryName, enableCache) {
+    if (!enableCache) {
+        return fileSystem.readFileSync(join(cwd, `dist/${entryName}.html`), 'utf8');
+    }
+
     let entry = STATIC_HTML_CACHE.get(entryName);
     if (!entry) {
         if (fileSystem) {
@@ -40,7 +47,7 @@ async function getStaticHtml(fileSystem, cwd, entryName) {
  * @return {Function} koa middleware
  */
 export default function (core) {
-    let {cwd, config, renderer, builder} = core;
+    let {cwd, config, renderer, builder, isProd} = core;
     return async function (req, res, next) {
         let url = req.url;
         let matchedEntry = config.entry.find(entryConfig => matchUrl(entryConfig.routes, url));
@@ -54,7 +61,7 @@ export default function (core) {
         if (!needSSR) {
             console.log(`[Lavas] route middleware: static ${url}`);
             let devFs = builder && builder.devMiddleware && builder.devMiddleware.fileSystem;
-            res.end(await getStaticHtml(devFs, cwd, entryName));
+            res.end(await getStaticHtml(devFs, cwd, entryName, isProd));
         }
         else {
             console.log(`[Lavas] route middleware: ssr ${url}`);

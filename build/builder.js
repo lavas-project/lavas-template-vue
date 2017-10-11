@@ -167,7 +167,7 @@ export default class Builder {
                 let skeletonImportPath = `@/entries/${entryName}/skeleton.vue`;
                 if (await pathExists(skeletonPath)) {
                     let entryPath = await this.createSkeletonEntry(entryName, skeletonImportPath);
-                    // skeletonEntries[entryName] = [entryPath];
+                    skeletonEntries[entryName] = [entryPath];
                 }
             }
         }));
@@ -302,13 +302,23 @@ export default class Builder {
         this.watchers.push(watcher);
     }
 
+    reloadClient() {
+        // publish reload event to old client
+        if (this.oldHotMiddleware) {
+            this.oldHotMiddleware.publish({
+                action: 'reload'
+            });
+        }
+    }
+
     /**
      * rebuild in development mode
      */
     async rebuild() {
         console.log('[Lavas] config changed, start rebuilding...');
-
-        this.init(await this.core.configReader.read());
+        let newConfig = await this.core.configReader.read();
+        this.core.config = newConfig;
+        this.init(newConfig);
         this.core.internalMiddlewares = [];
         this.core.emit('rebuild');
     }
@@ -318,109 +328,147 @@ export default class Builder {
      */
     async buildDev() {
         this.isDev = true;
-        // webpack client & server config
-        let clientConfig = this.webpackConfig.client();
-        let serverConfig = this.webpackConfig.server();
+        let mpaConfig;
+        let clientConfig;
+        let serverConfig;
         let hotMiddleware;
+        let clientCompiler; // compiler for client in ssr and mpa
+        let serverCompiler; // compiler for server in ssr
+        let clientMFS;
 
         await this.routeManager.buildRoutes();
         await this.writeLavasLink();
 
         if (this.ssrExists) {
             console.log('[Lavas] SSR build starting...');
-            // build bundle renderer
+            clientConfig = this.webpackConfig.client();
+            serverConfig = this.webpackConfig.server();
+            let serverMFS = new MFS();
+
+            // pass addWatcher & reloadClient to renderer
+            this.renderer.addWatcher = this.addWatcher.bind(this);
+            this.renderer.reloadClient = this.reloadClient.bind(this);
             await this.renderer.build(clientConfig, serverConfig);
-            console.log('[Lavas] SSR build completed.');
+            this.renderer.serverMFS = serverMFS;
+
+            serverCompiler = webpack(serverConfig);
+            serverCompiler.outputFileSystem = serverMFS;
+
+            this.serverWatching = serverCompiler.watch({}, async (err, stats) => {
+                if (err) {
+                    throw err;
+                }
+                stats = stats.toJson();
+                if (stats.errors.length) {
+                    for (let error of stats.errors) {
+                        console.error(error);
+                    }
+                    return;
+                }
+                await this.renderer.refreshFiles();
+            });
         }
 
         if (this.mpaExists) {
             console.log('[Lavas] MPA build starting...');
             // create mpa config first
-            let mpaConfig = await this.createMPAConfig();
+            mpaConfig = await this.createMPAConfig();
 
             // add skeleton routes
             this.addSkeletonRoutes(mpaConfig);
+        }
 
-            // create a compiler based on mpa config
-            let compiler = webpack(mpaConfig);
-            // compiler.cache = this.sharedCache;
-            // compiler.outputFileSystem = new MFS();
+        // create a compiler based on mpa config
+        clientCompiler = webpack([clientConfig, mpaConfig].filter(config => config));
+        clientCompiler.cache = this.sharedCache;
 
-            this.devMiddleware = webpackDevMiddleware(compiler, {
-                publicPath: clientConfig.output.publicPath,
-                noInfo: true
+        this.devMiddleware = webpackDevMiddleware(clientCompiler, {
+            publicPath: this.config.build.publicPath,
+            noInfo: true
+        });
+
+        // set memory-fs used by devMiddleware
+        clientMFS = this.devMiddleware.fileSystem;
+        clientCompiler.outputFileSystem = clientMFS;
+        if (this.ssrExists) {
+            this.renderer.clientMFS = clientMFS;
+        }
+
+        hotMiddleware = webpackHotMiddleware(clientCompiler, {
+            heartbeat: 5000,
+            log: () => {}
+        });
+        /**
+         * TODO: hot reload for html
+         * html-webpack-plugin has a problem with webpack 3.x.
+         * the relative ISSUE: https://github.com/vuejs-templates/webpack/issues/751#issuecomment-309955295
+         *
+         * before the problem solved, there's no page reload
+         * when the html-webpack-plugin template changes in webpack 3.x
+         */
+        clientCompiler.plugin('compilation', (compilation) => {
+            compilation.plugin('html-webpack-plugin-after-emit', (data, cb) => {
+                // trigger reload action, which will be used in hot-reload-client.js
+                hotMiddleware.publish({
+                    action: 'reload'
+                });
+                cb();
             });
+        });
 
-            hotMiddleware = webpackHotMiddleware(compiler, {
-                heartbeat: 5000,
-                log: () => {}
-            });
+        /**
+         * add html history api support:
+         * in mpa, we use connect-history-api-fallback middleware
+         * in ssr, ssr middleware will handle it instead
+         */
+        if (!this.ssrExists) {
+            let mpaEntries = this.config.entry.filter(e => !e.ssr);
+            let rewrites = mpaEntries
+                .map(entry => {
+                    let {name, routes} = entry;
+                    return {
+                        from: routes2Reg(routes),
+                        to: `/${name}.html`
+                    };
+                });
             /**
-             * TODO: hot reload for html
-             * html-webpack-plugin has a problem with webpack 3.x.
-             * the relative ISSUE: https://github.com/vuejs-templates/webpack/issues/751#issuecomment-309955295
-             *
-             * before the problem solved, there's no page reload
-             * when the html-webpack-plugin template changes in webpack 3.x
+             * we should put this middleware in front of dev middleware since
+             * it will rewrite req.url to xxx.html based on options.rewrites
              */
-            compiler.plugin('compilation', (compilation) => {
-                compilation.plugin('html-webpack-plugin-after-emit', (data, cb) => {
-                    // trigger reload action, which will be used in hot-reload-client.js
-                    hotMiddleware.publish({
+            this.core.internalMiddlewares.push(historyMiddleware({
+                htmlAcceptHeaders: ['text/html'],
+                disableDotRule: false, // ignore paths with dot inside
+                // verbose: true,
+                rewrites
+            }));
+        }
+
+        // add dev & hot-reload middlewares
+        this.core.internalMiddlewares.push(this.devMiddleware);
+        this.core.internalMiddlewares.push(hotMiddleware);
+
+        // wait until webpack building finished
+        await new Promise(resolve => {
+            this.devMiddleware.waitUntilValid(async () => {
+                if (this.mpaExists) {
+                    console.log('[Lavas] MPA build completed.');
+                }
+                if (this.ssrExists) {
+                    await this.renderer.refreshFiles();
+                    console.log('[Lavas] SSR build completed.');
+                }
+
+                // publish reload event to old client
+                if (this.oldHotMiddleware) {
+                    this.oldHotMiddleware.publish({
                         action: 'reload'
                     });
-                    cb();
-                });
+                }
+                // save current hotMiddleware
+                this.oldHotMiddleware = hotMiddleware;
+                resolve();
             });
-
-            /**
-             * add html history api support:
-             * in mpa, we use connect-history-api-fallback middleware
-             * in ssr, ssr middleware will handle it instead
-             */
-            if (!this.ssrExists) {
-                let mpaEntries = this.config.entry.filter(e => !e.ssr);
-                let rewrites = mpaEntries
-                    .map(entry => {
-                        let {name, routes} = entry;
-                        return {
-                            from: routes2Reg(routes),
-                            to: `/${name}.html`
-                        };
-                    });
-                /**
-                 * we should put this middleware in front of dev middleware since
-                 * it will rewrite req.url to xxx.html based on options.rewrites
-                 */
-                this.core.internalMiddlewares.push(historyMiddleware({
-                    htmlAcceptHeaders: ['text/html'],
-                    disableDotRule: false, // ignore paths with dot inside
-                    // verbose: true,
-                    rewrites
-                }));
-            }
-
-            // add dev & hot-reload middlewares
-            this.core.internalMiddlewares.push(this.devMiddleware);
-            this.core.internalMiddlewares.push(hotMiddleware);
-
-            // wait until webpack building finished
-            await new Promise(resolve => {
-                this.devMiddleware.waitUntilValid(() => {
-                    console.log('[Lavas] MPA build completed.');
-
-                    // publish reload event to old client
-                    if (this.oldHotMiddleware) {
-                        this.oldHotMiddleware.publish({
-                            action: 'reload'
-                        });
-                    }
-                    // save current hotMiddleware
-                    this.oldHotMiddleware = hotMiddleware;
-                    resolve();
-                });
-            });
-        }
+        });
 
         // use chokidar to rebuild routes
         let pagesDir = join(this.config.globals.rootDir, 'pages');
@@ -502,6 +550,13 @@ export default class Builder {
             await new Promise(resolve => {
                 this.devMiddleware.close(() => resolve());
             });
+        }
+        // stop serverCompiler watching in ssr mode
+        if (this.serverWatching) {
+            await new Promise(resolve => {
+                this.serverWatching.close(() => resolve());
+            });
+            this.serverWatching = null;
         }
     }
 }
