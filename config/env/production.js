@@ -9,11 +9,7 @@ module.exports = {
 
     build: {
         cssExtract: true,
-        copy: [
-            {
-                path: 'static',
-                ignore: ['.*']
-            },
+        ssrCopy: [
             {
                 path: 'lib'
             },

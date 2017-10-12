@@ -103,7 +103,7 @@ module.exports = {
     extend: null,
 
     /**
-     * files need to be copied after build
+     * files need to be copied after build when ssr entry exists
      *
      * each element contains following properties:
      * @param {string} path *required* file or directory path
@@ -111,10 +111,5 @@ module.exports = {
      *
      * @type {Array}
      */
-    copy: [
-        {
-            path: 'static',
-            ignore: ['.*']
-        }
-    ]
+    ssrCopy: []
 };

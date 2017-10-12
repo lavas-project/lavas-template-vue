@@ -149,11 +149,11 @@ export default class WebpackConfig {
      * @return {Object} client base config
      */
     client(buildConfig = {}) {
-        let {globals, build, manifest} = this.config;
+        let {globals, build, manifest, entry} = this.config;
 
         /* eslint-disable fecs-one-var-per-line */
         let {cssSourceMap, cssMinimize, cssExtract,
-            jsSourceMap, bundleAnalyzerReport, extend, copy} = Object.assign({}, build, buildConfig);
+            jsSourceMap, bundleAnalyzerReport, extend, ssrCopy} = Object.assign({}, build, buildConfig);
         /* eslint-enable fecs-one-var-per-line */
 
         let outputFilename = this.isDev ? 'js/[name].[hash:8].js' : 'js/[name].[chunkhash:8].js';
@@ -217,19 +217,6 @@ export default class WebpackConfig {
                     chunks: ['vue']
                 }),
 
-                // copy custom static assets
-                // new CopyWebpackPlugin([{
-                //     from: join(globals.rootDir, 'static'),
-                //     to: 'static',
-                //     ignore: ['.*']
-                // },{
-                //     from: join(globals.rootDir, 'lib'),
-                //     to: 'lib',
-                //     ignore: ['.*']
-                // },{
-                //     from: join(globals.rootDir, 'server.prod.js'),
-                // }]),
-
                 new ManifestJsonWebpackPlugin({
                     config: manifest,
                     path: assetsPath('manifest.json')
@@ -237,9 +224,15 @@ export default class WebpackConfig {
             ]
         });
 
-        if (copy && copy.length !== 0) {
-            let copyPluginConfigs = [];
-            copy.forEach(copyConfig => {
+        let ssrExists = !!entry.find(entryConfig => entryConfig.ssr);
+        let copyPluginConfigs = [{
+            from: join(globals.rootDir, 'static'),
+            to: 'static',
+            ignore: ['.*']
+        }];
+
+        if (ssrExists && ssrCopy && ssrCopy.length !== 0) {
+            ssrCopy.forEach(copyConfig => {
                 if (copyConfig.path) {
                     let copyPluginConfig = {
                         from: join(globals.rootDir, copyConfig.path),
@@ -253,9 +246,9 @@ export default class WebpackConfig {
                     copyPluginConfigs.push(copyPluginConfig);
                 }
             });
-
-            clientConfig.plugins.push(new CopyWebpackPlugin(copyPluginConfigs));
         }
+
+        clientConfig.plugins.push(new CopyWebpackPlugin(copyPluginConfigs));
 
         if (bundleAnalyzerReport) {
             clientConfig.plugins.push(
