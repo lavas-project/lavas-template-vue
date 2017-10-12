@@ -10,7 +10,7 @@ import webpack from 'webpack';
 import MFS from 'memory-fs';
 import chokidar from 'chokidar';
 import template from 'lodash.template';
-import {copy, emptyDir, readFile, outputFile, pathExists} from 'fs-extra';
+import {emptyDir, readFile, outputFile, pathExists} from 'fs-extra';
 import {join} from 'path';
 
 import historyMiddleware from 'connect-history-api-fallback';
@@ -212,33 +212,6 @@ export default class Builder {
         await writeFile(join(this.lavasDir, 'LavasLink.js'), template(lavasLinkTemplate)({
             entryConfig: JsonUtil.stringify(this.config.entry)
         }));
-    }
-
-    /**
-     * copy server relatived files into dist when build
-     */
-    async copyServerModuleToDist() {
-        let distPath = this.config.build.path;
-
-        // TODO: delete after moving lib to lavas-core
-        let libDir = join(this.cwd, 'lib');
-        let distLibDir = join(distPath, 'lib');
-
-        let serverDir = join(this.cwd, 'server.prod.js');
-        let distServerDir = join(distPath, 'server.prod.js');
-
-        let nodeModulesDir = join(this.cwd, 'node_modules');
-        let distNodeModulesDir = join(distPath, 'node_modules');
-
-        let jsonDir = join(this.cwd, 'package.json');
-        let distJsonDir = join(distPath, 'package.json');
-
-        await Promise.all([
-            copy(libDir, distLibDir),
-            copy(serverDir, distServerDir),
-            copy(nodeModulesDir, distNodeModulesDir),
-            copy(jsonDir, distJsonDir)
-        ]);
     }
 
     /**
@@ -462,18 +435,14 @@ export default class Builder {
             let serverConfig = this.webpackConfig.server();
             // build bundle renderer
             await this.renderer.build(clientConfig, serverConfig);
-            await Promise.all([
-                /**
-                 * when running online server, renderer needs to use template and
-                 * replace some variables such as meta, config in it. so we need
-                 * to store some props in config.json.
-                 * TODO: not all the props in config is needed. for now, only manifest
-                 * & assetsDir are required. some props such as globalDir are useless.
-                 */
-                this.writeConfigFile(this.config),
-                // copy some files to /dist
-                this.copyServerModuleToDist()
-            ]);
+            /**
+             * when running online server, renderer needs to use template and
+             * replace some variables such as meta, config in it. so we need
+             * to store some props in config.json.
+             * TODO: not all the props in config is needed. for now, only manifest
+             * & assetsDir are required. some props such as globalDir are useless.
+             */
+            await this.writeConfigFile(this.config);
             console.log('[Lavas] SSR build completed.');
         }
 

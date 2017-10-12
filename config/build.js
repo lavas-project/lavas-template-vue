@@ -100,5 +100,33 @@ module.exports = {
      *
      * @type {Function}
      */
-    extend: null
+    extend: null,
+
+    /**
+     * files need to be copied after build
+     *
+     * each element contains following properties:
+     * @param {string} path *required* file or directory path
+     * @param {Array<string>} ignore *NOT required* files or patterns need to be ignored
+     *
+     * @type {Array}
+     */
+    copy: [
+        {
+            path: 'static',
+            ignore: ['.*']
+        },
+        {
+            path: 'lib'
+        },
+        {
+            path: 'server.prod.js'
+        },
+        {
+            path: 'node_modules'
+        },
+        {
+            path: 'package.json'
+        }
+    ]
 };
