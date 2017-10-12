@@ -20,7 +20,14 @@ import SWRegisterWebpackPlugin from 'sw-register-webpack-plugin';
 
 import {vueLoaders, styleLoaders} from './utils/loader';
 import {assetsPath} from './utils/path';
-import {LAVAS_DIRNAME_IN_DIST, ASSETS_DIRNAME_IN_DIST, SERVER_BUNDLE} from './constants';
+import {LAVAS_DIRNAME_IN_DIST, SERVER_BUNDLE} from './constants';
+
+import fs from 'fs';
+import gracefulFs from 'graceful-fs';
+
+// solve 'too many open files' problem on Windows
+// see https://github.com/webpack-contrib/copy-webpack-plugin/issues/59
+gracefulFs.gracefulify(fs);
 
 export default class WebpackConfig {
     constructor(config = {}, env) {
@@ -146,7 +153,7 @@ export default class WebpackConfig {
 
         /* eslint-disable fecs-one-var-per-line */
         let {cssSourceMap, cssMinimize, cssExtract,
-            jsSourceMap, bundleAnalyzerReport, extend} = Object.assign({}, build, buildConfig);
+            jsSourceMap, bundleAnalyzerReport, extend, copy} = Object.assign({}, build, buildConfig);
         /* eslint-enable fecs-one-var-per-line */
 
         let outputFilename = this.isDev ? 'js/[name].[hash:8].js' : 'js/[name].[chunkhash:8].js';
@@ -211,11 +218,17 @@ export default class WebpackConfig {
                 }),
 
                 // copy custom static assets
-                new CopyWebpackPlugin([{
-                    from: join(globals.rootDir, 'static'),
-                    to: ASSETS_DIRNAME_IN_DIST,
-                    ignore: ['.*']
-                }]),
+                // new CopyWebpackPlugin([{
+                //     from: join(globals.rootDir, 'static'),
+                //     to: 'static',
+                //     ignore: ['.*']
+                // },{
+                //     from: join(globals.rootDir, 'lib'),
+                //     to: 'lib',
+                //     ignore: ['.*']
+                // },{
+                //     from: join(globals.rootDir, 'server.prod.js'),
+                // }]),
 
                 new ManifestJsonWebpackPlugin({
                     config: manifest,
@@ -223,6 +236,26 @@ export default class WebpackConfig {
                 })
             ]
         });
+
+        if (copy && copy.length !== 0) {
+            let copyPluginConfigs = [];
+            copy.forEach(copyConfig => {
+                if (copyConfig.path) {
+                    let copyPluginConfig = {
+                        from: join(globals.rootDir, copyConfig.path),
+                        to: copyConfig.path
+                    };
+
+                    if (copyConfig.ignore) {
+                        copyPluginConfig.ignore = copyConfig.ignore;
+                    }
+
+                    copyPluginConfigs.push(copyPluginConfig);
+                }
+            });
+
+            clientConfig.plugins.push(new CopyWebpackPlugin(copyPluginConfigs));
+        }
 
         if (bundleAnalyzerReport) {
             clientConfig.plugins.push(

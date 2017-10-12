@@ -8,7 +8,25 @@
 module.exports = {
 
     build: {
-        cssExtract: true
+        cssExtract: true,
+        copy: [
+            {
+                path: 'static',
+                ignore: ['.*']
+            },
+            {
+                path: 'lib'
+            },
+            {
+                path: 'server.prod.js'
+            },
+            {
+                path: 'node_modules'
+            },
+            {
+                path: 'package.json'
+            }
+        ]
     }
 
 };
