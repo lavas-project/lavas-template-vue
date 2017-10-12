@@ -195,7 +195,12 @@ export default class RouteManager {
     async writeRoutesSourceFile() {
         let writeFile = this.isDev ? writeFileInDev : outputFile;
         await Promise.all(this.config.entry.map(async entryConfig => {
-            let {name: entryName, mode = 'history', base = '/'} = entryConfig;
+            let {
+                name: entryName,
+                mode = 'history',
+                base = '/',
+                pageTransition = {enable: false}
+            } = entryConfig;
 
             let entryRoutes = this.routes.filter(route => route.entryName === entryName);
             let entryFlatRoutes = new Set();
@@ -204,6 +209,28 @@ export default class RouteManager {
                     entryFlatRoutes.add(flatRoute)
                 }
             });
+
+            // set page transition, support 2 types: slide|fade
+            let transitionType = pageTransition.type;
+            if (transitionType === 'slide') {
+                pageTransition = Object.assign({
+                    enable: true,
+                    slideLeftClass: 'slide-left',
+                    slideRightClass: 'slide-right',
+                    alwaysBackPages: ['index'],
+                    alwaysForwardPages: []
+                }, pageTransition);
+            }
+            else if (transitionType) {
+                pageTransition = Object.assign({
+                    enable: true,
+                    transitionClass: transitionType
+                }, pageTransition);
+            }
+            else {
+                console.log(`[Lavas] page transition type is required.`);
+                pageTransition = {enable: false};
+            }
 
             // add error route
             entryRoutes.push(this.errorRoute);
@@ -216,7 +243,8 @@ export default class RouteManager {
                 router: {
                     mode,
                     base,
-                    routes: entryFlatRoutes
+                    routes: entryFlatRoutes,
+                    pageTransition
                 },
                 routesContent
             });

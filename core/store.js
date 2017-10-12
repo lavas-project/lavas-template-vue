@@ -48,7 +48,6 @@ if (typeof storeData !== 'function') {
 
         name = paths.pop();
         module[name] = getModule(filename);
-        // console.log(module[name]);
         module[name].namespaced = true;
     }
 }
