@@ -24,7 +24,6 @@ export default class Renderer {
         this.config = core.config;
         this.rootDir = this.config && this.config.globals.rootDir;
         this.cwd = core.cwd;
-        this.internalMiddlewares = core.internalMiddlewares;
         this.renderer = {};
         this.serverBundle = null;
         this.clientManifest = {};
@@ -35,15 +34,25 @@ export default class Renderer {
     }
 
     /**
+     * get template path for entry
+     *
+     * @param {string} entryName entry name
+     * @return {string} template path
+     */
+    getTemplatePathByEntry(entryName) {
+        let templateName = this.getTemplateName(entryName);
+        return join(this.rootDir, `entries/${entryName}/${templateName}`);
+    }
+
+    /**
      * return ssr template
      *
      * @param {string} alias webpack alias
      * @param {string} entryName entry name
-     * @return {string} resolved path
+     * @return {string} templateContent
      */
     async getTemplate(entryName) {
-        let templateName = this.getTemplateName(entryName);
-        let templatePath = join(this.rootDir, `entries/${entryName}/${templateName}`);
+        let templatePath = this.getTemplatePathByEntry(entryName);
         if (!await pathExists(templatePath)) {
             throw new Error(`${templateName} required for entry: ${entryName}`);
         }
@@ -121,76 +130,33 @@ export default class Renderer {
     async buildDev() {
         let lavasDir = join(this.rootDir, './.lavas');
 
-        await Promise.all(this.entries.map(async entryName => {
-            this.templates[entryName] = await this.getTemplate(entryName);
-        }));
+        // add watcher for each template
+        this.entries.map(entryName => {
+            let templatePath = this.getTemplatePathByEntry(entryName);
+            this.addWatcher(templatePath, 'change', async () => {
+                await this.refreshFiles(true);
+            });
+        });
 
         await enableHotReload(lavasDir, this.clientConfig, true);
 
         // add custom ssr client plugin
         this.addSSRClientPlugin();
-
-        let clientCompiler = webpack(this.clientConfig);
-
-        // dev middleware
-        let devMiddleware = webpackDevMiddleware(clientCompiler, {
-            publicPath: this.clientConfig.output.publicPath,
-            noInfo: true
-        });
-        this.devFs = devMiddleware.fileSystem;
-        clientCompiler.outputFileSystem = this.devFs;
-
-        this.internalMiddlewares.push(devMiddleware);
-
-        // hot middleware
-        let hotMiddleware = webpackHotMiddleware(clientCompiler, {
-            heartbeat: 5000
-        });
-
-        this.internalMiddlewares.push(hotMiddleware);
-
-        clientCompiler.plugin('done', async stats => {
-            stats = stats.toJson();
-            stats.errors.forEach(err => console.error(err));
-            stats.warnings.forEach(err => console.warn(err));
-
-            if (stats.errors.length) {
-                for (let error of stats.errors) {
-                    console.error(error);
-                }
-                return;
-            }
-            await this.refreshFiles();
-        });
-
-        let serverCompiler = webpack(this.serverConfig);
-        this.mfs = new MFS();
-        serverCompiler.outputFileSystem = this.mfs;
-
-        serverCompiler.watch({}, async (err, stats) => {
-            if (err) {
-                throw err;
-            }
-            stats = stats.toJson();
-            if (stats.errors.length) {
-                // print all errors
-                for (let error of stats.errors) {
-                    console.error(error);
-                }
-                return;
-            }
-            await this.refreshFiles();
-        });
     }
 
+    /**
+     * if any of clientManifest, serverBundle and template changed, refresh them and
+     * create new renderer
+     */
     async refreshFiles() {
-        let changed = false;
         console.log('[Lavas] refresh ssr bundle & manifest.');
+
+        let changed = false;
+        let templateChanged = false;
         this.clientManifest = this.entries.reduce((prev, entryName) => {
             let clientManifestPath = distLavasPath(this.clientConfig.output.path, `${entryName}/${CLIENT_MANIFEST}`);
-            if (this.devFs.existsSync(clientManifestPath)) {
-
-                let clientManifestContent = this.devFs.readFileSync(clientManifestPath, 'utf-8');
+            if (this.clientMFS.existsSync(clientManifestPath)) {
+                let clientManifestContent = this.clientMFS.readFileSync(clientManifestPath, 'utf-8');
                 if (prev[entryName] && JSON.stringify(prev[entryName]) !== clientManifestContent) {
                     changed = true;
                 }
@@ -200,16 +166,31 @@ export default class Renderer {
         }, {});
 
         let serverBundlePath = distLavasPath(this.serverConfig.output.path, SERVER_BUNDLE);
-        if (this.mfs.existsSync(serverBundlePath)) {
-            let serverBundleContent = this.mfs.readFileSync(serverBundlePath, 'utf8');
+        if (this.serverMFS.existsSync(serverBundlePath)) {
+            let serverBundleContent = this.serverMFS.readFileSync(serverBundlePath, 'utf8');
             if (this.serverBundle && JSON.stringify(this.serverBundle) !== serverBundleContent) {
                 changed = true;
             }
             this.serverBundle = JSON.parse(serverBundleContent);
         }
 
+        this.templates = {};
+        await Promise.all(this.entries.map(async entryName => {
+            let templateContent = await this.getTemplate(entryName);
+            if (this.templates[entryName] !== templateContent) {
+                changed = true;
+                templateChanged = true;
+            }
+            this.templates[entryName] = templateContent;
+        }));
+
         if (changed) {
             await this.createRenderer();
+
+            // if we detect template changed, publish reload event to client
+            if (templateChanged) {
+                this.reloadClient();
+            }
         }
     }
 
@@ -254,7 +235,7 @@ export default class Renderer {
      * create renderer
      */
     async createRenderer() {
-        if (this.serverBundle && this.clientManifest) {
+        if (this.serverBundle && Object.keys(this.clientManifest).length) {
             await Promise.all(this.entries.map(async entryName => {
                 if (this.clientManifest[entryName]) {
                     let first = !this.renderer[entryName];
