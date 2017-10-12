@@ -10,13 +10,7 @@
     },
     "renderIgnores": [],
     "exportsIgnores": [
-        "build",
-        "_old",
         "build.js",
-        "package.json",
-        "server.dev.js",
-        "server.express.js",
-        "webpack.config.js",
         ".gitignore",
         "test"
     ],
