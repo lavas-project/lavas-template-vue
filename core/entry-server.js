@@ -34,7 +34,8 @@ export default function (context) {
             return reject();
         }
 
-        let {app, router, store} = createApp();
+        let {App, router, store} = createApp();
+        let app = new App();
 
         let fullPath = router.resolve(url).route.fullPath;
 

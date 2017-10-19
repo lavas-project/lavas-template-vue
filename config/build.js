@@ -62,16 +62,24 @@ module.exports = {
     /**
      * alias for webpack
      *
-     * @type {Object.<string, string>}
+     * @type {Object.<string, Object>}
      */
-    alias: {},
+    alias: {
+        base: {},
+        client: {},
+        server: {}
+    },
 
     /**
      * webpack plugins
      *
-     * @type {Array.<*>}
+     * @type {Object.<string, Array.<*>>}
      */
-    plugins: [],
+    plugins: {
+        base: [],
+        client: [],
+        server: []
+    },
 
     /**
      * node externals
@@ -100,7 +108,19 @@ module.exports = {
      *
      * @type {Function}
      */
-    extend: null,
+    extend: function (config, {type, env}) {
+        if (type === 'base') {
+            let vueRule = config.module.rules[0];
+            vueRule.use.push({
+                loader: 'vue-style-variables-loader',
+                options: {
+                    importStatements: [
+                        '@import "~@/assets/theme-variables.styl";'
+                    ]
+                }
+            });
+        }
+    },
 
     /**
      * files need to be copied after build when ssr entry exists

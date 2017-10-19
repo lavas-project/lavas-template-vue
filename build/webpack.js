@@ -46,7 +46,8 @@ export default class WebpackConfig {
     base(buildConfig = {}) {
         let {globals, build, babel, serviceWorker: swPrecacheConfig, routes} = this.config;
         let {path, publicPath, cssSourceMap, cssMinimize,
-            cssExtract, jsSourceMap, alias, extend} = Object.assign({}, build, buildConfig);
+            cssExtract, jsSourceMap, alias: {base: baseAlias = {}}, extend,
+            plugins: {base: basePlugins = []}} = Object.assign({}, build, buildConfig);
 
         let baseConfig = {
             output: {
@@ -58,7 +59,7 @@ export default class WebpackConfig {
                 alias: Object.assign({
                     '@': globals.rootDir,
                     '$': join(globals.rootDir, '.lavas')
-                }, alias)
+                }, baseAlias)
             },
             module: {
                 rules: [{
@@ -70,7 +71,13 @@ export default class WebpackConfig {
                                 cssMinimize,
                                 cssExtract
                             })
-                        }]
+                        }],
+                        include: [
+                            join(globals.rootDir, 'components'),
+                            join(globals.rootDir, 'core'),
+                            join(globals.rootDir, 'pages'),
+                            join(globals.rootDir, 'entries')
+                        ]
                     },
                     {
                         test: /\.js$/,
@@ -119,9 +126,10 @@ export default class WebpackConfig {
                     })),
                     new SWRegisterWebpackPlugin({
                         filePath: resolve(__dirname, 'templates/sw-register.js')
-                    })
+                    }),
+                    ...basePlugins
                 ]
-                : [new FriendlyErrorsPlugin()]
+                : [new FriendlyErrorsPlugin(), ...basePlugins]
         };
 
         if (cssExtract) {
@@ -153,7 +161,9 @@ export default class WebpackConfig {
 
         /* eslint-disable fecs-one-var-per-line */
         let {cssSourceMap, cssMinimize, cssExtract,
-            jsSourceMap, bundleAnalyzerReport, extend, ssrCopy} = Object.assign({}, build, buildConfig);
+            jsSourceMap, bundleAnalyzerReport, extend, ssrCopy,
+            alias: {client: clientAlias = {}},
+            plugins: {client: clientPlugins = []}} = Object.assign({}, build, buildConfig);
         /* eslint-enable fecs-one-var-per-line */
 
         let outputFilename = this.isDev ? 'js/[name].[hash:8].js' : 'js/[name].[chunkhash:8].js';
@@ -161,6 +171,9 @@ export default class WebpackConfig {
             output: {
                 filename: assetsPath(outputFilename),
                 chunkFilename: assetsPath('js/[name].[chunkhash:8].js')
+            },
+            resolve: {
+                alias: clientAlias
             },
             module: {
                 rules: styleLoaders({
@@ -180,6 +193,7 @@ export default class WebpackConfig {
                 // split vendor js into its own file
                 new webpack.optimize.CommonsChunkPlugin({
                     name: 'vendor',
+                    filename: 'vendor.[chunkhash:8].js',
                     minChunks(module, count) {
                         // any required modules inside node_modules are extracted to vendor
                         return module.resource
@@ -191,6 +205,7 @@ export default class WebpackConfig {
                 // split vue, vue-router, vue-meta and vuex into vue chunk
                 new webpack.optimize.CommonsChunkPlugin({
                     name: 'vue',
+                    filename: 'vue.[chunkhash:8].js',
                     minChunks(module, count) {
                         // On Windows, context will be seperated by '\',
                         // then paths like '\node_modules\vue\' cannot be matched because of '\v'.
@@ -220,7 +235,10 @@ export default class WebpackConfig {
                 new ManifestJsonWebpackPlugin({
                     config: manifest,
                     path: assetsPath('manifest.json')
-                })
+                }),
+
+                // add custom plugins in client side
+                ...clientPlugins
             ]
         });
 
@@ -272,7 +290,9 @@ export default class WebpackConfig {
      * @return {Object} webpack server config
      */
     server(buildConfig = {}) {
-        let {extend, nodeExternalsWhitelist = []} = this.config.build;
+        let {extend, nodeExternalsWhitelist = [],
+            alias: {server: serverAlias = {}},
+            plugins: {server: serverPlugins = []}} = this.config.build;
 
         let serverConfig = merge(this.base(buildConfig), {
             target: 'node',
@@ -280,7 +300,9 @@ export default class WebpackConfig {
                 filename: 'server-bundle.js',
                 libraryTarget: 'commonjs2'
             },
-            resolve: {},
+            resolve: {
+                alias: serverAlias
+            },
             // https://webpack.js.org/configuration/externals/#externals
             // https://github.com/liady/webpack-node-externals
             externals: nodeExternals({
@@ -294,7 +316,9 @@ export default class WebpackConfig {
                 }),
                 new VueSSRServerPlugin({
                     filename: join(LAVAS_DIRNAME_IN_DIST, SERVER_BUNDLE)
-                })
+                }),
+                // add custom plugins in server side
+                ...serverPlugins
             ]
         });
 

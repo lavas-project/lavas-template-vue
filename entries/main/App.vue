@@ -1,6 +1,5 @@
 <template>
     <div id="app">
-        Main App
         <transition
             :name="pageTransitionEffect">
             <keep-alive>

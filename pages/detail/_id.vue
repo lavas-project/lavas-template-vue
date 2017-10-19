@@ -46,9 +46,6 @@ export default {
         await new Promise((resolve, reject) => {
             setTimeout(resolve, 500);
         });
-    },
-    created() {
-        setState(this.$store);
     }
 };
 </script>
