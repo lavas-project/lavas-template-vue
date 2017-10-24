@@ -1,5 +1,5 @@
 /**
- * @file client server
+ * @file server entry
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
@@ -34,7 +34,8 @@ export default function (context) {
             return reject();
         }
 
-        let {app, router, store} = createApp();
+        let {App, router, store} = createApp();
+        let app = new App();
 
         let fullPath = router.resolve(url).route.fullPath;
 

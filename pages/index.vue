@@ -12,8 +12,7 @@
 
 <script>
 
-function setState(store) {
-}
+function setState(store) {}
 
 export default {
     name: 'index',
@@ -27,9 +26,6 @@ export default {
     },
     async asyncData({store, route}) {
         setState(store);
-    },
-    activated() {
-        setState(this.$store);
     }
 };
 </script>
