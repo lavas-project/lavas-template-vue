@@ -52,7 +52,7 @@ module.exports = [
     // },
     {
         name: 'main',
-        ssr: false,
+        ssr: true,
         mode: 'history',
         base: '/',
         routes: /^.*$/,

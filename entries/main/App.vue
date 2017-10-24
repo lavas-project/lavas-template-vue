@@ -57,7 +57,7 @@ export default {
         left 0
         overflow-x hidden
         overflow-y auto
-        background white
+        background $theme.primary
 
         &::-webkit-scrollbar
             width 0

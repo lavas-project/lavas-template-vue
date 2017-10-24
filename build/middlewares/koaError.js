@@ -18,6 +18,10 @@ export default function (core) {
             await next();
         }
         catch (err) {
+            if (ctx.req.lavasIgnoreFlag) {
+                return await next();
+            }
+
             let errorMsg = 'Internal Server Error';
             if (err.status !== 404) {
                 console.log('[Lavas] error middleware catch error:');

@@ -20,7 +20,8 @@ export default function (core) {
     ];
 
     return async function (req, res, next) {
-        if (privateFiles.find(file => req.url.startsWith(file))) {
+        if (privateFiles.find(file => req.url.startsWith(file))
+            && !req.lavasIgnoreFlag) {
             await next({status: 404});
         }
         else {

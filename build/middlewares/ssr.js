@@ -49,11 +49,14 @@ async function getStaticHtml(fileSystem, cwd, entryName, enableCache) {
 export default function (core) {
     let {cwd, config, renderer, builder, isProd} = core;
     return async function (req, res, next) {
+        if (req.lavasIgnoreFlag) {
+            return next();
+        }
+
         let url = req.url;
         let matchedEntry = config.entry.find(entryConfig => matchUrl(entryConfig.routes, url));
         if (!matchedEntry) {
-            next(new Error(`${url} not found`));
-            return;
+            return next(new Error(`${url} not found`));
         }
 
         let {ssr: needSSR, name: entryName} = matchedEntry;

@@ -1,5 +1,5 @@
 /**
- * @file client server
+ * @file server entry
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 

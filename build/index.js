@@ -143,8 +143,21 @@ export default class LavasCore extends EventEmitter {
         ]);
     }
 
+    /**
+     * close builder in development mode
+     *
+     */
     async close() {
         await this.builder.close();
         console.log('[Lavas] lavas closed.');
+    }
+
+    /**
+     * add flag to req which will be ignored by lavas middlewares
+     *
+     * @param {Request} req req
+     */
+    ignore(req) {
+        req.lavasIgnoreFlag = true;
     }
 }
