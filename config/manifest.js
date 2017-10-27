@@ -13,7 +13,7 @@ module.exports = {
      *
      * @type {string}
      */
-    start_url: '/',
+    start_url: '/?utm_source=homescreen',
 
     /**
      * manifest name

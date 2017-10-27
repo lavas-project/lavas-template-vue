@@ -193,7 +193,7 @@ export default class WebpackConfig {
                 // split vendor js into its own file
                 new webpack.optimize.CommonsChunkPlugin({
                     name: 'vendor',
-                    filename: 'vendor.[chunkhash:8].js',
+                    filename: assetsPath('js/vendor.[chunkhash:8].js'),
                     minChunks(module, count) {
                         // any required modules inside node_modules are extracted to vendor
                         return module.resource
@@ -205,7 +205,7 @@ export default class WebpackConfig {
                 // split vue, vue-router, vue-meta and vuex into vue chunk
                 new webpack.optimize.CommonsChunkPlugin({
                     name: 'vue',
-                    filename: 'vue.[chunkhash:8].js',
+                    filename: assetsPath('js/vue.[chunkhash:8].js'),
                     minChunks(module, count) {
                         // On Windows, context will be seperated by '\',
                         // then paths like '\node_modules\vue\' cannot be matched because of '\v'.
