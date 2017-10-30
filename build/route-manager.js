@@ -9,6 +9,7 @@
 import {readFile, outputFile} from 'fs-extra';
 import {join} from 'path';
 import {createHash} from 'crypto';
+import serialize from 'serialize-javascript';
 import template from 'lodash.template';
 
 import {generateRoutes, matchUrl} from './utils/router';
@@ -199,7 +200,8 @@ export default class RouteManager {
                 name: entryName,
                 mode = 'history',
                 base = '/',
-                pageTransition = {enable: false}
+                pageTransition = {enable: false},
+                scrollBehavior
             } = entryConfig;
 
             let entryRoutes = this.routes.filter(route => route.entryName === entryName);
@@ -236,6 +238,12 @@ export default class RouteManager {
             entryRoutes.push(this.errorRoute);
             entryFlatRoutes.add(this.errorRoute);
 
+            // scrollBehavior
+            if (scrollBehavior) {
+                scrollBehavior = serialize(scrollBehavior).replace('scrollBehavior(', 'function(');
+                console.log(scrollBehavior)
+            }
+
             let routesFilePath = join(this.lavasDir, `${entryName}/router.js`);
             let routesContent = this.generateRoutesContent(entryRoutes);
 
@@ -244,6 +252,7 @@ export default class RouteManager {
                     mode,
                     base,
                     routes: entryFlatRoutes,
+                    scrollBehavior,
                     pageTransition
                 },
                 routesContent

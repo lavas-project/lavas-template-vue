@@ -18,7 +18,7 @@
     "graceful-fs": "^4.1.11",
     "koa": "^2.3.0",
     "koa-router": "^7.2.1",
-    "lavas-core": "^0.0.17",
+    "lavas-core": "^0.0.18",
     "stoppable": "^1.0.4"
   },
   "devDependencies": {

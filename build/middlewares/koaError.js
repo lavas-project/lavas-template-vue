@@ -14,14 +14,13 @@ export default function (core) {
     const errPath = core.config.errorHandler.errorPath;
 
     return async (ctx, next) => {
+        if (ctx.req.lavasIgnoreFlag) {
+            return await next();
+        }
         try {
             await next();
         }
         catch (err) {
-            if (ctx.req.lavasIgnoreFlag) {
-                return await next();
-            }
-
             let errorMsg = 'Internal Server Error';
             if (err.status !== 404) {
                 console.log('[Lavas] error middleware catch error:');

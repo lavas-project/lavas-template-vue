@@ -37,6 +37,14 @@ module.exports = [
     //     mode: 'history',
     //
     //     /**
+    //      * scrollBehavior function in history mode.
+    //      *
+    //      * @type {function}
+    //      */
+    //     scrollBehavior: (to, from, savedPosition) => {
+    //     },
+    //
+    //     /**
     //      * the RegExp of this entry's routes
     //      *
     //      * @type {RegExp|string|Array.<RegExp|string>}
