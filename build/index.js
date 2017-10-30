@@ -17,12 +17,17 @@ import ora from 'ora';
 import {compose} from 'compose-middleware';
 import composeKoa from 'koa-compose';
 import c2k from 'koa-connect';
+import mount from 'koa-mount';
+import koaStatic from 'koa-static';
+import send from 'koa-send';
 import serve from 'serve-static';
 import favicon from 'serve-favicon';
 import compression from 'compression';
 
 import {join} from 'path';
 import EventEmitter from 'events';
+
+import {ASSETS_DIRNAME_IN_DIST} from './constants';
 
 export default class LavasCore extends EventEmitter {
     constructor(cwd = process.cwd()) {
@@ -87,13 +92,6 @@ export default class LavasCore extends EventEmitter {
         // serve favicon
         let faviconPath = join(this.cwd, 'static/img/icons', 'favicon.ico');
         this.internalMiddlewares.push(favicon(faviconPath));
-        if (this.isProd) {
-            /**
-             * add static files middleware only in prod mode,
-             * we already have webpack-dev-middleware in dev mode
-             */
-            this.internalMiddlewares.push(serve(this.cwd));
-        }
     }
 
     /**
@@ -113,9 +111,11 @@ export default class LavasCore extends EventEmitter {
      * @return {Function} koa middleware
      */
     koaMiddleware() {
-        let ssrExists = this.config.entry.some(e => e.ssr);
-        // transform express/connect style middleware to koa style
-        return composeKoa([
+        let {entry, serviceWorker} = this.config;
+        let ssrExists = entry.some(e => e.ssr);
+        let base = entry.length && entry[0].base || '/';
+
+        let middlewares = [
             koaErrorFactory(this),
             async (ctx, next) => {
                 // koa defaults to 404 when it sees that status is unset
@@ -123,9 +123,44 @@ export default class LavasCore extends EventEmitter {
                 await next();
             },
             c2k(privateFileFactory(this)),
-            ...this.internalMiddlewares.map(c2k),
-            ssrExists ? c2k(ssrFactory(this)) : () => {}
-        ]);
+            ...this.internalMiddlewares.map(c2k)
+        ];
+
+        /**
+         * add static files middleware only in prod mode,
+         * we already have webpack-dev-middleware in dev mode
+         */
+        if (this.isProd) {
+            // serve /static
+            middlewares.push(mount(
+                join(base, ASSETS_DIRNAME_IN_DIST),
+                koaStatic(join(this.cwd, ASSETS_DIRNAME_IN_DIST))
+            ));
+
+            let swFiles = [
+                join(base, serviceWorker.filename),
+                join(base, 'sw-register.js')
+            ];
+            middlewares.push(async (ctx, next) => {
+                let done = false;
+                if (swFiles.includes(ctx.path)) {
+                    // Don't cache service-worker.js & sw-register.js.
+                    ctx.set('Cache-Control', 'private, no-cache, no-store');
+                    done = await send(ctx, ctx.path, {
+                        root: this.cwd
+                    });
+                }
+                if (!done) {
+                    await next();
+                }
+            });
+        }
+        if (ssrExists) {
+            middlewares.push(c2k(ssrFactory(this)));
+        }
+
+        // transform express/connect style middleware to koa style
+        return composeKoa(middlewares);
     }
 
     /**

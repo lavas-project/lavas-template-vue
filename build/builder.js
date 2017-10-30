@@ -10,7 +10,7 @@ import webpack from 'webpack';
 import MFS from 'memory-fs';
 import chokidar from 'chokidar';
 import template from 'lodash.template';
-import {emptyDir, readFile, outputFile, pathExists} from 'fs-extra';
+import {emptyDir, readFile, outputFile, pathExists, copy} from 'fs-extra';
 import {join} from 'path';
 
 import historyMiddleware from 'connect-history-api-fallback';
@@ -468,8 +468,9 @@ export default class Builder {
      */
     async buildProd() {
         this.isProd = true;
+        let {build, globals} = this.config;
         // clear dist/ first
-        await emptyDir(this.config.build.path);
+        await emptyDir(build.path);
         // inject routes into service-worker.js.tmpl for later use
         await this.injectEntriesToSW();
         await this.routeManager.buildRoutes();
@@ -481,8 +482,10 @@ export default class Builder {
             // webpack client & server config
             let clientConfig = this.webpackConfig.client();
             let serverConfig = this.webpackConfig.server();
+
             // build bundle renderer
             await this.renderer.build(clientConfig, serverConfig);
+
             /**
              * when running online server, renderer needs to use template and
              * replace some variables such as meta, config in it. so we need
@@ -491,6 +494,25 @@ export default class Builder {
              * & assetsDir are required. some props such as globalDir are useless.
              */
             await this.writeConfigFile(this.config);
+
+            /**
+             * Don't use copy-webpack-plugin to copy this kind of files,
+             * otherwise these files will be added in the compilation of webpack.
+             * It will let some plugins such as vue-ssr-client misuse them.
+             * So just use fs.copy in such senario.
+             */
+
+            if (build.ssrCopy) {
+                await Promise.all(build.ssrCopy.map(
+                    async ({src, dest = src, options = {}}) => {
+                        await copy(
+                            join(globals.rootDir, src),
+                            join(build.path, dest),
+                            options
+                        );
+                    }
+                ));
+            }
             console.log('[Lavas] SSR build completed.');
         }
 

@@ -20,7 +20,7 @@ import SWRegisterWebpackPlugin from 'sw-register-webpack-plugin';
 
 import {vueLoaders, styleLoaders} from './utils/loader';
 import {assetsPath} from './utils/path';
-import {LAVAS_DIRNAME_IN_DIST, SERVER_BUNDLE} from './constants';
+import {LAVAS_DIRNAME_IN_DIST, SERVER_BUNDLE, ASSETS_DIRNAME_IN_DIST} from './constants';
 
 import fs from 'fs';
 import gracefulFs from 'graceful-fs';
@@ -242,31 +242,11 @@ export default class WebpackConfig {
             ]
         });
 
-        let ssrExists = !!entry.find(entryConfig => entryConfig.ssr);
-        let copyPluginConfigs = [{
-            from: join(globals.rootDir, 'static'),
-            to: 'static',
-            ignore: ['.*']
-        }];
-
-        if (ssrExists && ssrCopy && ssrCopy.length !== 0) {
-            ssrCopy.forEach(copyConfig => {
-                if (copyConfig.path) {
-                    let copyPluginConfig = {
-                        from: join(globals.rootDir, copyConfig.path),
-                        to: copyConfig.path
-                    };
-
-                    if (copyConfig.ignore) {
-                        copyPluginConfig.ignore = copyConfig.ignore;
-                    }
-
-                    copyPluginConfigs.push(copyPluginConfig);
-                }
-            });
-        }
-
-        clientConfig.plugins.push(new CopyWebpackPlugin(copyPluginConfigs));
+        clientConfig.plugins.push(new CopyWebpackPlugin([{
+            from: join(globals.rootDir, ASSETS_DIRNAME_IN_DIST),
+            to: ASSETS_DIRNAME_IN_DIST,
+            ignore: ['*.md']
+        }]));
 
         if (bundleAnalyzerReport) {
             clientConfig.plugins.push(

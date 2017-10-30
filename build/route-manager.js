@@ -241,7 +241,6 @@ export default class RouteManager {
             // scrollBehavior
             if (scrollBehavior) {
                 scrollBehavior = serialize(scrollBehavior).replace('scrollBehavior(', 'function(');
-                console.log(scrollBehavior)
             }
 
             let routesFilePath = join(this.lavasDir, `${entryName}/router.js`);

@@ -9,7 +9,7 @@
     "dev:express": "npm run build:core && node server.express.js",
     "build:minify": "npm run build && cd dist && echo [Lavas] remove devDependencies && npm prune --production && echo [Lavas] all complete",
     "build": "npm run build:core && node build.js",
-    "start": "node dist/server.prod.js",
+    "start": "node server.prod.js",
     "lint": "fecs ./ --rule --type 'vue,js,css'",
     "build:core": "babel build --out-dir lib --copy-files"
   },
