@@ -125,7 +125,8 @@ export default class WebpackConfig {
                         templateFilePath: resolve(__dirname, 'templates/service-worker-real.js.tmpl')
                     })),
                     new SWRegisterWebpackPlugin({
-                        filePath: resolve(__dirname, 'templates/sw-register.js')
+                        filePath: resolve(__dirname, 'templates/sw-register.js'),
+                        prefix: publicPath
                     }),
                     ...basePlugins
                 ]
@@ -160,7 +161,7 @@ export default class WebpackConfig {
         let {globals, build, manifest, entry} = this.config;
 
         /* eslint-disable fecs-one-var-per-line */
-        let {cssSourceMap, cssMinimize, cssExtract,
+        let {publicPath, cssSourceMap, cssMinimize, cssExtract,
             jsSourceMap, bundleAnalyzerReport, extend, ssrCopy,
             alias: {client: clientAlias = {}},
             plugins: {client: clientPlugins = []}} = Object.assign({}, build, buildConfig);
@@ -234,6 +235,7 @@ export default class WebpackConfig {
 
                 new ManifestJsonWebpackPlugin({
                     config: manifest,
+                    publicPath,
                     path: assetsPath('manifest.json')
                 }),
 

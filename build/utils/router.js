@@ -4,6 +4,7 @@
  */
 import {resolve, dirname, basename} from 'path';
 import glob from 'glob';
+import {inspect} from 'util';
 
 export function routes2Reg(routes) {
     let reg;
@@ -73,7 +74,15 @@ function mapDirsInfo(dirs, baseDir) {
             type: isFolder(dir, dirs) ? 'folder' : 'file'
         };
 
-        if (info.type === 'folder' && dirs.indexOf(dir + '.vue') > -1) {
+        let capitalizedBasename = basename(dir)
+            .replace(/^(.)/, match => match.toUpperCase());
+        let capitalizedDir = resolve(dir, '..', capitalizedBasename);
+
+        if (info.type === 'folder'
+            && (
+                dirs.indexOf(dir + '.vue') > -1
+                || dirs.indexOf(capitalizedDir + '.vue') > -1
+            )) {
             info.nested = true;
         }
 
@@ -84,7 +93,16 @@ function mapDirsInfo(dirs, baseDir) {
             return true;
         }
 
-        if (dir.slice(-4) === '.vue' && dirs.indexOf(dir.slice(0, -4)) === -1) {
+        let suffix = dir.slice(-4);
+        let originalDir = dir.slice(0, -4);
+        let lowerCaseBasename = basename(originalDir)
+            .replace(/^(.)/, match => match.toLowerCase());
+        let lowerCaseDir = resolve(originalDir, '..', lowerCaseBasename);
+
+        if (suffix === '.vue'
+            && dirs.indexOf(originalDir) === -1
+            && dirs.indexOf(lowerCaseDir) === -1
+        ) {
             return true;
         }
 
@@ -154,9 +172,15 @@ function treeToRouter(tree, parent) {
 
         let route = {
             path: info.dir.slice(parent.dir.length)
+                .replace(/^\/(.)/, match => match.toLowerCase())
                 .replace(/_/g, ':')
                 .replace(/(\/?index)?\.vue$/, ''),
-            component: info.level.join('/')
+            component: info.level.reduce((prev, cur, i) => {
+                if (i === info.level.length - 1) {
+                    cur = cur.replace(/^(.)/, match => match.toUpperCase());
+                }
+                return prev + '/' + cur;
+            }, '')
         };
 
         if (parent.nested) {
@@ -171,6 +195,7 @@ function treeToRouter(tree, parent) {
             route.children = treeToRouter(children, info);
         }
         route.name = info.level.slice(1).join('-')
+            .replace(/^(.)/, match => match.toLowerCase())
             .replace(/_/g, '')
             .replace(/(-index)?\.vue$/, '');
 

@@ -19,6 +19,7 @@ export default class ManifestJson {
      */
     constructor(opts) {
         this.config = opts.config;
+        this.publicPath = opts.publicPath || '/';
         this.path = opts.path;
     }
 
@@ -35,7 +36,7 @@ export default class ManifestJson {
             config.icons.forEach((item, index) => {
 
                 // 加上时间戳，做浏览器缓存
-                config.icons[index].src = item.src + '?v=' + Date.now();
+                config.icons[index].src = this.publicPath + item.src + '?v=' + Date.now();
             });
         }
 

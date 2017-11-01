@@ -26,9 +26,13 @@ const apps = getAllApps();
 // return a Promise that resolves to the app instance.
 export default function (context) {
     return new Promise((resolve, reject) => {
+        let {url, entryName, config} = context;
+        // remove base first
+        let base = config.entry.find(e => e.name === entryName).base
+            .replace(/^\/+/, '').replace(/\/+$/, '');
+        url = url.replace(new RegExp(`^/${base}/?`), '/');
 
-        let url = context.url;
-        let createApp = apps[context.entryName].createApp;
+        let createApp = apps[entryName].createApp;
 
         if (!createApp || typeof createApp !== 'function') {
             return reject();
