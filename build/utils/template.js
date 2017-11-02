@@ -11,26 +11,27 @@ import path from 'path';
 const serverTemplatePath = fs.readFileSync(path.resolve(__dirname, '../templates/server.html.tmpl'));
 const clientTemplatePath = fs.readFileSync(path.resolve(__dirname, '../templates/client.html.tmpl'));
 
-function inner(customTemplate, templatePath) {
+function inner(customTemplate, templatePath, baseUrl) {
     let useCustomOnlyFlag = false;
     let renderMetaFlag = false;
     let renderManifestFlag = false;
     let renderEntryFlag = false;
 
     let temp = template(customTemplate)({
-        useCustomOnly: () => {
+        useCustomOnly() {
             useCustomOnlyFlag = true;
             return '';
         },
-        renderMeta: () => {
+        baseUrl,
+        renderMeta() {
             renderMetaFlag = true;
             return '';
         },
-        renderManifest: () => {
+        renderManifest() {
             renderManifestFlag = true;
             return '';
         },
-        renderEntry: () => {
+        renderEntry() {
             renderEntryFlag = true;
             return '@RENDER_ENTRY@';
         }
@@ -69,6 +70,6 @@ function inner(customTemplate, templatePath) {
 }
 
 export default {
-    client: customTemplate => inner(customTemplate, clientTemplatePath),
-    server: customTemplate => inner(customTemplate, serverTemplatePath)
+    client: (customTemplate, baseUrl) => inner(customTemplate, clientTemplatePath, baseUrl),
+    server: (customTemplate, baseUrl) => inner(customTemplate, serverTemplatePath, baseUrl)
 };

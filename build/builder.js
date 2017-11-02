@@ -81,10 +81,11 @@ export default class Builder {
      *
      * @param {string} sourcePath sourcePath
      * @param {string} targetPath targetPath
+     * @param {Object} baseUrl    user's base url
      */
-    async createHtmlTemplate(sourcePath, targetPath) {
+    async createHtmlTemplate(sourcePath, targetPath, baseUrl = '/') {
         let writeFile = this.isDev ? writeFileInDev : outputFile;
-        let clientTemplateContent = templateUtil.client(await readFile(sourcePath, 'utf8'));
+        let clientTemplateContent = templateUtil.client(await readFile(sourcePath, 'utf8'), baseUrl);
         await writeFile(targetPath, clientTemplateContent);
     }
 
@@ -93,17 +94,20 @@ export default class Builder {
      *
      * @param {Object} mpaConfig mpaConfig
      * @param {string} entryName entryName
+     * @param {string} baseUrl entry base url
      */
-    async addHtmlPlugin(mpaConfig, entryName) {
+    async addHtmlPlugin(mpaConfig, entryName, baseUrl) {
         // allow user to provide a custom HTML template
         let rootDir = this.config.globals.rootDir;
         let htmlFilename = `${entryName}.html`;
         let customTemplatePath = join(rootDir, `entries/${entryName}/${TEMPLATE_HTML}`);
+
         if (!await pathExists(customTemplatePath)) {
             throw new Error(`${TEMPLATE_HTML} required for entry: ${entryName}`);
         }
+
         let realTemplatePath = join(this.lavasDir, `${entryName}/${TEMPLATE_HTML}`);
-        await this.createHtmlTemplate(customTemplatePath, realTemplatePath);
+        await this.createHtmlTemplate(customTemplatePath, realTemplatePath, baseUrl);
 
         // add html webpack plugin
         mpaConfig.plugins.unshift(new HtmlWebpackPlugin({
@@ -125,7 +129,7 @@ export default class Builder {
         // watch template in development mode
         if (this.isDev) {
             this.addWatcher(customTemplatePath, 'change', async () => {
-                await this.createHtmlTemplate(customTemplatePath, realTemplatePath);
+                await this.createHtmlTemplate(customTemplatePath, realTemplatePath, baseUrl);
             });
         }
     }
@@ -153,14 +157,14 @@ export default class Builder {
          * 2. create an entry if a skeleton component is provided
          */
         await Promise.all(this.config.entry.map(async entryConfig => {
-            let {name: entryName, ssr: needSSR} = entryConfig;
+            let {name: entryName, ssr: needSSR, base: baseUrl} = entryConfig;
 
             if (!needSSR) {
                 // set client entry first
                 mpaConfig.entry[entryName] = [`./entries/${entryName}/entry-client.js`];
 
                 // add html-webpack-plugin
-                await this.addHtmlPlugin(mpaConfig, entryName);
+                await this.addHtmlPlugin(mpaConfig, entryName, baseUrl);
 
                 // if skeleton provided, we need to create an entry
                 let skeletonPath = join(rootDir, `entries/${entryName}/Skeleton.vue`);

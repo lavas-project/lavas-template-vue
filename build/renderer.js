@@ -44,15 +44,17 @@ export default class Renderer {
      * return ssr template
      *
      * @param {string} entryName entry name
+     * @param {string} baseUrl entry base url
      * @return {string} templateContent
      */
-    async getTemplate(entryName) {
+    async getTemplate(entryName, baseUrl = '/') {
         let templatePath = this.getTemplatePathByEntry(entryName);
         if (!await pathExists(templatePath)) {
             throw new Error(`${templatePath} required for entry: ${entryName}`);
         }
         return templateUtil.server(
-            await readFile(templatePath, 'utf8')
+            await readFile(templatePath, 'utf8'),
+            baseUrl
         );
     }
 
@@ -109,8 +111,8 @@ export default class Renderer {
         // copy index.template.html to dist/lavas/{entryName}/
         await Promise.all(this.config.entry.map(async entryConfig => {
             if (entryConfig.ssr) {
-                let entryName = entryConfig.name;
-                let templateContent = await this.getTemplate(entryName);
+                let {name: entryName, base: baseUrl} = entryConfig;
+                let templateContent = await this.getTemplate(entryName, baseUrl);
                 let distTemplatePath = distLavasPath(
                     this.config.build.path,
                     `${entryName}/${this.getTemplateName(entryName)}`
@@ -168,8 +170,9 @@ export default class Renderer {
         }
 
         this.templates = {};
-        await Promise.all(this.entries.map(async entryName => {
-            let templateContent = await this.getTemplate(entryName);
+        await Promise.all(this.config.entry.map(async entryConfig => {
+            let {name: entryName, base: baseUrl} = entryConfig;
+            let templateContent = await this.getTemplate(entryName, baseUrl);
             if (this.templates[entryName] !== templateContent) {
                 changed = true;
                 templateChanged = true;
