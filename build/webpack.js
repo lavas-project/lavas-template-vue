@@ -124,8 +124,9 @@ export default class WebpackConfig {
                         }
                     }),
                     // new WorkboxWebpackPlugin({
-                    //     globDirectory: 'dist/static',
+                    //     globDirectory: 'dist',
                     //     globPatterns: ['**/*.{html,js,css}'],
+                    //     swSrc: join(path, '../core', 'service-worker.js'),
                     //     swDest: join('dist', 'service-worker.js'),
                     // }),
                     new SWPrecacheWebPlugin(Object.assign(swPrecacheConfig, {

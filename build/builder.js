@@ -163,8 +163,8 @@ export default class Builder {
                 await this.addHtmlPlugin(mpaConfig, entryName);
 
                 // if skeleton provided, we need to create an entry
-                let skeletonPath = join(rootDir, `entries/${entryName}/skeleton.vue`);
-                let skeletonImportPath = `@/entries/${entryName}/skeleton.vue`;
+                let skeletonPath = join(rootDir, `entries/${entryName}/Skeleton.vue`);
+                let skeletonImportPath = `@/entries/${entryName}/Skeleton.vue`;
                 if (await pathExists(skeletonPath)) {
                     let entryPath = await this.createSkeletonEntry(entryName, skeletonImportPath);
                     skeletonEntries[entryName] = [entryPath];
@@ -241,15 +241,15 @@ export default class Builder {
         // only pages in MPA need skeleton
         let entriesWithSkeleton = entry.filter(async e => {
             let {name, ssr} = e;
-            let skeletonPath = join(rootDir, `entries/${name}/skeleton.vue`);
+            let skeletonPath = join(rootDir, `entries/${name}/Skeleton.vue`);
             return !ssr && await pathExists(skeletonPath);
         });
 
         clientConfig.module.rules.push(SkeletonWebpackPlugin.loader({
-            resource: entriesWithSkeleton.map(e => join(rootDir, `.lavas/${e.name}/routes`)),
+            resource: entriesWithSkeleton.map(e => join(rootDir, `.lavas/${e.name}/router`)),
             options: {
                 entry: entriesWithSkeleton.map(e => e.name),
-                importTemplate: 'import [nameCap] from \'@/entries/[name]/skeleton.vue\';',
+                importTemplate: 'import [nameCap] from \'@/entries/[name]/Skeleton.vue\';',
                 routePathTemplate: '/skeleton-[name]',
                 insertAfter: 'let routes = ['
             }

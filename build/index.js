@@ -139,9 +139,10 @@ export default class LavasCore extends EventEmitter {
 
             // serve sw-register.js & sw.js
             let swFiles = [
-                posix.join(publicPath, serviceWorker.filename),
-                posix.join(publicPath, 'sw-register.js')
-            ];
+                'workbox-sw.prod.v2.1.0.js',
+                serviceWorker.filename,
+                'sw-register.js'
+            ].map(f => posix.join(publicPath, f));
             middlewares.push(async (ctx, next) => {
                 let done = false;
                 if (swFiles.includes(ctx.path)) {
@@ -184,9 +185,10 @@ export default class LavasCore extends EventEmitter {
 
             // serve sw-register.js & sw.js
             let swFiles = [
-                posix.join(publicPath, serviceWorker.filename),
-                posix.join(publicPath, 'sw-register.js')
-            ];
+                'workbox-sw.prod.v2.1.0.js',
+                serviceWorker.filename,
+                'sw-register.js'
+            ].map(f => posix.join(publicPath, f));
         }
 
         return compose([
