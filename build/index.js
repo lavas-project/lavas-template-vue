@@ -111,9 +111,8 @@ export default class LavasCore extends EventEmitter {
      * @return {Function} koa middleware
      */
     koaMiddleware() {
-        let {entry, serviceWorker} = this.config;
+        let {entry, build: {publicPath}, serviceWorker} = this.config;
         let ssrExists = entry.some(e => e.ssr);
-        let base = entry.length && entry[0].base || '/';
 
         // transform express/connect style middleware to koa style
         let middlewares = [
@@ -134,14 +133,14 @@ export default class LavasCore extends EventEmitter {
         if (this.isProd) {
             // serve /static
             middlewares.push(mount(
-                posix.join(base, ASSETS_DIRNAME_IN_DIST),
+                posix.join(publicPath, ASSETS_DIRNAME_IN_DIST),
                 koaStatic(join(this.cwd, ASSETS_DIRNAME_IN_DIST))
             ));
 
             // serve sw-register.js & sw.js
             let swFiles = [
-                posix.join(base, serviceWorker.filename),
-                posix.join(base, 'sw-register.js')
+                posix.join(publicPath, serviceWorker.filename),
+                posix.join(publicPath, 'sw-register.js')
             ];
             middlewares.push(async (ctx, next) => {
                 let done = false;
@@ -170,9 +169,8 @@ export default class LavasCore extends EventEmitter {
      * @return {Function} express middleware
      */
     expressMiddleware() {
-        let {entry, serviceWorker} = this.config;
+        let {entry, build: {publicPath}, serviceWorker} = this.config;
         let ssrExists = entry.some(e => e.ssr);
-        let base = entry.length && entry[0].base || '/';
 
         /**
          * add static files middleware only in prod mode,
@@ -186,8 +184,8 @@ export default class LavasCore extends EventEmitter {
 
             // serve sw-register.js & sw.js
             let swFiles = [
-                posix.join(base, serviceWorker.filename),
-                posix.join(base, 'sw-register.js')
+                posix.join(publicPath, serviceWorker.filename),
+                posix.join(publicPath, 'sw-register.js')
             ];
         }
 

@@ -11,7 +11,7 @@ import MFS from 'memory-fs';
 import chokidar from 'chokidar';
 import template from 'lodash.template';
 import {emptyDir, readFile, outputFile, pathExists, copy} from 'fs-extra';
-import {join} from 'path';
+import {join, posix} from 'path';
 
 import historyMiddleware from 'connect-history-api-fallback';
 import webpackDevMiddleware from 'webpack-dev-middleware';
@@ -399,10 +399,10 @@ export default class Builder {
             let mpaEntries = this.config.entry.filter(e => !e.ssr);
             let rewrites = mpaEntries
                 .map(entry => {
-                    let {name, routes} = entry;
+                    let {name, routes, base} = entry;
                     return {
                         from: routes2Reg(routes),
-                        to: `/${name}.html`
+                        to: posix.join(base, `/${name}.html`)
                     };
                 });
             /**

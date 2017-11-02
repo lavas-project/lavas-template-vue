@@ -17,6 +17,7 @@ import BundleAnalyzerPlugin from 'webpack-bundle-analyzer';
 import ManifestJsonWebpackPlugin from './plugins/manifest-json-webpack-plugin';
 import SWPrecacheWebPlugin from 'sw-precache-webpack-plugin';
 import SWRegisterWebpackPlugin from 'sw-register-webpack-plugin';
+// import WorkboxWebpackPlugin from 'workbox-webpack-plugin';
 
 import {vueLoaders, styleLoaders} from './utils/loader';
 import {assetsPath} from './utils/path';
@@ -122,6 +123,11 @@ export default class WebpackConfig {
                             safe: true
                         }
                     }),
+                    // new WorkboxWebpackPlugin({
+                    //     globDirectory: 'dist/static',
+                    //     globPatterns: ['**/*.{html,js,css}'],
+                    //     swDest: join('dist', 'service-worker.js'),
+                    // }),
                     new SWPrecacheWebPlugin(Object.assign(swPrecacheConfig, {
                         templateFilePath: resolve(__dirname, 'templates/service-worker-real.js.tmpl')
                     })),
@@ -131,7 +137,10 @@ export default class WebpackConfig {
                     }),
                     ...basePlugins
                 ]
-                : [new FriendlyErrorsPlugin(), ...basePlugins]
+                : [
+                    new FriendlyErrorsPlugin(),
+                    ...basePlugins
+                ]
         };
 
         if (cssExtract) {

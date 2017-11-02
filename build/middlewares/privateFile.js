@@ -20,11 +20,10 @@ export default function (core) {
         'node_modules/',
         'lavas/'
     ];
-    let entryConfig = core.config.entry;
-    let base = entryConfig.length && entryConfig[0].base || '/';
+    let publicPath = core.config.build.publicPath || '/';
 
     return async function (req, res, next) {
-        if (privateFiles.find(file => req.url.startsWith(posix.join(base, file)))
+        if (privateFiles.find(file => req.url.startsWith(posix.join(publicPath, file)))
             && !req.lavasIgnoreFlag) {
             await next({status: 404});
         }

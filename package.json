@@ -15,10 +15,8 @@
   },
   "dependencies": {
     "express": "^4.15.4",
-    "graceful-fs": "^4.1.11",
     "koa": "^2.3.0",
-    "koa-router": "^7.2.1",
-    "lavas-core": "^0.0.21",
+    "lavas-core": "^0.0.24",
     "stoppable": "^1.0.4"
   },
   "devDependencies": {
