@@ -28,10 +28,15 @@ document.body.appendChild(loading.$el);
 FastClick.attach(document.body);
 
 Vue.mixin({
+
     /**
      * Add an in-component guard which gets called
      * when component is reused in the new route.
      * eg. /detail/1 => /detail/2
+     *
+     * @param {Object} to to route
+     * @param {Object} from from route
+     * @param {Function} next next function
      */
     async beforeRouteUpdate(to, from, next) {
         let asyncData = this.$options.asyncData;
@@ -51,8 +56,10 @@ Vue.mixin({
     }
 });
 
-/* Add your custom router global guards here. */
-/* These guards must be added before new App().*/
+/**
+ * Add your custom router global guards here.
+ * These guards must be added before new App().
+ */
 
 handleMiddlewares();
 

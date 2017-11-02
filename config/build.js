@@ -107,6 +107,10 @@ module.exports = {
      * ```
      *
      * @type {Function}
+     * @param {Object} config config
+     * @param {Object} options options
+     * @param {string} options.type base|client|server
+     * @param {string} options.env development|production
      */
     extend: function (config, {type, env}) {
         if (type === 'base') {

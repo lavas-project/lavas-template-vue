@@ -6,7 +6,7 @@
 import Vue from 'vue';
 import {createRouter} from '@/.lavas/detail/router';
 import {createStore} from '@/core/store';
-import meta from '@/core/meta';
+import '@/core/meta';
 import AppComponent from './App.vue';
 
 let store;

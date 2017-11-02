@@ -2,9 +2,8 @@
  * @file utils.router.js
  * @author lavas
  */
-import {resolve, dirname, basename} from 'path';
+import {resolve, dirname, basename, posix} from 'path';
 import glob from 'glob';
-import {inspect} from 'util';
 
 export function routes2Reg(routes) {
     let reg;
@@ -18,7 +17,7 @@ export function routes2Reg(routes) {
     return reg;
 }
 
-export function matchUrl (routes, url) {
+export function matchUrl(routes, url) {
     if (Array.isArray(routes)) {
         return routes.some(route => matchUrl(route, url));
     }
@@ -41,7 +40,7 @@ export function matchUrl (routes, url) {
  * @param {Object} options glob options
  * @return {Promise} resolve generated router, reject error
  */
-export function generateRoutes (baseDir, options) {
+export function generateRoutes(baseDir, options) {
     return getDirs(baseDir, '.vue', options)
         .then(dirs => {
             let tree = mapDirsInfo(dirs, baseDir)
@@ -76,7 +75,7 @@ function mapDirsInfo(dirs, baseDir) {
 
         let capitalizedBasename = basename(dir)
             .replace(/^(.)/, match => match.toUpperCase());
-        let capitalizedDir = resolve(dir, '..', capitalizedBasename);
+        let capitalizedDir = posix.join(dir, '..', capitalizedBasename);
 
         if (info.type === 'folder'
             && (
@@ -97,7 +96,7 @@ function mapDirsInfo(dirs, baseDir) {
         let originalDir = dir.slice(0, -4);
         let lowerCaseBasename = basename(originalDir)
             .replace(/^(.)/, match => match.toLowerCase());
-        let lowerCaseDir = resolve(originalDir, '..', lowerCaseBasename);
+        let lowerCaseDir = posix.join(originalDir, '..', lowerCaseBasename);
 
         if (suffix === '.vue'
             && dirs.indexOf(originalDir) === -1
@@ -175,12 +174,18 @@ function treeToRouter(tree, parent) {
                 .replace(/^\/(.)/, match => match.toLowerCase())
                 .replace(/_/g, ':')
                 .replace(/(\/?index)?\.vue$/, ''),
-            component: info.level.reduce((prev, cur, i) => {
-                if (i === info.level.length - 1) {
-                    cur = cur.replace(/^(.)/, match => match.toUpperCase());
-                }
-                return prev + '/' + cur;
-            }, '')
+            component: info.level.map(function (l, i) {
+                return i === info.level.length - 1
+                    ? l.replace(/^(.)/, match => match.toUpperCase()) : l;
+            }).join('/'),
+            name: info.level.slice(1).map(function (cur, i) {
+                return cur
+                    .replace(/_/g, '')
+                    .replace(/\.vue$/, '')
+                    .replace(/^(.)/, function (match) {
+                        return i === 0 ? match.toLowerCase() : match.toUpperCase();
+                    });
+            }).join('')
         };
 
         if (parent.nested) {
@@ -194,10 +199,6 @@ function treeToRouter(tree, parent) {
             route.component += '.vue';
             route.children = treeToRouter(children, info);
         }
-        route.name = info.level.slice(1).join('-')
-            .replace(/^(.)/, match => match.toLowerCase())
-            .replace(/_/g, '')
-            .replace(/(-index)?\.vue$/, '');
 
         router.push(route);
         return router;

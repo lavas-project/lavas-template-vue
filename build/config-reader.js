@@ -3,7 +3,7 @@
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
-import {ensureFile, writeFile, readFile} from 'fs-extra';
+import {readFile} from 'fs-extra';
 import {join} from 'path';
 import glob from 'glob';
 import _ from 'lodash';

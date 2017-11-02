@@ -20,11 +20,11 @@ import c2k from 'koa-connect';
 import mount from 'koa-mount';
 import koaStatic from 'koa-static';
 import send from 'koa-send';
-import serve from 'serve-static';
+import serveStatic from 'serve-static';
 import favicon from 'serve-favicon';
 import compression from 'compression';
 
-import {join} from 'path';
+import {join, posix} from 'path';
 import EventEmitter from 'events';
 
 import {ASSETS_DIRNAME_IN_DIST} from './constants';
@@ -115,6 +115,7 @@ export default class LavasCore extends EventEmitter {
         let ssrExists = entry.some(e => e.ssr);
         let base = entry.length && entry[0].base || '/';
 
+        // transform express/connect style middleware to koa style
         let middlewares = [
             koaErrorFactory(this),
             async (ctx, next) => {
@@ -133,13 +134,14 @@ export default class LavasCore extends EventEmitter {
         if (this.isProd) {
             // serve /static
             middlewares.push(mount(
-                join(base, ASSETS_DIRNAME_IN_DIST),
+                posix.join(base, ASSETS_DIRNAME_IN_DIST),
                 koaStatic(join(this.cwd, ASSETS_DIRNAME_IN_DIST))
             ));
 
+            // serve sw-register.js & sw.js
             let swFiles = [
-                join(base, serviceWorker.filename),
-                join(base, 'sw-register.js')
+                posix.join(base, serviceWorker.filename),
+                posix.join(base, 'sw-register.js')
             ];
             middlewares.push(async (ctx, next) => {
                 let done = false;
@@ -159,7 +161,6 @@ export default class LavasCore extends EventEmitter {
             middlewares.push(c2k(ssrFactory(this)));
         }
 
-        // transform express/connect style middleware to koa style
         return composeKoa(middlewares);
     }
 
@@ -169,7 +170,27 @@ export default class LavasCore extends EventEmitter {
      * @return {Function} express middleware
      */
     expressMiddleware() {
-        let ssrExists = this.config.entry.some(e => e.ssr);
+        let {entry, serviceWorker} = this.config;
+        let ssrExists = entry.some(e => e.ssr);
+        let base = entry.length && entry[0].base || '/';
+
+        /**
+         * add static files middleware only in prod mode,
+         * we already have webpack-dev-middleware in dev mode
+         */
+        if (this.isProd) {
+            // serve /static
+            this.internalMiddlewares.push(
+                serveStatic(join(this.cwd, ASSETS_DIRNAME_IN_DIST))
+            );
+
+            // serve sw-register.js & sw.js
+            let swFiles = [
+                posix.join(base, serviceWorker.filename),
+                posix.join(base, 'sw-register.js')
+            ];
+        }
+
         return compose([
             privateFileFactory(this),
             ...this.internalMiddlewares,

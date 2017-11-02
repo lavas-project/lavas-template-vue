@@ -5,7 +5,6 @@
 
 import middleware from './middleware';
 import middConf from '@/config/middleware';
-import entryConf from '@/config/entry';
 import {stringify} from 'querystring';
 import {middlewareSeries, urlJoin} from './utils';
 import {getServerContext} from './context-server';

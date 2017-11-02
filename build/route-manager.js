@@ -13,9 +13,7 @@ import serialize from 'serialize-javascript';
 import template from 'lodash.template';
 
 import {generateRoutes, matchUrl} from './utils/router';
-import {distLavasPath} from './utils/path';
 import {writeFileInDev} from './utils/webpack';
-import {ROUTES_FILE, SKELETON_DIRNAME} from './constants';
 
 const routerTemplate = join(__dirname, './templates/router.tpl');
 
@@ -70,6 +68,8 @@ export default class RouteManager {
      *
      * @param {Array} routes routes
      * @param {Array} routesConfig config
+     * @param {Array} rewriteRules rewriteRules
+     * @param {Array} parentPath parentPath
      */
     mergeWithConfig(routes, routesConfig = [], rewriteRules = [], parentPath = '') {
         /**
@@ -104,9 +104,9 @@ export default class RouteManager {
             }
 
             // find route in config
-            let routeConfig = routesConfig.find(({pattern}) => {
-                return pattern instanceof RegExp ?
-                    pattern.test(route.fullPath) : pattern === route.fullPath;
+            let routeConfig = routesConfig.find(function ({pattern}) {
+                return pattern instanceof RegExp
+                    ? pattern.test(route.fullPath) : pattern === route.fullPath;
             });
 
             // mixin with config, rewrites path, add lazyLoading, meta
@@ -153,6 +153,7 @@ export default class RouteManager {
      * based on nested routes
      *
      * @param {Array} routes route list
+     * @param {boolean} recursive need recursive?
      * @return {string} content
      */
     generateRoutesContent(routes, recursive) {
@@ -208,7 +209,7 @@ export default class RouteManager {
             let entryFlatRoutes = new Set();
             this.flatRoutes.forEach(flatRoute => {
                 if (flatRoute.entryName === entryName) {
-                    entryFlatRoutes.add(flatRoute)
+                    entryFlatRoutes.add(flatRoute);
                 }
             });
 
@@ -230,7 +231,7 @@ export default class RouteManager {
                 }, pageTransition);
             }
             else {
-                console.log(`[Lavas] page transition type is required.`);
+                console.log('[Lavas] page transition type is required.');
                 pageTransition = {enable: false};
             }
 

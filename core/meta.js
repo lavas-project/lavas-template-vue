@@ -1,3 +1,8 @@
+/**
+ * @file use vue-meta plugin
+ * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
+ */
+
 import Vue from 'vue';
 import Meta from 'vue-meta';
 

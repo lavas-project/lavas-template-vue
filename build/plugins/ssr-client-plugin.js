@@ -6,7 +6,7 @@
 import hash from 'hash-sum';
 import uniq from 'lodash.uniq';
 
-const isJS = (file) => /\.js(\?[^.]+)?$/.test(file);
+const isJS = file => /\.js(\?[^.]+)?$/.test(file);
 
 /**
  * VueSSRClientPlugin
@@ -14,13 +14,13 @@ const isJS = (file) => /\.js(\?[^.]+)?$/.test(file);
  * @class
  */
 export default class VueSSRClientPlugin {
-    constructor (options = {}) {
+    constructor(options = {}) {
         this.options = Object.assign({
             filename: 'vue-ssr-client-manifest.json'
         }, options);
     }
 
-    apply (compiler) {
+    apply(compiler) {
         compiler.plugin('emit', (compilation, cb) => {
             const stats = compilation.getStats().toJson();
 
@@ -41,7 +41,7 @@ export default class VueSSRClientPlugin {
                     all: allFiles,
                     initial: initialFiles,
                     async: asyncFiles,
-                    modules: { /* [identifier: string]: Array<index: number> */ }
+                    modules: {}
                 };
 
                 const assetModules = stats.modules.filter(m => m.assets.length);
@@ -56,22 +56,25 @@ export default class VueSSRClientPlugin {
                         }
                         const files = manifest.modules[hash(m.identifier)] = chunk.files.map(fileToIndex);
                         // find all asset modules associated with the same chunk
+                        /* eslint-disable max-nested-callbacks */
                         assetModules.forEach(m => {
                             if (m.chunks.some(id => id === cid)) {
                                 files.push.apply(files, m.assets.map(fileToIndex));
                             }
                         });
+                        /* eslint-enable max-nested-callbacks */
                     }
                 });
 
                 const json = JSON.stringify(manifest, null, 2);
 
                 let manifestPath = this.options.filename.replace('[entryName]', entryName);
-
+                let source = () => json;
+                let size = () => json.length;
                 compilation.assets[manifestPath] = {
-                    source: () => json,
-                    size: () => json.length
-                }
+                    source,
+                    size
+                };
             });
 
             cb();

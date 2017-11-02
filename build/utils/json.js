@@ -1,3 +1,7 @@
+/**
+ * @file utils.json
+ * @author lavas
+ */
 import superJson from 'super-json';
 
 const jsonInstance = superJson.create({

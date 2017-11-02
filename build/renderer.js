@@ -5,14 +5,10 @@
 
 import {join} from 'path';
 import {pathExists, readFile, readJson, outputFile} from 'fs-extra';
-import webpack from 'webpack';
-import MFS from 'memory-fs';
-import webpackDevMiddleware from 'webpack-dev-middleware';
-import webpackHotMiddleware from 'webpack-hot-middleware';
 import {createBundleRenderer} from 'vue-server-renderer';
 import VueSSRClientPlugin from './plugins/ssr-client-plugin';
 
-import {distLavasPath, resolveAliasPath} from './utils/path';
+import {distLavasPath} from './utils/path';
 import {webpackCompile, enableHotReload} from './utils/webpack';
 import templateUtil from './utils/template';
 
@@ -47,14 +43,13 @@ export default class Renderer {
     /**
      * return ssr template
      *
-     * @param {string} alias webpack alias
      * @param {string} entryName entry name
      * @return {string} templateContent
      */
     async getTemplate(entryName) {
         let templatePath = this.getTemplatePathByEntry(entryName);
         if (!await pathExists(templatePath)) {
-            throw new Error(`${templateName} required for entry: ${entryName}`);
+            throw new Error(`${templatePath} required for entry: ${entryName}`);
         }
         return templateUtil.server(
             await readFile(templatePath, 'utf8')
@@ -72,9 +67,7 @@ export default class Renderer {
         if (entryConfig && entryConfig.templateFile) {
             return entryConfig.templateFile;
         }
-        else {
-            return TEMPLATE_HTML;
-        }
+        return TEMPLATE_HTML;
     }
 
     /**
@@ -259,6 +252,7 @@ export default class Renderer {
     /**
      * get vue server renderer
      *
+     * @param {string} entryName entryName
      * @return {Promise.<*>}
      */
     getRenderer(entryName) {

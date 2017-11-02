@@ -25,7 +25,7 @@
 </template>
 
 <script>
-import {mapState, mapActions} from 'vuex';
+import {mapState} from 'vuex';
 
 export default {
     name: 'detail',
@@ -38,7 +38,7 @@ export default {
         pageTransitionClass() {
             return `transition-${this.pageTransitionType}`;
         }
-    },
+    }
 };
 </script>
 

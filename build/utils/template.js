@@ -69,11 +69,6 @@ function inner(customTemplate, templatePath) {
 }
 
 export default {
-    client: (customTemplate) => {
-        return inner(customTemplate, clientTemplatePath);
-    },
-
-    server: (customTemplate) => {
-        return inner(customTemplate, serverTemplatePath);
-    }
-}
+    client: customTemplate => inner(customTemplate, clientTemplatePath),
+    server: customTemplate => inner(customTemplate, serverTemplatePath)
+};

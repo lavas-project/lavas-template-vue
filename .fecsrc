@@ -13,7 +13,8 @@
 
         "rules": {
             "no-console": 0,
-            "fecs-no-require": "off"
+            "fecs-no-require": "off",
+            "fecs-use-method-definition": "off"
         }
     }
 }

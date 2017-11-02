@@ -5,7 +5,7 @@
 
 import webpack from 'webpack';
 import merge from 'webpack-merge';
-import {posix, join, resolve, sep} from 'path';
+import {join, resolve, sep} from 'path';
 
 import nodeExternals from 'webpack-node-externals';
 import ExtractTextPlugin from 'extract-text-webpack-plugin';
@@ -44,11 +44,12 @@ export default class WebpackConfig {
      * @return {Object} webpack base config
      */
     base(buildConfig = {}) {
-        let {globals, build, babel, serviceWorker: swPrecacheConfig, routes} = this.config;
+        let {globals, build, babel, serviceWorker: swPrecacheConfig} = this.config;
+        /* eslint-disable fecs-one-var-per-line */
         let {path, publicPath, cssSourceMap, cssMinimize,
             cssExtract, jsSourceMap, alias: {base: baseAlias = {}}, extend,
             plugins: {base: basePlugins = []}} = Object.assign({}, build, buildConfig);
-
+        /* eslint-enable fecs-one-var-per-line */
         let baseConfig = {
             output: {
                 path,
@@ -158,11 +159,11 @@ export default class WebpackConfig {
      * @return {Object} client base config
      */
     client(buildConfig = {}) {
-        let {globals, build, manifest, entry} = this.config;
+        let {globals, build, manifest} = this.config;
 
         /* eslint-disable fecs-one-var-per-line */
         let {publicPath, cssSourceMap, cssMinimize, cssExtract,
-            jsSourceMap, bundleAnalyzerReport, extend, ssrCopy,
+            jsSourceMap, bundleAnalyzerReport, extend,
             alias: {client: clientAlias = {}},
             plugins: {client: clientPlugins = []}} = Object.assign({}, build, buildConfig);
         /* eslint-enable fecs-one-var-per-line */
@@ -217,8 +218,8 @@ export default class WebpackConfig {
                         // /^(vue|vue-router)$/i
                         let npmRegExp = new RegExp(targets.join('|'), 'i');
                         // /^(_vue@2.4.2@vue|_vue-router@1.2.3@vue-router)$/i
-                        let cnpmRegExp =
-                            new RegExp(targets.map(t => `_${t}@\\d\\.\\d\\.\\d@${t}`).join('|'), 'i');
+                        let cnpmRegExp
+                            = new RegExp(targets.map(t => `_${t}@\\d\\.\\d\\.\\d@${t}`).join('|'), 'i');
 
                         return context
                             && matchContext.indexOf('node_modules') !== -1
@@ -272,9 +273,11 @@ export default class WebpackConfig {
      * @return {Object} webpack server config
      */
     server(buildConfig = {}) {
+        /* eslint-disable fecs-one-var-per-line */
         let {extend, nodeExternalsWhitelist = [],
             alias: {server: serverAlias = {}},
             plugins: {server: serverPlugins = []}} = this.config.build;
+        /* eslint-enable fecs-one-var-per-line */
 
         let serverConfig = merge(this.base(buildConfig), {
             target: 'node',

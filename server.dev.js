@@ -33,7 +33,7 @@ function startDevServer() {
             server = stoppable(app.listen(port, () => {
                 console.log('server started at localhost:' + port);
             }));
-        }).catch((err) => {
+        }).catch(err => {
             console.log(err);
         });
 }
@@ -53,7 +53,7 @@ core.init('development', true)
 
 // catch promise error
 process.on('unhandledRejection', (err, promise) => {
-    console.log('in unhandledRejection')
+    console.log('in unhandledRejection');
     console.log(err);
     // cannot redirect without ctx!
 });
