@@ -6,7 +6,7 @@
                 Detail {{$route.params.id}}
             </header>
             <lavas-link :to="{
-                name: 'detail-id',
+                name: 'detailId',
                 params: {
                     id: Number($route.params.id) + 1
                 }

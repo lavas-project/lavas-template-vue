@@ -11,16 +11,16 @@ module.exports = {
         cssExtract: true,
         ssrCopy: [
             {
-                path: 'lib'
+                src: 'lib'
             },
             {
-                path: 'server.prod.js'
+                src: 'server.prod.js'
             },
+            // {
+            //     src: 'node_modules'
+            // },
             {
-                path: 'node_modules'
-            },
-            {
-                path: 'package.json'
+                src: 'package.json'
             }
         ]
     }

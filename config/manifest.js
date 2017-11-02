@@ -13,7 +13,7 @@ module.exports = {
      *
      * @type {string}
      */
-    start_url: '/',
+    start_url: '/?utm_source=homescreen',
 
     /**
      * manifest name
@@ -36,7 +36,7 @@ module.exports = {
      */
     icons: [
         {
-            src: '/static/img/icons/android-chrome-192x192.png',
+            src: 'static/img/icons/android-chrome-192x192.png',
             type: 'image/png',
             size: '512x512'
         }

@@ -10,7 +10,6 @@
     },
     "renderIgnores": [],
     "exportsIgnores": [
-        "build.js",
         ".gitignore",
         "test"
     ],
@@ -31,7 +30,11 @@
         "dependencies": {
           "express": "^4.15.4",
           "koa": "^2.3.0",
+<<<<<<< HEAD
           "lavas-core": "^0.0.14",
+=======
+          "lavas-core": "^0.0.18",
+>>>>>>> dev
           "stoppable": "^1.0.4"
         },
         "devDependencies": {

@@ -6,17 +6,23 @@
 import Vue from 'vue';
 import {createRouter} from '@/.lavas/detail/router';
 import {createStore} from '@/core/store';
-import meta from '@/core/meta';
-import App from './App.vue';
+import '@/core/meta';
+import AppComponent from './App.vue';
+
+let store;
 
 /* eslint-disable no-new */
 export function createApp() {
     let router = createRouter();
-    let store = createStore();
-    let app = new Vue({
+    store = createStore();
+    let App = Vue.extend({
         router,
         store,
-        ...App
+        ...AppComponent
     });
-    return {app, router, store};
+    return {App, router, store};
+}
+
+if (module.hot) {
+    module.hot.accept(['@/core/store'], () => {});
 }

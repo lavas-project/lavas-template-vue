@@ -46,7 +46,8 @@ module.exports = {
      * @type {Array}
      */
     staticFileGlobsIgnorePatterns: [
-        /\.map$/ // map文件不需要缓存
+        /\.map$/, // map文件不需要缓存
+        /vue-ssr-client-manifest\.json/
     ],
 
     /**

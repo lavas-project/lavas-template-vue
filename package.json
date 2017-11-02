@@ -9,18 +9,14 @@
     "dev:express": "node server.express.js",
     "build:minify": "npm run build && cd dist && echo [Lavas] remove devDependencies && npm prune --production && echo [Lavas] all complete",
     "build": "node build.js",
-    "start": "node dist/server.prod.js",
+    "start": "node server.prod.js",
     "lint": "fecs ./ --rule --type 'vue,js,css'"
   },
   "dependencies": {
     "express": "^4.15.4",
     "koa": "^2.3.0",
-<<<<<<< HEAD
-    "lavas-core": "^0.0.14",
-=======
     "koa-router": "^7.2.1",
-    "lavas-core": "^0.0.15",
->>>>>>> dev
+    "lavas-core": "^0.0.23",
     "stoppable": "^1.0.4"
   },
   "devDependencies": {
