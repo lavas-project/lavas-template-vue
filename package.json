@@ -13,9 +13,7 @@
     "lint": "fecs ./ --rule --type 'vue,js,css'"
   },
   "dependencies": {
-    "express": "^4.15.4",
     "koa": "^2.3.0",
-    "koa-router": "^7.2.1",
     "lavas-core": "^0.0.23",
     "stoppable": "^1.0.4"
   },

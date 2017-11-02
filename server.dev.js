@@ -5,8 +5,6 @@
 
 const LavasCore = require('lavas-core');
 const Koa = require('koa');
-const Router = require('koa-router');
-const router = new Router();
 const stoppable = require('stoppable');
 
 let port = process.env.PORT || 3000;
@@ -14,16 +12,10 @@ let core = new LavasCore(__dirname);
 let app;
 let server;
 
-router.all(['/api', '/let/lavas/ignore/:id'], (ctx, next) => {
-    core.ignore(ctx.req);
-    next();
-});
-
 function startDevServer() {
     app = new Koa();
     core.build()
         .then(() => {
-            app.use(router.routes());
             app.use(core.koaMiddleware());
 
             /**
