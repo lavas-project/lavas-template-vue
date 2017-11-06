@@ -24,7 +24,7 @@ export default {
         };
     },
     mounted() {
-        this.show = navigator.onLine;
+        this.show = !navigator.onLine;
         window.addEventListener('online', this.handleOnline);
         window.addEventListener('offline', this.handleOffline);
     },

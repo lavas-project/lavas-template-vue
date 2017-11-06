@@ -9,7 +9,7 @@
  * Need adding publicPath manually.
  */
 importScripts('/static/js/broadcast-channel-polyfill.js');
-importScripts('/static/js/workbox-sw.dev.v2.1.0.js');
+importScripts('/static/js/workbox-sw.dev.v2.1.1.js');
 
 const workboxSW = new WorkboxSW({
     // cacheId: 'your-custom-cache-name',
