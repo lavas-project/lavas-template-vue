@@ -24,11 +24,12 @@ module.exports = {
 
     routes: [
         {
-            pattern: '/detail/:id',
-            // path: '/rewrite/detail/:id',
-            meta: {
-                keepAlive: true
-            }
+            pattern: /\/detail/,
+            // meta: {
+            //     keepAlive: true
+            // },
+            lazyLoading: true,
+            chunkname: 'detail'
         }
     ]
 };

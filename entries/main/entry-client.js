@@ -70,25 +70,25 @@ Vue.mixin({
 handleMiddlewares();
 
 // find correct entry current entry-client.js belongs to
-// let context = require.context('../', true, /^.*\/entry-client\.js$/);
-// let entryName = context.keys()[0].match(/^\.\/(.*)\/entry-client\.js$/)[1];
-// let noSSR = window.location.search.indexOf('nossr') > -1;
-// if (!noSSR && entryConf.find(e => e.name = entryName).ssr) {
-//     app = new App();
-//     // In SSR client, should put in onReady callback
-//     router.onReady(() => {
-//         /**
-//          * Add after router is ready because we shuold
-//          * avoid double-fetch the data already fetched in entry-server
-//          */
-//         handleAsyncData();
-//         app.$mount('#app');
-//     });
-// }
-// else {
+let context = require.context('../', true, /^.*\/entry-client\.js$/);
+let entryName = context.keys()[0].match(/^\.\/(.*)\/entry-client\.js$/)[1];
+let noSSR = window.location.search.indexOf('nossr') > -1;
+if (!noSSR && entryConf.find(e => e.name = entryName).ssr) {
+    app = new App();
+    // In SSR client, should put in onReady callback
+    router.onReady(() => {
+        /**
+         * Add after router is ready because we should
+         * avoid double-fetch the data already fetched in entry-server
+         */
+        handleAsyncData();
+        app.$mount('#app');
+    });
+}
+else {
     handleAsyncData();
     app = new App().$mount('#app');
-// }
+}
 
 /**
  * execute middlewares

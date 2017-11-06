@@ -85,10 +85,7 @@ export default class WebpackConfig {
                         test: /\.js$/,
                         use: {
                             loader: 'babel-loader',
-                            options: {
-                                presets: babel.presets,
-                                plugins: babel.plugins
-                            }
+                            options: babel
                         },
                         exclude: /node_modules/
                     },

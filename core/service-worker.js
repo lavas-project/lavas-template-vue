@@ -6,10 +6,11 @@
 
 /**
  * Import polyfill & workbox-sw with `importScripts` function.
- * Need adding publicPath manually.
+ * 1. Need adding publicPath manually.
+ * 2. If the version of workbox updated, modification is also required.
  */
 importScripts('/static/js/broadcast-channel-polyfill.js');
-importScripts('/static/js/workbox-sw.dev.v2.1.0.js');
+importScripts('/static/js/workbox-sw.dev.v2.1.1.js');
 
 const workboxSW = new WorkboxSW({
     // cacheId: 'your-custom-cache-name',

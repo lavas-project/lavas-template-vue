@@ -48,6 +48,10 @@ const DEFAULT_CONFIG = {
         extend: null,
         ssrCopy: []
     },
+    babel: {
+        presets: ['vue-app'],
+        babelrc: false
+    },
     entry: [],
     production: {
         build: {
@@ -59,6 +63,9 @@ const DEFAULT_CONFIG = {
             filenames: {
                 entry: 'js/[name].[hash:8].js'
             }
+        },
+        babel: {
+            cacheDirectory: true
         }
     }
 };
