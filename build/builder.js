@@ -506,7 +506,6 @@ export default class Builder {
              * It will let some plugins such as vue-ssr-client misuse them.
              * So just use fs.copy in such senario.
              */
-
             if (build.ssrCopy) {
                 await Promise.all(build.ssrCopy.map(
                     async ({src, dest = src, options = {}}) => {

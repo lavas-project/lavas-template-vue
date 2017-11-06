@@ -60,19 +60,19 @@ module.exports = [
     // },
     {
         name: 'main',
-        ssr: false,
+        ssr: true,
         mode: 'history',
         base: '/',
         routes: /^.*$/,
         pageTransition: {
-            type: 'slide',
-            slideLeftClass: 'slide-left',
-            slideRightClass: 'slide-right',
-            alwaysBackPages: ['index'],
-            alwaysForwardPages: []
+            // type: 'slide',
+            // slideLeftClass: 'slide-left',
+            // slideRightClass: 'slide-right',
+            // alwaysBackPages: ['index'],
+            // alwaysForwardPages: []
 
-            // type: 'fade',
-            // transitionClass: 'fade'
+            type: 'fade',
+            transitionClass: 'fade'
 
             // type: 'slide-fade'
         }

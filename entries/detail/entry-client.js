@@ -9,10 +9,13 @@ import middleware from '@/core/middleware';
 import middConf from '@/config/middleware';
 import entryConf from '@/config/entry';
 import {createApp} from './app';
-import ProgressBar from '@/core/components/ProgressBar.vue';
+import ProgressBar from '@/components/ProgressBar';
 import {middlewareSeries} from '@/core/utils';
 import {getClientContext} from '@/core/context-client';
 import LavasLink from '@/.lavas/LavasLink';
+
+import '@/assets/stylus/main.styl';
+import '@/static/js/broadcast-channel-polyfill';
 
 Vue.component(LavasLink.name, LavasLink);
 

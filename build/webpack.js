@@ -15,12 +15,12 @@ import CopyWebpackPlugin from 'copy-webpack-plugin';
 import VueSSRServerPlugin from 'vue-server-renderer/server-plugin';
 import BundleAnalyzerPlugin from 'webpack-bundle-analyzer';
 import ManifestJsonWebpackPlugin from './plugins/manifest-json-webpack-plugin';
-import SWPrecacheWebPlugin from 'sw-precache-webpack-plugin';
 import SWRegisterWebpackPlugin from 'sw-register-webpack-plugin';
-// import WorkboxWebpackPlugin from 'workbox-webpack-plugin';
+import WorkboxWebpackPlugin from 'workbox-webpack-plugin';
 
 import {vueLoaders, styleLoaders} from './utils/loader';
 import {assetsPath} from './utils/path';
+import {getWorkboxFiles} from './utils/workbox';
 import {LAVAS_DIRNAME_IN_DIST, SERVER_BUNDLE, ASSETS_DIRNAME_IN_DIST} from './constants';
 
 import fs from 'fs';
@@ -45,9 +45,9 @@ export default class WebpackConfig {
      * @return {Object} webpack base config
      */
     base(buildConfig = {}) {
-        let {globals, build, babel, serviceWorker: swPrecacheConfig} = this.config;
+        let {globals, build, babel} = this.config;
         /* eslint-disable fecs-one-var-per-line */
-        let {path, publicPath, cssSourceMap, cssMinimize,
+        let {path, publicPath, filenames, cssSourceMap, cssMinimize,
             cssExtract, jsSourceMap, alias: {base: baseAlias = {}}, extend,
             plugins: {base: basePlugins = []}} = Object.assign({}, build, buildConfig);
         /* eslint-enable fecs-one-var-per-line */
@@ -97,7 +97,7 @@ export default class WebpackConfig {
                         loader: 'url-loader',
                         options: {
                             limit: 10000,
-                            name: assetsPath('img/[name].[hash:7].[ext]')
+                            name: assetsPath(filenames.img)
                         }
                     },
                     {
@@ -105,7 +105,7 @@ export default class WebpackConfig {
                         loader: 'url-loader',
                         options: {
                             limit: 10000,
-                            name: assetsPath('fonts/[name].[hash:7].[ext]')
+                            name: assetsPath(filenames.fonts)
                         }
                     }
                 ]
@@ -123,15 +123,6 @@ export default class WebpackConfig {
                             safe: true
                         }
                     }),
-                    // new WorkboxWebpackPlugin({
-                    //     globDirectory: 'dist',
-                    //     globPatterns: ['**/*.{html,js,css}'],
-                    //     swSrc: join(path, '../core', 'service-worker.js'),
-                    //     swDest: join('dist', 'service-worker.js'),
-                    // }),
-                    new SWPrecacheWebPlugin(Object.assign(swPrecacheConfig, {
-                        templateFilePath: resolve(__dirname, 'templates/service-worker-real.js.tmpl')
-                    })),
                     new SWRegisterWebpackPlugin({
                         filePath: resolve(__dirname, 'templates/sw-register.js'),
                         prefix: publicPath
@@ -147,7 +138,7 @@ export default class WebpackConfig {
         if (cssExtract) {
             baseConfig.plugins.unshift(
                 new ExtractTextPlugin({
-                    filename: assetsPath('css/[name].[contenthash].css')
+                    filename: assetsPath(filenames.css)
                 })
             );
         }
@@ -169,23 +160,27 @@ export default class WebpackConfig {
      * @return {Object} client base config
      */
     client(buildConfig = {}) {
-        let {globals, build, manifest} = this.config;
+        let {globals, build, manifest, serviceWorker: workboxConfig} = this.config;
 
         /* eslint-disable fecs-one-var-per-line */
-        let {publicPath, cssSourceMap, cssMinimize, cssExtract,
+        let {publicPath, filenames, cssSourceMap, cssMinimize, cssExtract,
             jsSourceMap, bundleAnalyzerReport, extend,
+            defines: {client: clientDefines = {}},
             alias: {client: clientAlias = {}},
             plugins: {client: clientPlugins = []}} = Object.assign({}, build, buildConfig);
         /* eslint-enable fecs-one-var-per-line */
 
-        let outputFilename = this.isDev ? 'js/[name].[hash:8].js' : 'js/[name].[chunkhash:8].js';
+        let outputFilename = filenames.entry;
         let clientConfig = merge(this.base(buildConfig), {
             output: {
                 filename: assetsPath(outputFilename),
-                chunkFilename: assetsPath('js/[name].[chunkhash:8].js')
+                chunkFilename: assetsPath(filenames.chunk)
             },
             resolve: {
-                alias: clientAlias
+                alias: {
+                    ...clientDefines,
+                    ...clientAlias
+                }
             },
             module: {
                 rules: styleLoaders({
@@ -205,7 +200,7 @@ export default class WebpackConfig {
                 // split vendor js into its own file
                 new webpack.optimize.CommonsChunkPlugin({
                     name: 'vendor',
-                    filename: assetsPath('js/vendor.[chunkhash:8].js'),
+                    filename: assetsPath(filenames.vendor),
                     minChunks(module, count) {
                         // any required modules inside node_modules are extracted to vendor
                         return module.resource
@@ -217,7 +212,7 @@ export default class WebpackConfig {
                 // split vue, vue-router, vue-meta and vuex into vue chunk
                 new webpack.optimize.CommonsChunkPlugin({
                     name: 'vue',
-                    filename: assetsPath('js/vue.[chunkhash:8].js'),
+                    filename: assetsPath(filenames.vue),
                     minChunks(module, count) {
                         // On Windows, context will be seperated by '\',
                         // then paths like '\node_modules\vue\' cannot be matched because of '\v'.
@@ -251,15 +246,27 @@ export default class WebpackConfig {
                 }),
 
                 // add custom plugins in client side
-                ...clientPlugins
+                ...clientPlugins,
+
+                new WorkboxWebpackPlugin(workboxConfig)
             ]
         });
 
-        clientConfig.plugins.push(new CopyWebpackPlugin([{
-            from: join(globals.rootDir, ASSETS_DIRNAME_IN_DIST),
-            to: ASSETS_DIRNAME_IN_DIST,
-            ignore: ['*.md']
-        }]));
+        clientConfig.plugins.push(new CopyWebpackPlugin([
+            {
+                from: join(globals.rootDir, ASSETS_DIRNAME_IN_DIST),
+                to: ASSETS_DIRNAME_IN_DIST,
+                ignore: ['*.md']
+            },
+            // TODO: Copy workbox.dev.js from node_modules manually.
+            ...getWorkboxFiles(false)
+                .map(f => {
+                    return {
+                        from: join(globals.rootDir, `node_modules/workbox-sw/build/importScripts/${f}`),
+                        to: assetsPath(`js/${f}`)
+                    };
+                })
+        ]));
 
         if (bundleAnalyzerReport) {
             clientConfig.plugins.push(
@@ -285,8 +292,10 @@ export default class WebpackConfig {
     server(buildConfig = {}) {
         /* eslint-disable fecs-one-var-per-line */
         let {extend, nodeExternalsWhitelist = [],
+            defines: {server: serverDefines = {}},
             alias: {server: serverAlias = {}},
-            plugins: {server: serverPlugins = []}} = this.config.build;
+            plugins: {server: serverPlugins = []},
+            ssrPrerender} = this.config.build;
         /* eslint-enable fecs-one-var-per-line */
 
         let serverConfig = merge(this.base(buildConfig), {
@@ -296,7 +305,10 @@ export default class WebpackConfig {
                 libraryTarget: 'commonjs2'
             },
             resolve: {
-                alias: serverAlias
+                alias: {
+                    ...serverDefines,
+                    ...serverAlias
+                }
             },
             // https://webpack.js.org/configuration/externals/#externals
             // https://github.com/liady/webpack-node-externals

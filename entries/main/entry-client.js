@@ -9,10 +9,14 @@ import middleware from '@/core/middleware';
 import middConf from '@/config/middleware';
 import entryConf from '@/config/entry';
 import {createApp} from './app';
-import ProgressBar from '@/core/components/ProgressBar.vue';
+import ProgressBar from '@/components/ProgressBar';
 import {middlewareSeries} from '@/core/utils';
 import {getClientContext} from '@/core/context-client';
 import LavasLink from '@/.lavas/LavasLink';
+
+import 'es6-promise/auto';
+import '@/static/js/broadcast-channel-polyfill';
+import '@/assets/stylus/main.styl';
 
 Vue.component(LavasLink.name, LavasLink);
 
@@ -20,10 +24,12 @@ let loading = Vue.prototype.$loading = new Vue(ProgressBar).$mount();
 let {App, router, store} = createApp();
 let app;
 
+// Sync with server side state.
 if (window.__INITIAL_STATE__) {
     store.replaceState(window.__INITIAL_STATE__);
 }
 
+// Add loading component.
 document.body.appendChild(loading.$el);
 FastClick.attach(document.body);
 
@@ -64,24 +70,25 @@ Vue.mixin({
 handleMiddlewares();
 
 // find correct entry current entry-client.js belongs to
-let context = require.context('../', true, /^.*\/entry-client\.js$/);
-let entryName = context.keys()[0].match(/^\.\/(.*)\/entry-client\.js$/)[1];
-if (entryConf.find(e => e.name = entryName).ssr) {
-    app = new App();
-    // In SSR client, should put in onReady callback
-    router.onReady(() => {
-        /**
-         * Add after router is ready because we shuold
-         * avoid double-fetch the data already fetched in entry-server
-         */
-        handleAsyncData();
-        app.$mount('#app');
-    });
-}
-else {
+// let context = require.context('../', true, /^.*\/entry-client\.js$/);
+// let entryName = context.keys()[0].match(/^\.\/(.*)\/entry-client\.js$/)[1];
+// let noSSR = window.location.search.indexOf('nossr') > -1;
+// if (!noSSR && entryConf.find(e => e.name = entryName).ssr) {
+//     app = new App();
+//     // In SSR client, should put in onReady callback
+//     router.onReady(() => {
+//         /**
+//          * Add after router is ready because we shuold
+//          * avoid double-fetch the data already fetched in entry-server
+//          */
+//         handleAsyncData();
+//         app.$mount('#app');
+//     });
+// }
+// else {
     handleAsyncData();
     app = new App().$mount('#app');
-}
+// }
 
 /**
  * execute middlewares

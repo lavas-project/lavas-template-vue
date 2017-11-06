@@ -24,6 +24,13 @@ module.exports = {
     publicPath: '/',
 
     /**
+     * output.filename
+     *
+     * @type {Object<string, string>}
+     */
+    // filenames: {}
+
+    /**
      * if extract css files
      *
      * @type {boolean}
@@ -58,6 +65,17 @@ module.exports = {
      * @type {boolean|Object}
      */
     bundleAnalyzerReport: false,
+
+    /**
+     * webpack.DefinePlugin
+     *
+     * @type {Object.<string, Object>}
+     */
+    defines: {
+        base: {},
+        client: {},
+        server: {}
+    },
 
     /**
      * alias for webpack
@@ -114,12 +132,13 @@ module.exports = {
      */
     extend: function (config, {type, env}) {
         if (type === 'base') {
+            // Import `theme-variables.styl` in every <style> block in .vue files.
             let vueRule = config.module.rules[0];
             vueRule.use.push({
                 loader: 'vue-style-variables-loader',
                 options: {
                     importStatements: [
-                        '@import "~@/assets/theme-variables.styl";'
+                        '@import "~@/assets/stylus/theme-variables.styl";'
                     ]
                 }
             });

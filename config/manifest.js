@@ -36,9 +36,24 @@ module.exports = {
      */
     icons: [
         {
-            src: 'static/img/icons/android-chrome-192x192.png',
+            src: 'static/img/icons/android-chrome-512x512.png',
             type: 'image/png',
             size: '512x512'
+        },
+        {
+            src: 'static/img/icons/android-chrome-192x192.png',
+            type: 'image/png',
+            size: '192x192'
+        },
+        {
+            src: 'static/img/icons/apple-touch-icon-180x180.png',
+            type: 'image/png',
+            size: '180x180'
+        },
+        {
+            src: 'static/img/icons/apple-touch-icon-152x152.png',
+            type: 'image/png',
+            size: '152x152'
         }
     ],
 
