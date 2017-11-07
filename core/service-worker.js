@@ -28,5 +28,5 @@ workboxSW.precache([]);
 workboxSW.router.registerNavigationRoute('/appshell');
 
 // Define runtime cache.
-// workboxSW.router.registerRoute('/api/get/data',
-//     workboxSW.strategies.cacheFirst());
+workboxSW.router.registerRoute(new RegExp('https://query\.yahooapis\.com/v1/public/yql'),
+    workboxSW.strategies.networkFirst());

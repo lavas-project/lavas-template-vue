@@ -64,7 +64,10 @@ module.exports = {
      */
     templatedUrls: {
         '/appshell': [
-            '../entries/main/App.vue'
+            '../entries/main/**/*.*',
+            '../components/OfflineToast.vue',
+            '../components/UpdateToast.vue',
+            '../assets/stylus/main.styl'
         ]
     },
 

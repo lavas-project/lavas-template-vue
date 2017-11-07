@@ -72,20 +72,26 @@ handleMiddlewares();
 // find correct entry current entry-client.js belongs to
 let context = require.context('../', true, /^.*\/entry-client\.js$/);
 let entryName = context.keys()[0].match(/^\.\/(.*)\/entry-client\.js$/)[1];
-let noSSR = window.location.search.indexOf('nossr') > -1;
-if (!noSSR && entryConf.find(e => e.name = entryName).ssr) {
+/**
+ * When service-worker handles all navigation requests,
+ * the same appshell is always served in which condition data should be fetched in client side.
+ * When `empty-appshell` attribute detected on body, we know current html is appshell.
+ */
+let usingAppshell = document.body.hasAttribute('empty-appshell');
+if (!usingAppshell && entryConf.find(e => e.name = entryName).ssr) {
     app = new App();
-    // In SSR client, should put in onReady callback
+    // In SSR client, fetching & mounting should be put in onReady callback.
     router.onReady(() => {
         /**
          * Add after router is ready because we should
-         * avoid double-fetch the data already fetched in entry-server
+         * avoid double-fetch the data already fetched in entry-server.
          */
         handleAsyncData();
         app.$mount('#app');
     });
 }
 else {
+    // Fetch data in client side.
     handleAsyncData();
     app = new App().$mount('#app');
 }
