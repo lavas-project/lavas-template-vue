@@ -30,3 +30,6 @@ workboxSW.router.registerNavigationRoute('/game/appshell');
 // Define runtime cache.
 workboxSW.router.registerRoute(new RegExp('https://query\.yahooapis\.com/v1/public/yql'),
     workboxSW.strategies.networkFirst());
+
+workboxSW.router.registerRoute(/^https:\/\/ss\d\.baidu\.com/, workboxSW.strategies.cacheFirst());
+
