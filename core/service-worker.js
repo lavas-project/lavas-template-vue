@@ -9,8 +9,8 @@
  * 1. Need adding publicPath manually.
  * 2. If the version of workbox updated, modification is also required.
  */
-importScripts('/static/js/broadcast-channel-polyfill.js');
-importScripts('/static/js/workbox-sw.dev.v2.1.1.js');
+importScripts('/game/static/js/broadcast-channel-polyfill.js');
+importScripts('/game/static/js/workbox-sw.dev.v2.1.1.js');
 
 const workboxSW = new WorkboxSW({
     // cacheId: 'your-custom-cache-name',
@@ -25,7 +25,7 @@ const workboxSW = new WorkboxSW({
 workboxSW.precache([]);
 
 // Respond to navigation requests with appshell precached.
-workboxSW.router.registerNavigationRoute('/appshell');
+workboxSW.router.registerNavigationRoute('/game/appshell');
 
 // Define runtime cache.
 workboxSW.router.registerRoute(new RegExp('https://query\.yahooapis\.com/v1/public/yql'),

@@ -63,7 +63,7 @@ module.exports = {
      * All the filepath are relative to `globDirectory`.
      */
     templatedUrls: {
-        '/appshell': [
+        '/game/appshell': [
             '../entries/main/**/*.*',
             '../components/OfflineToast.vue',
             '../components/UpdateToast.vue',
