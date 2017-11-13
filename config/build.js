@@ -21,7 +21,7 @@ module.exports = {
      *
      * @type {string}
      */
-    publicPath: '/',
+    publicPath: '/game/',
 
     /**
      * output.filename
