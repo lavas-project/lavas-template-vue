@@ -25,23 +25,13 @@ export default {
         };
     },
     mounted() {
-        /**
-         * Listen service-worker precache update event with broadcast channel.
-         * Channel's name is defined in service-worker.js.
-         *
-         * polyfill: https://gist.github.com/inexorabletash/52f437d1451d12145264
-         */
-        this.updatesChannel = new BroadcastChannel('sw-precache');
-        this.updatesChannel.addEventListener('message', this.handleUpdate);
+        window.addEventListener('sw.update', this.handleUpdate);
     },
     beforeDestroy() {
-        this.updatesChannel.removeEventListener('message', this.handleUpdate);
+        window.removeEventListener('sw.update', this.handleUpdate);
     },
     methods: {
         handleUpdate(event) {
-            if (process.env.NODE_ENV === 'development') {
-                console.log('info', `Resource: ${JSON.stringify(event.data)} updated.`);
-            }
             this.show = true;
         },
         handleRefresh() {

@@ -243,11 +243,14 @@ export default class WebpackConfig {
                 }),
 
                 // add custom plugins in client side
-                ...clientPlugins,
-
-                new WorkboxWebpackPlugin(workboxConfig)
+                ...clientPlugins
             ]
         });
+
+        // Use workbox in prod mode.
+        if (this.isProd) {
+            clientConfig.plugins.push(new WorkboxWebpackPlugin(workboxConfig));
+        }
 
         clientConfig.plugins.push(new CopyWebpackPlugin([
             {
@@ -255,8 +258,8 @@ export default class WebpackConfig {
                 to: ASSETS_DIRNAME_IN_DIST,
                 ignore: ['*.md']
             },
-            // TODO: Copy workbox.dev.js from node_modules manually.
-            ...getWorkboxFiles(false)
+            // Copy workbox.dev|prod.js from node_modules manually.
+            ...getWorkboxFiles(this.isProd)
                 .map(f => {
                     return {
                         from: join(globals.rootDir, `node_modules/workbox-sw/build/importScripts/${f}`),

@@ -15,7 +15,6 @@ import {getClientContext} from '@/core/context-client';
 import LavasLink from '@/.lavas/LavasLink';
 
 import 'es6-promise/auto';
-import '@/static/js/broadcast-channel-polyfill';
 import '@/assets/stylus/main.styl';
 
 Vue.component(LavasLink.name, LavasLink);
