@@ -6,6 +6,6 @@
 'use strict';
 
 module.exports = {
-    babelrc: false,
-    cacheDirectory: false
+    presets: ['vue-app'],
+    babelrc: false
 };

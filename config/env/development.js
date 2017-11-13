@@ -8,6 +8,9 @@
 module.exports = {
 
     build: {
+        filenames: {
+            entry: 'js/[name].[hash:8].js'
+        },
         cssExtract: false
     }
 
