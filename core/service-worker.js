@@ -23,7 +23,7 @@ const workboxSW = new WorkboxSW({
 workboxSW.precache([]);
 
 // Respond to navigation requests with appshell precached.
-workboxSW.router.registerNavigationRoute('/game/appshell');
+workboxSW.router.registerNavigationRoute('/appshell');
 
 // Define runtime cache.
 workboxSW.router.registerRoute(new RegExp('https://query\.yahooapis\.com/v1/public/yql'),

@@ -62,7 +62,7 @@ module.exports = [
         name: 'main',
         ssr: true,
         mode: 'history',
-        base: '/game/',
+        base: '/',
         routes: /^.*$/,
         pageTransition: {
             // type: 'slide',

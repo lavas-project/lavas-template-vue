@@ -20,6 +20,7 @@ Fast - Respond quickly to user interactions with silky smooth animations and no 
             </p>
             <img src="https://ss1.baidu.com/6ONXsjip0QIZ8tyhnq/it/u=3956514070,2615060783&fm=58">
             <img src="https://ss0.baidu.com/6ONWsjip0QIZ8tyhnq/it/u=3924771,2747391465&fm=58">
+            <br/>
             <lavas-link to="/">
                 Back to home
             </lavas-link>
