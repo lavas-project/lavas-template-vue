@@ -3,7 +3,7 @@
 
 <script>
 export default {
-    name: 'appshell',
+    name: 'appshell-main',
     head: {
         title: 'Home',
         titleTemplate: '%s - Lavas',

@@ -9,6 +9,21 @@ import {createStore} from '@/core/store';
 import '@/core/meta';
 import AppComponent from './App.vue';
 
+// import {
+//     Vuetify,
+//     VApp,
+//     VBtn
+// } from 'vuetify';
+// console.log(Vuetify, VApp, VBtn)
+
+// import Vuetify from 'vuetify/es5/components/Vuetify';
+// import VApp from 'vuetify/es5/components/VApp';
+// Vue.use(Vuetify, {
+//     components: {
+//         VApp
+//     }
+// });
+
 let store;
 
 /* eslint-disable no-new */

@@ -9,7 +9,7 @@
  * 1. Need adding publicPath manually.
  * 2. If the version of workbox updated, modification is also required.
  */
-importScripts('/game/static/js/workbox-sw.prod.v2.1.1.js');
+importScripts('/static/js/workbox-sw.prod.v2.1.1.js');
 
 const workboxSW = new WorkboxSW({
     // cacheId: 'your-custom-cache-name',
@@ -23,10 +23,36 @@ const workboxSW = new WorkboxSW({
 workboxSW.precache([]);
 
 // Respond to navigation requests with appshell precached.
-workboxSW.router.registerNavigationRoute('/game/appshell');
+workboxSW.router.registerNavigationRoute('/appshell', {
+    blacklist: [/\.(js|css)$/]
+});
 
 // Define runtime cache.
 workboxSW.router.registerRoute(new RegExp('https://query\.yahooapis\.com/v1/public/yql'),
     workboxSW.strategies.networkFirst());
 
-workboxSW.router.registerRoute(/^https:\/\/ss\d\.baidu\.com/, workboxSW.strategies.cacheFirst());
+workboxSW.router.registerRoute(/^https:\/\/ss\d\.baidu\.com/i,
+    workboxSW.strategies.cacheFirst({
+        cacheName: 'game-cache-images',
+        cacheExpiration: {
+            maxEntries: 100,
+            maxAgeSeconds: 7 * 24 * 60 * 60
+        },
+        cacheableResponse: {
+            statuses: [0, 200]
+        }
+    })
+);
+
+workboxSW.router.registerRoute(/^https:\/\/gss0\.bdstatic\.com/i,
+    workboxSW.strategies.cacheFirst({
+        cacheName: 'game-cache-images',
+        cacheExpiration: {
+            maxEntries: 100,
+            maxAgeSeconds: 7 * 24 * 60 * 60
+        },
+        cacheableResponse: {
+            statuses: [0, 200]
+        }
+    })
+);

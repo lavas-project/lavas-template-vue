@@ -24,7 +24,7 @@ module.exports = {
 
     routes: [
         {
-            pattern: /\/detail/,
+            pattern: /^\/detail/,
             // meta: {
             //     keepAlive: true
             // },

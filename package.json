@@ -20,9 +20,11 @@
     "koa": "^2.3.0",
     "koa-mount": "^3.0.0",
     "koa-static": "^4.0.1",
-    "lavas-core": "^0.0.24",
+    "lavas-core": "0.0.31",
     "normalize.css": "^7.0.0",
-    "stoppable": "^1.0.4"
+    "stoppable": "^1.0.4",
+    "vuetify": "^0.16.0",
+    "babel-plugin-transform-imports": "^1.4.1"
   },
   "devDependencies": {
     "babel-cli": "^6.24.0",

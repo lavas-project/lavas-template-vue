@@ -1,5 +1,6 @@
 <template>
     <div id="app">
+    <v-app>
         <transition
             :name="pageTransitionEffect">
             <keep-alive>
@@ -22,6 +23,7 @@
         </transition>
         <offline-toast></offline-toast>
         <update-toast></update-toast>
+    </v-app>
     </div>
 </template>
 

@@ -62,6 +62,7 @@ $close-btn-height = 28px
     padding 0 8px
     opacity 1
     transform translateY(0)
+    z-index 1000
 
     &.popup-enter-active,
     &.popup-leave-active

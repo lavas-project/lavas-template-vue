@@ -84,7 +84,6 @@ export default function (core) {
                 if (err) {
                     return next(err);
                 }
-                res.setHeader('ETag', (new Date).getTime() + parseInt(Math.random() * 1000, 10));
                 res.end(html);
             });
         }
