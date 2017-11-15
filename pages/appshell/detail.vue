@@ -21,4 +21,5 @@ export default {
 <style scoped lang='stylus'>
 header
     background #ccc
+    height 16px
 </style>

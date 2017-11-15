@@ -17,8 +17,6 @@
 Reliable - Load instantly and never show the downasaur, even in uncertain network conditions.
 Fast - Respond quickly to user interactions with silky smooth animations and no janky scrolling.
             </p>
-            <img src="https://ss1.baidu.com/6ONXsjip0QIZ8tyhnq/it/u=3956514070,2615060783&fm=58">
-            <span style="background-image: url('https://gss0.bdstatic.com/9rkZbzqaKgQUohGko9WTAnF6hhy/assets/pwa/projects/http:is2.mzstatic.comimagethumbPurple128v4f24f30f24f302c-f3ed-55de-257c-ef85f8a4baecsource175x175bb.jpg_1509448166926.jpg');width: 72px; height: 72px;display: inline-block;background-size:cover"></span>
             <lavas-link to="/">
                 Back to home
             </lavas-link>
