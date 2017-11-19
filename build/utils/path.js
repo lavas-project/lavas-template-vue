@@ -39,3 +39,26 @@ export function resolveAliasPath(alias, path) {
     return matchedAliasKey
         ? join(alias[matchedAliasKey], path.substring(matchedAliasKey.length)) : path;
 }
+
+/**
+ * whether the publicPath is from cdn
+ *
+ * @param {string} publicPath publicPath
+ * @return {boolean} is from cdn
+ */
+export function isFromCDN(publicPath) {
+    return publicPath.startsWith('http://')
+        || publicPath.startsWith('https://')
+        || publicPath.startsWith('//');
+}
+
+/**
+ * remove trailing slash
+ *
+ * @param {string} base base
+ * @return {string} base without trailing slash
+ */
+export function removeTrailingSlash(base) {
+    return base.endsWith('/')
+        ? base.substring(0, base.length - 1) : base;
+}

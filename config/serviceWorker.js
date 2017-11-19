@@ -105,7 +105,9 @@ module.exports = {
      *
      * @type {Object<String,String>} modifyUrlPrefix
      */
-    //  modifyUrlPrefix: {},
+    //  modifyUrlPrefix: {
+    //      '/game': ''
+    //  },
 
     /**
      * Assets that match this regex will be assumed to be uniquely versioned via their URL,

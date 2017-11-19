@@ -19,7 +19,7 @@ import webpackHotMiddleware from 'webpack-hot-middleware';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import SkeletonWebpackPlugin from 'vue-skeleton-webpack-plugin';
 
-import {CONFIG_FILE, TEMPLATE_HTML} from './constants';
+import {CONFIG_FILE, TEMPLATE_HTML, LAVAS_CONFIG_FILE} from './constants';
 import {webpackCompile, enableHotReload, writeFileInDev} from './utils/webpack';
 import {distLavasPath, assetsPath} from './utils/path';
 import {routes2Reg} from './utils/router';
@@ -461,8 +461,8 @@ export default class Builder {
             });
         }
 
-        // watch config directory, rebuild whole process
-        let configDir = join(this.config.globals.rootDir, 'config');
+        // watch lavas.config.js, rebuild whole process
+        let configDir = join(this.config.globals.rootDir, LAVAS_CONFIG_FILE);
         this.addWatcher(configDir, 'change', async () => {
             await this.rebuild();
         });

@@ -18,9 +18,7 @@
     "es6-promise": "^4.1.1",
     "express": "^4.15.4",
     "koa": "^2.3.0",
-    "koa-mount": "^3.0.0",
-    "koa-static": "^4.0.1",
-    "lavas-core": "^0.0.24",
+    "lavas-core": "^0.0.32",
     "normalize.css": "^7.0.0",
     "stoppable": "^1.0.4"
   },
