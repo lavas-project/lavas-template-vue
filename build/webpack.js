@@ -64,7 +64,9 @@ export default class WebpackConfig {
                 }, baseAlias)
             },
             module: {
-                rules: [{
+                noParse: /es6-promise\.js$/,
+                rules: [
+                    {
                         test: /\.vue$/,
                         use: [{
                             loader: 'vue-loader',
@@ -309,6 +311,18 @@ export default class WebpackConfig {
                     ...serverDefines,
                     ...serverAlias
                 }
+            },
+            module: {
+                /**
+                 * Generally in ssr, we don't need any loader to handle style files,
+                 * but some UI library such as vuetify will require style files directly in JS file.
+                 * So we still add some relative loaders here.
+                 */
+                rules: styleLoaders({
+                    cssSourceMap: false,
+                    cssMinimize: false,
+                    cssExtract: false
+                })
             },
             // https://webpack.js.org/configuration/externals/#externals
             // https://github.com/liady/webpack-node-externals
