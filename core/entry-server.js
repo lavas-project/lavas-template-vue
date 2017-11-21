@@ -4,7 +4,7 @@
  */
 
 import middleware from './middleware';
-import middConf from '@/config/middleware';
+import {middConf} from '@/lavas.config';
 import {stringify} from 'querystring';
 import {middlewareSeries, urlJoin} from './utils';
 import {getServerContext} from './context-server';
@@ -115,8 +115,8 @@ export default function (context) {
 async function execMiddlewares(components = [], context, app) {
     // all + server + components middlewares
     let middlewareNames = [
-        ...(middConf.all || []),
-        ...(middConf.server || []),
+        ...(middConf && middConf.all || []),
+        ...(middConf && middConf.server || []),
         ...components
             .filter(({middleware}) => !!middleware)
             .reduce((arr, {middleware}) => arr.concat(middleware), [])

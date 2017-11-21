@@ -7,9 +7,10 @@
   "scripts": {
     "dev": "node server.dev.js",
     "build:minify": "npm run build && cd dist && echo [Lavas] remove devDependencies && npm prune --production && echo [Lavas] all complete",
-    "build": "node build.js",
-    "start": "node server.prod.js",
-    "lint": "fecs ./ --rule --type 'vue,js,css'"
+    "build": "npm run build:core && node build.js",
+    "start": "node dist/server.prod.js",
+    "lint": "fecs ./ --rule --type 'vue,js,css'",
+    "build:core": "babel build --out-dir lib --copy-files"
   },
   "dependencies": {
     "axios": "^0.17.0",
