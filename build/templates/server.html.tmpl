@@ -44,6 +44,8 @@
 
         <!--vue-ssr-outlet-->
 
+        <!-- @CUSTOM_BODY_AFTER@ -->
+
         {{{ renderScripts() }}}
         {{{ renderState() }}}
 
@@ -59,7 +61,5 @@
             };
         </script>
         <%= "\<% } %\>" %>
-
-        <!-- @CUSTOM_BODY_AFTER@ -->
     </body>
 </html>
