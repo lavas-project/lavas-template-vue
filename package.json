@@ -5,16 +5,18 @@
   "author": "*__author__* <*__email__*>",
   "private": true,
   "scripts": {
-    "dev": "npm run build:core && node server.dev.js",
-    "dev:express": "npm run build:core && node server.express.js",
+    "dev": "npm run build:core && cross-env NODE_ENV=development node server.dev.js",
+    "dev:express": "npm run build:core && cross-env NODE_ENV=development node server.express.js",
     "build:minify": "npm run build && cd dist && echo [Lavas] remove devDependencies && npm prune --production && echo [Lavas] all complete",
-    "build": "npm run build:core && node build.js",
-    "start": "node dist/server.prod.js",
+    "build": "npm run build:core && cross-env NODE_ENV=production node build.js",
+    "start": "cross-env NODE_ENV=production node dist/server.prod.js",
     "lint": "fecs ./ --rule --type 'vue,js,css'",
     "build:core": "babel build --out-dir lib --copy-files"
   },
   "dependencies": {
+    "array.prototype.find": "^2.0.4",
     "axios": "^0.17.0",
+    "cross-env": "^5.1.1",
     "es6-promise": "^4.1.1",
     "express": "^4.15.4",
     "koa": "^2.3.0",

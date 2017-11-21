@@ -8,8 +8,8 @@ import ConfigReader from './config-reader';
 import Builder from './builder';
 
 import ssrFactory from './middlewares/ssr';
-import koaErrorFactory from './middlewares/koaError';
-import expressErrorFactory from './middlewares/expressError';
+import koaErrorFactory from './middlewares/koa-error';
+import expressErrorFactory from './middlewares/express-error';
 import staticFactory from './middlewares/static';
 
 import ora from 'ora';

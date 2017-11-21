@@ -70,6 +70,7 @@ const DEFAULT_CONFIG = {
         server: [],
         client: []
     },
+    serviceWorker: null,
     production: {
         build: {
             cssExtract: true
@@ -114,11 +115,7 @@ export default class ConfigReader {
         if (await pathExists(singleConfigPath)) {
             console.log('[Lavas] read lavas.config.js.');
             delete require.cache[require.resolve(singleConfigPath)];
-            let configFunc = await import(singleConfigPath);
-            if (!isFunction(configFunc)) {
-                throw new Error('[Lavas] lavas.config.js must return a function.');
-            }
-            merge(config, configFunc(this.env));
+            merge(config, await import(singleConfigPath));
         }
         else {
             if (config[this.env]) {

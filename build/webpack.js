@@ -13,7 +13,7 @@ import FriendlyErrorsPlugin from 'friendly-errors-webpack-plugin';
 import OptimizeCSSPlugin from 'optimize-css-assets-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import VueSSRServerPlugin from 'vue-server-renderer/server-plugin';
-import BundleAnalyzerPlugin from 'webpack-bundle-analyzer';
+import {BundleAnalyzerPlugin} from 'webpack-bundle-analyzer';
 import ManifestJsonWebpackPlugin from './plugins/manifest-json-webpack-plugin';
 import SWRegisterWebpackPlugin from 'sw-register-webpack-plugin';
 import WorkboxWebpackPlugin from 'workbox-webpack-plugin';
@@ -159,7 +159,7 @@ export default class WebpackConfig {
      * @return {Object} client base config
      */
     client(buildConfig = {}) {
-        let {globals, build, manifest, serviceWorker: workboxConfig} = this.config;
+        let {buildVersion, globals, build, manifest, serviceWorker: workboxConfig} = this.config;
 
         /* eslint-disable fecs-one-var-per-line */
         let {publicPath, filenames, cssSourceMap, cssMinimize, cssExtract,
@@ -250,26 +250,39 @@ export default class WebpackConfig {
         });
 
         // Use workbox in prod mode.
-        if (this.isProd) {
+        if (this.isProd && workboxConfig) {
+            if (workboxConfig.appshellUrls && workboxConfig.appshellUrls.length) {
+                workboxConfig.templatedUrls = {};
+                workboxConfig.appshellUrls.forEach(appshellUrl => {
+                    workboxConfig.templatedUrls[appshellUrl] = `${buildVersion}`;
+                });
+            }
             clientConfig.plugins.push(new WorkboxWebpackPlugin(workboxConfig));
         }
 
-        clientConfig.plugins.push(new CopyWebpackPlugin([
-            {
-                from: join(globals.rootDir, ASSETS_DIRNAME_IN_DIST),
-                to: ASSETS_DIRNAME_IN_DIST,
-                ignore: ['*.md']
-            },
-            // Copy workbox.dev|prod.js from node_modules manually.
-            ...getWorkboxFiles(this.isProd)
-                .map(f => {
-                    return {
-                        from: join(globals.rootDir, `node_modules/workbox-sw/build/importScripts/${f}`),
-                        to: assetsPath(`js/${f}`)
-                    };
-                })
-        ]));
+        // Copy static files to /dist.
+        let copyList = [{
+            from: join(globals.rootDir, ASSETS_DIRNAME_IN_DIST),
+            to: ASSETS_DIRNAME_IN_DIST,
+            ignore: ['*.md']
+        }];
+        // Copy workbox.dev|prod.js from node_modules manually.
+        if (this.isProd && workboxConfig) {
+            // node_modules/workbox-sw/build/importScripts/workbox-sw.prod.v2.1.2.js
+            const WORKBOX_PATH = require.resolve('workbox-sw');
+            copyList = copyList.concat(
+                getWorkboxFiles(this.isProd)
+                    .map(f => {
+                        return {
+                            from: join(WORKBOX_PATH, `../${f}`),
+                            to: assetsPath(`js/${f}`)
+                        };
+                    })
+            );
+        }
+        clientConfig.plugins.push(new CopyWebpackPlugin(copyList));
 
+        // Bundle analyzer.
         if (bundleAnalyzerReport) {
             clientConfig.plugins.push(
                 new BundleAnalyzerPlugin(Object.assign({}, bundleAnalyzerReport)));

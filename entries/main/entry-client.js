@@ -6,21 +6,22 @@
 import Vue from 'vue';
 import FastClick from 'fastclick';
 import middleware from '@/core/middleware';
-import middConf from '@/config/middleware';
-import entryConf from '@/config/entry';
+import lavasConfig from '@/lavas.config';
 import {createApp} from './app';
 import ProgressBar from '@/components/ProgressBar';
 import {middlewareSeries} from '@/core/utils';
 import {getClientContext} from '@/core/context-client';
-import LavasLink from '@/.lavas/LavasLink';
+import arrayFindShim from 'array.prototype.find';
 
+// Apply shim & polyfill.
 import 'es6-promise/auto';
-import '@/assets/stylus/main.styl';
+arrayFindShim.shim();
 
-Vue.component(LavasLink.name, LavasLink);
+import '@/assets/stylus/main.styl';
 
 let loading = Vue.prototype.$loading = new Vue(ProgressBar).$mount();
 let {App, router, store} = createApp();
+let {entry: entryConf = [], middleware: middConf = {}} = lavasConfig;
 let app;
 
 // Sync with server side state.
