@@ -53,6 +53,7 @@ const DEFAULT_CONFIG = {
         babelrc: false
     },
     entry: [],
+    router: {},
     errorHandler: {
         target: '/500',
         statusCode: {
@@ -110,6 +111,10 @@ export default class ConfigReader {
             buildVersion: Date.now()
         });
 
+        if (config[this.env]) {
+            merge(config, config[this.env]);
+        }
+
         // read from lavas.config.js
         let singleConfigPath = join(this.cwd, LAVAS_CONFIG_FILE);
         if (await pathExists(singleConfigPath)) {
@@ -118,10 +123,6 @@ export default class ConfigReader {
             merge(config, await import(singleConfigPath));
         }
         else {
-            if (config[this.env]) {
-                merge(config, config[this.env]);
-            }
-
             let configDir = join(this.cwd, 'config');
             let files = glob.sync(
                 '**/*.js', {

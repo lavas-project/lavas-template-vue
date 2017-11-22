@@ -189,7 +189,6 @@ export default class RouteManager {
                 component: _${cur.hash},
                 meta: ${JSON.stringify(cur.meta || {})},
                 ${aliasContent}
-                pathToRegexpOptions: { strict: true },
                 ${childrenContent}
             },`;
         }, '');

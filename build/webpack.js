@@ -270,6 +270,7 @@ export default class WebpackConfig {
         if (this.isProd && workboxConfig) {
             // node_modules/workbox-sw/build/importScripts/workbox-sw.prod.v2.1.2.js
             const WORKBOX_PATH = require.resolve('workbox-sw');
+            console.log('xxxxx', WORKBOX_PATH)
             copyList = copyList.concat(
                 getWorkboxFiles(this.isProd)
                     .map(f => {
