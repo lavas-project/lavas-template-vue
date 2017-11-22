@@ -8,6 +8,9 @@ import {createRouter} from '@/.lavas/main/router';
 import {createStore} from '@/core/store';
 import '@/core/meta';
 import AppComponent from './App.vue';
+import LavasLink from '@/.lavas/LavasLink';
+
+Vue.component(LavasLink.name, LavasLink);
 
 let store;
 

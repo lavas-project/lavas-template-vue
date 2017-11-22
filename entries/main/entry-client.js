@@ -6,20 +6,22 @@
 import Vue from 'vue';
 import FastClick from 'fastclick';
 import middleware from '@/core/middleware';
-import lavasConf from '@/lavas.config';
+import lavasConfig from '@/lavas.config';
 import {createApp} from './app';
 import ProgressBar from '@/components/ProgressBar';
 import {middlewareSeries} from '@/core/utils';
 import {getClientContext} from '@/core/context-client';
-import LavasLink from '@/.lavas/LavasLink';
+import arrayFindShim from 'array.prototype.find';
 
+// Apply shim & polyfill.
 import 'es6-promise/auto';
-import '@/assets/stylus/main.styl';
+arrayFindShim.shim();
 
-Vue.component(LavasLink.name, LavasLink);
+import '@/assets/stylus/main.styl';
 
 let loading = Vue.prototype.$loading = new Vue(ProgressBar).$mount();
 let {App, router, store} = createApp();
+let {entry: entryConf = [], middleware: middConf = {}} = lavasConfig;
 let app;
 
 // Sync with server side state.
@@ -76,7 +78,6 @@ let entryName = context.keys()[0].match(/^\.\/(.*)\/entry-client\.js$/)[1];
  * When `empty-appshell` attribute detected on body, we know current html is appshell.
  */
 let usingAppshell = document.body.hasAttribute('empty-appshell');
-let entryConf = lavasConf.entry || [];
 if (!usingAppshell && entryConf.find(e => e.name = entryName).ssr) {
     app = new App();
     // In SSR client, fetching & mounting should be put in onReady callback.
@@ -102,11 +103,10 @@ else {
  * @param {*} context Vue context
  */
 async function execMiddlewares(components = [], context) {
-    let middConf = lavasConf.middleware;
     // all + client + components middlewares
     let middlewareNames = [
-        ...(middConf && middConf.all || []),
-        ...(middConf && middConf.client || []),
+        ...(middConf.all || []),
+        ...(middConf.client || []),
         ...components
             .filter(({middleware}) => !!middleware)
             .reduce((arr, {middleware}) => arr.concat(middleware), [])

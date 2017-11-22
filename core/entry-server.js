@@ -4,16 +4,14 @@
  */
 
 import middleware from './middleware';
-import {middConf} from '@/lavas.config';
+import lavasConfig from '@/lavas.config';
 import {stringify} from 'querystring';
 import {middlewareSeries, urlJoin} from './utils';
 import {getServerContext} from './context-server';
 import Vue from 'vue';
-import LavasLink from '@/.lavas/LavasLink';
-
-Vue.component(LavasLink.name, LavasLink);
 
 const isDev = process.env.NODE_ENV !== 'production';
+let {middleware: middConf = {}} = lavasConfig;
 
 // import app.js from all modules
 const apps = getAllApps();

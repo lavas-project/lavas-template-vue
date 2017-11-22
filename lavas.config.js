@@ -111,14 +111,7 @@ module.exports = {
             'sw-register.js',
             '**/*.map'
         ],
-        templatedUrls: {
-            '/game/appshell': [
-                '../entries/main/**/*.*',
-                '../components/OfflineToast.vue',
-                '../components/UpdateToast.vue',
-                '../assets/stylus/main.styl'
-            ]
-        },
+        appshellUrls: ['/game/appshell'],
         dontCacheBustUrlsMatching: /\.\w{8}\./
     }
 };

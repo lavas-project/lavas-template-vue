@@ -7,11 +7,8 @@ const LavasCore = require('lavas-core');
 
 let core = new LavasCore(__dirname);
 
-core.init('production', true)
+core.init(process.env.NODE_ENV || 'production', true)
     .then(() => core.build())
-    .then(() => {
-        // TODO: fix a building bug in prod mode
-        process.exit(0);
-    }).catch(e => {
+    .catch(e => {
         console.error(e);
     });

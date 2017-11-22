@@ -1,6 +1,5 @@
 <template>
     <div class="detail-wrapper">
-        Children Route ID
         <article class="detail-content text-xs-center">
             <header class="detail-title text-xs-center">
                 Detail {{$route.params.id}}
@@ -18,9 +17,6 @@
 Reliable - Load instantly and never show the downasaur, even in uncertain network conditions.
 Fast - Respond quickly to user interactions with silky smooth animations and no janky scrolling.
             </p>
-            <img src="https://ss1.baidu.com/6ONXsjip0QIZ8tyhnq/it/u=3956514070,2615060783&fm=58">
-            <img src="https://ss0.baidu.com/6ONWsjip0QIZ8tyhnq/it/u=3924771,2747391465&fm=58">
-            <br/>
             <lavas-link to="/">
                 Back to home
             </lavas-link>

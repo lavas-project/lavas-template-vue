@@ -1,6 +1,6 @@
 <template>
     <div>
-        Parent Route Detail
+        <header>Detail Header</header>
         <router-view></router-view>
     </div>
 </template>
@@ -9,3 +9,8 @@ export default {
     name: 'detail'
 };
 </script>
+<style scoped lang='stylus'>
+header
+    background #ccc
+    height 16px
+</style>
