@@ -8,21 +8,9 @@ import {createRouter} from '@/.lavas/main/router';
 import {createStore} from '@/core/store';
 import '@/core/meta';
 import AppComponent from './App.vue';
+import LavasLink from '@/.lavas/LavasLink';
 
-// import {
-//     Vuetify,
-//     VApp,
-//     VBtn
-// } from 'vuetify';
-// console.log(Vuetify, VApp, VBtn)
-
-// import Vuetify from 'vuetify/es5/components/Vuetify';
-// import VApp from 'vuetify/es5/components/VApp';
-// Vue.use(Vuetify, {
-//     components: {
-//         VApp
-//     }
-// });
+Vue.component(LavasLink.name, LavasLink);
 
 let store;
 

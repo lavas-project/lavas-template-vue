@@ -40,7 +40,7 @@ core.on('rebuild', () => {
     });
 });
 
-core.init('development', true)
+core.init(process.env.NODE_ENV || 'development', true)
     .then(() => startDevServer());
 
 // catch promise error

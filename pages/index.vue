@@ -26,8 +26,8 @@ export default {
         ]
     },
     async asyncData({store, route}) {
-        let result = await axios(`https://query.yahooapis.com/v1/public/yql?q=select%20item.condition.text%20from%20weather.forecast%20where%20woeid%20%3D%202151330&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys`);
-        console.log('Weather of Beijing: ', result.data.query.results.channel.item.condition.text);
+        // let result = await axios(`https://query.yahooapis.com/v1/public/yql?q=select%20item.condition.text%20from%20weather.forecast%20where%20woeid%20%3D%202151330&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys`);
+        // console.log('Weather of Beijing: ', result.data.query.results.channel.item.condition.text);
 
         setState(store);
     }

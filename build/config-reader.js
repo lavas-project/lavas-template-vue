@@ -3,11 +3,11 @@
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
-import {readFile} from 'fs-extra';
+import {readFile, pathExists} from 'fs-extra';
 import {join} from 'path';
 import glob from 'glob';
-import _ from 'lodash';
-import {CONFIG_FILE} from './constants';
+import {merge, isFunction} from 'lodash';
+import {CONFIG_FILE, LAVAS_CONFIG_FILE} from './constants';
 import {distLavasPath} from './utils/path';
 import * as JsonUtil from './utils/json';
 
@@ -53,6 +53,24 @@ const DEFAULT_CONFIG = {
         babelrc: false
     },
     entry: [],
+    errorHandler: {
+        target: '/500',
+        statusCode: {
+            404: {
+                target: '/404'
+            },
+            500: {
+                target: '/500'
+            }
+        },
+        errorPath: '/error'
+    },
+    middleware: {
+        all: [],
+        server: [],
+        client: []
+    },
+    serviceWorker: null,
     production: {
         build: {
             cssExtract: true
@@ -82,60 +100,68 @@ export default class ConfigReader {
      * @return {Object} config
      */
     async read() {
-        // add buildVersion
-        const config = {
+        let config = {};
+
+        // merge with default options
+        merge(config, DEFAULT_CONFIG, {
             globals: {
                 rootDir: this.cwd
             },
             buildVersion: Date.now()
-        };
+        });
 
-        // merge with default options
-        _.merge(config, DEFAULT_CONFIG);
-
-        if (config[this.env]) {
-            _.merge(config, config[this.env]);
+        // read from lavas.config.js
+        let singleConfigPath = join(this.cwd, LAVAS_CONFIG_FILE);
+        if (await pathExists(singleConfigPath)) {
+            console.log('[Lavas] read lavas.config.js.');
+            delete require.cache[require.resolve(singleConfigPath)];
+            merge(config, await import(singleConfigPath));
         }
-
-        let configDir = join(this.cwd, 'config');
-        let files = glob.sync(
-            '**/*.js', {
-                cwd: configDir
+        else {
+            if (config[this.env]) {
+                merge(config, config[this.env]);
             }
-        );
 
-        // require all files and assign them to config recursively
-        await Promise.all(files.map(async filepath => {
-            filepath = filepath.substring(0, filepath.length - 3);
+            let configDir = join(this.cwd, 'config');
+            let files = glob.sync(
+                '**/*.js', {
+                    cwd: configDir
+                }
+            );
 
-            let paths = filepath.split('/');
+            // require all files and assign them to config recursively
+            await Promise.all(files.map(async filepath => {
+                filepath = filepath.substring(0, filepath.length - 3);
 
-            let name;
-            let cur = config;
-            for (let i = 0; i < paths.length - 1; i++) {
-                name = paths[i];
-                if (!cur[name]) {
-                    cur[name] = {};
+                let paths = filepath.split('/');
+
+                let name;
+                let cur = config;
+                for (let i = 0; i < paths.length - 1; i++) {
+                    name = paths[i];
+                    if (!cur[name]) {
+                        cur[name] = {};
+                    }
+
+                    cur = cur[name];
                 }
 
-                cur = cur[name];
+                name = paths.pop();
+
+                // load config, delete cache first
+                let configPath = join(configDir, filepath);
+                delete require.cache[require.resolve(configPath)];
+                let exportContent = await import(configPath);
+                cur[name] = typeof exportContent === 'object' && exportContent !== null
+                    ? merge(cur[name], exportContent) : exportContent;
+            }));
+
+            let temp = config.env || {};
+
+            // merge config according env
+            if (temp[this.env]) {
+                merge(config, temp[this.env]);
             }
-
-            name = paths.pop();
-
-            // load config, delete cache first
-            let configPath = join(configDir, filepath);
-            delete require.cache[require.resolve(configPath)];
-            let exportContent = await import(configPath);
-            cur[name] = typeof exportContent === 'object' && exportContent !== null
-                ? _.merge(cur[name], exportContent) : exportContent;
-        }));
-
-        let temp = config.env || {};
-
-        // merge config according env
-        if (temp[this.env]) {
-            _.merge(config, temp[this.env]);
         }
 
         return config;

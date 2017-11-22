@@ -8,13 +8,7 @@
     "plugins": [
         "transform-runtime",
         "add-module-exports",
-        "dynamic-import-node",
-        ["transform-imports", {
-            "vuetify": {
-                "transform": "vuetify/es5/components/${member}",
-                "preventFullImport": true
-            }
-        }]
+        "dynamic-import-node"
     ],
     "comments": false
 }
