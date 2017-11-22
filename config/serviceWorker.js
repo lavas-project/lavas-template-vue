@@ -63,19 +63,12 @@ module.exports = {
      * All the filepath are relative to `globDirectory`.
      */
     templatedUrls: {
-        '/appshell/detail': [
+        '/appshell': [
             '../entries/main/**/*.*',
             '../components/OfflineToast.vue',
             '../components/UpdateToast.vue',
             '../assets/stylus/main.styl',
-            '../pages/appshell/detail.vue'
-        ],
-        '/appshell/main': [
-            '../entries/main/**/*.*',
-            '../components/OfflineToast.vue',
-            '../components/UpdateToast.vue',
-            '../assets/stylus/main.styl',
-            '../pages/appshell/main.vue'
+            '../pages/Appshell.vue'
         ]
     },
 

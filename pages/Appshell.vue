@@ -1,12 +1,11 @@
 <template>
-    <header>Detail Header</header>
 </template>
 
 <script>
 export default {
-    name: 'appshell-detail',
+    name: 'appshell',
     head: {
-        title: 'Detail',
+        title: 'Home',
         titleTemplate: '%s - Lavas',
         meta: [
             {name: 'keywords', content: 'lavas PWA'},
@@ -18,8 +17,3 @@ export default {
     }
 };
 </script>
-<style scoped lang='stylus'>
-header
-    background #ccc
-    height 16px
-</style>
