@@ -69,7 +69,7 @@ export async function writeFileInDev(path, content) {
 export async function enableHotReload(dir, config, subscribeReload = false) {
     let {entry, plugins, name: compilerName} = config;
 
-    let hotReloadEntryTemplate = join(__dirname, '../templates/entry-hot-reload.tpl');
+    let hotReloadEntryTemplate = join(__dirname, '../templates/entry-hot-reload.tmpl');
     let hotReloadEntryPath = join(dir, `${compilerName}-hot-reload.js`);
     let templateContent = template(await readFile(hotReloadEntryTemplate, 'utf8'))({
         compilerName,

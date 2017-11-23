@@ -3,8 +3,6 @@
  * @author lavas
  */
 
-import {posix} from 'path';
-
 /**
  * remove publicPath in urls of static files
  *
@@ -14,7 +12,6 @@ import {posix} from 'path';
 export default function (publicPath) {
 
     return function (req, res, next) {
-        let originalUrl = req.url;
         req.url = req.url.substring(publicPath.length);
         next();
     };

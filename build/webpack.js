@@ -270,7 +270,6 @@ export default class WebpackConfig {
         if (this.isProd && workboxConfig) {
             // node_modules/workbox-sw/build/importScripts/workbox-sw.prod.v2.1.2.js
             const WORKBOX_PATH = require.resolve('workbox-sw');
-            console.log('xxxxx', WORKBOX_PATH)
             copyList = copyList.concat(
                 getWorkboxFiles(this.isProd)
                     .map(f => {
@@ -310,8 +309,8 @@ export default class WebpackConfig {
         let {extend, nodeExternalsWhitelist = [],
             defines: {server: serverDefines = {}},
             alias: {server: serverAlias = {}},
-            plugins: {server: serverPlugins = []},
-            ssrPrerender} = this.config.build;
+            plugins: {server: serverPlugins = []}
+        } = this.config.build;
         /* eslint-enable fecs-one-var-per-line */
 
         let serverConfig = merge(this.base(buildConfig), {

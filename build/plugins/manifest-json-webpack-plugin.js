@@ -1,7 +1,20 @@
 /**
- * @file Lavas 内置的 manifest.json 生成的 webpack 插件
- * @author mj(zoumiaojiang@gmail.com)
+ * @file manifest-plugin
+ * @author lavas
  */
+
+/**
+ * convert camelCase to underscore
+ * eg. themeColor -> theme_color
+ *
+ * @param {string} origin origin string
+ * @return {string} result final string
+ */
+function camelCase2Underscore(origin) {
+    return origin.replace(
+        /[A-Z]/g,
+        capture => '_' + capture.toLowerCase());
+}
 
 /**
  * Generate manifest.json file
@@ -35,12 +48,22 @@ export default class ManifestJson {
         if (config && config.icons && config.icons.length > 0) {
             config.icons.forEach((item, index) => {
 
-                // 加上时间戳，做浏览器缓存
+                // add timestamp for every icon to disable cache
                 config.icons[index].src = this.publicPath + item.src + '?v=' + Date.now();
             });
         }
 
-        let manifestContent = JSON.stringify(this.config);
+        // support manifest which has keys in camelCase
+        let manifestContent = JSON.stringify(config, (key, value) => {
+            if (value && typeof value === 'object' && !Array.isArray(value)) {
+                let replacement = {};
+                Object.keys(value).forEach(originalKey => {
+                    replacement[camelCase2Underscore(originalKey)] = value[originalKey];
+                });
+                return replacement;
+            }
+            return value;
+        });
 
         compiler.plugin('emit', (compilation, callback) => {
             compilation.assets[this.path] = {

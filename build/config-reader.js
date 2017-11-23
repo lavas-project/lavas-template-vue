@@ -6,7 +6,7 @@
 import {readFile, pathExists} from 'fs-extra';
 import {join} from 'path';
 import glob from 'glob';
-import {merge, isFunction} from 'lodash';
+import {merge} from 'lodash';
 import {CONFIG_FILE, LAVAS_CONFIG_FILE} from './constants';
 import {distLavasPath} from './utils/path';
 import * as JsonUtil from './utils/json';
@@ -28,6 +28,7 @@ const DEFAULT_CONFIG = {
         cssSourceMap: true,
         jsSourceMap: true,
         bundleAnalyzerReport: false,
+        compress: true,
         defines: {
             base: {},
             client: {},
@@ -55,15 +56,6 @@ const DEFAULT_CONFIG = {
     entry: [],
     router: {},
     errorHandler: {
-        target: '/500',
-        statusCode: {
-            404: {
-                target: '/404'
-            },
-            500: {
-                target: '/500'
-            }
-        },
         errorPath: '/error'
     },
     middleware: {
@@ -71,6 +63,7 @@ const DEFAULT_CONFIG = {
         server: [],
         client: []
     },
+    manifest: {},
     serviceWorker: null,
     production: {
         build: {
@@ -87,6 +80,17 @@ const DEFAULT_CONFIG = {
             cacheDirectory: true
         }
     }
+};
+
+export const RUMTIME_ITEMS = {
+    build: {
+        publicPath: true,
+        compress: true,
+    },
+    entry: true,
+    middleware: true,
+    router: true,
+    manifest: true
 };
 
 export default class ConfigReader {

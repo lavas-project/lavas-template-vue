@@ -3,7 +3,7 @@
  * @author lavas
  */
 
-const LavasCore = require('./lib');
+const LavasCore = require('lavas-core');
 const Koa = require('koa');
 const app = new Koa();
 
@@ -21,3 +21,10 @@ core.init(process.env.NODE_ENV || 'production')
     }).catch(err => {
         console.log(err);
     });
+
+// catch promise error
+process.on('unhandledRejection', (err, promise) => {
+    console.log('in unhandledRejection');
+    console.log(err);
+    // cannot redirect without ctx!
+});

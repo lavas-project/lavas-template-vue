@@ -5,7 +5,8 @@
 
 import Renderer from './renderer';
 import ConfigReader from './config-reader';
-import Builder from './builder';
+import ProdBuilder from './builder/prod-builder';
+import DevBuilder from './builder/dev-builder';
 
 import ssrFactory from './middlewares/ssr';
 import koaErrorFactory from './middlewares/koa-error';
@@ -65,7 +66,8 @@ export default class LavasCore extends EventEmitter {
 
         this.internalMiddlewares = [];
         this.renderer = new Renderer(this);
-        this.builder = new Builder(this);
+        this.builder = this.isProd
+            ? new ProdBuilder(this) : new DevBuilder(this);
     }
 
     /**
@@ -74,15 +76,13 @@ export default class LavasCore extends EventEmitter {
      */
     async build() {
         let spinner = ora();
-
         spinner.start();
-        if (this.isProd) {
-            await this.builder.buildProd();
-        }
-        else {
+
+        if (this.isDev) {
             this.setupInternalMiddlewares();
-            await this.builder.buildDev();
         }
+        await this.builder.build();
+
         spinner.succeed(`[Lavas] ${this.env} build completed.`);
     }
 
@@ -184,15 +184,14 @@ export default class LavasCore extends EventEmitter {
      * @return {Function} express middleware
      */
     expressMiddleware() {
+        let expressRouter = Router;
         let {entry, build: {publicPath}, serviceWorker} = this.config;
         let ssrExists = entry.some(e => e.ssr);
 
-        let middlewares = [
-            ...this.internalMiddlewares
-        ];
+        let middlewares = Array.from(this.internalMiddlewares);
 
         // Redirect without trailing slash.
-        let rootRouter = Router();
+        let rootRouter = expressRouter();
         rootRouter.get(
             entry.map(e => removeTrailingSlash(e.base || '/')),
             (req, res, next) => {
@@ -215,7 +214,7 @@ export default class LavasCore extends EventEmitter {
              */
             if (this.isProd && !isFromCDN(publicPath)) {
                 // Serve /static.
-                let staticRouter = Router();
+                let staticRouter = expressRouter();
                 staticRouter.get(
                     posix.join(publicPath, ASSETS_DIRNAME_IN_DIST, '*'),
                     staticFactory(publicPath)
@@ -232,7 +231,7 @@ export default class LavasCore extends EventEmitter {
                     basename(serviceWorker.swDest),
                     'sw-register.js'
                 ].map(f => posix.join(publicPath, f));
-                let swRouter = Router();
+                let swRouter = expressRouter();
                 swRouter.get(swFiles, staticFactory(publicPath));
                 middlewares.push(swRouter);
                 // Use cache-control but not etag.

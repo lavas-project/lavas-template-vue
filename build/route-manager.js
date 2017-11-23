@@ -16,7 +16,7 @@ import pathToRegexp from 'path-to-regexp';
 import {generateRoutes, matchUrl} from './utils/router';
 import {writeFileInDev} from './utils/webpack';
 
-const routerTemplate = join(__dirname, './templates/router.tpl');
+const routerTemplate = join(__dirname, './templates/router.tmpl');
 
 export default class RouteManager {
 
