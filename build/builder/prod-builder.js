@@ -9,7 +9,6 @@ import {join} from 'path';
 import {CONFIG_FILE} from '../constants';
 import {webpackCompile} from '../utils/webpack';
 import {distLavasPath} from '../utils/path';
-import * as JsonUtil from '../utils/json';
 
 import BaseBuilder from './base-builder';
 

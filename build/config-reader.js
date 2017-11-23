@@ -82,10 +82,13 @@ const DEFAULT_CONFIG = {
     }
 };
 
+/**
+ * config items used in runtime
+ */
 export const RUMTIME_ITEMS = {
     build: {
         publicPath: true,
-        compress: true,
+        compress: true
     },
     entry: true,
     middleware: true,

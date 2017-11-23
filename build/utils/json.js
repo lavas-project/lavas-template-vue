@@ -26,10 +26,10 @@ export function parse(string) {
  * https://github.com/mohsen1/deep_pick
  *
  * @param {Object|Array} object srcObject
- * @param {Object|Array} pickObject pickObject
+ * @param {Object|Array} json pickObject
  * @return {Object} object after pick
  */
-export function deepPick(object, json){
+export function deepPick(object, json) {
     if (Array.isArray(json) && Array.isArray(object)) {
         return object.map(item => {
             if (isObject(item)) {
@@ -41,9 +41,9 @@ export function deepPick(object, json){
     let keys = Object.keys(json);
     object = pick(object, keys);
     keys.forEach(key => {
-        if (isObject(json[key])){
+        if (isObject(json[key])) {
             object[key] = deepPick(object[key], json[key]);
-        };
+        }
     });
     return object;
 }

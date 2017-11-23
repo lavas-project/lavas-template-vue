@@ -23,13 +23,9 @@ const workboxSW = new WorkboxSW({
 workboxSW.precache([]);
 
 // Respond to navigation requests with appshell precached.
-workboxSW.router.registerNavigationRoute('/appshell/detail', {
-    whitelist: [/^\/detail/],
-    blacklist: [/\.(js|css)$/]
-});
 
-workboxSW.router.registerNavigationRoute('/appshell/main', {
-    blacklist: [/^\/detail/, /^\/appshell/, /\.(js|css)$/]
+workboxSW.router.registerNavigationRoute('/appshell', {
+    blacklist: [/\.(js|css)$/]
 });
 
 // Define runtime cache.
