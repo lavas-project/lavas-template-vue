@@ -8,7 +8,6 @@ import lavasConfig from '@/lavas.config';
 import {stringify} from 'querystring';
 import {middlewareSeries, urlJoin} from './utils';
 import {getServerContext} from './context-server';
-import Vue from 'vue';
 
 const isDev = process.env.NODE_ENV !== 'production';
 let {middleware: middConf = {}} = lavasConfig;

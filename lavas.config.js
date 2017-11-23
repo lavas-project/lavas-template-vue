@@ -71,9 +71,9 @@ module.exports = {
         ]
     },
     manifest: {
-        start_url: '/?utm_source=homescreen',
+        startUrl: '/?utm_source=homescreen',
         name: '*__name__*',
-        short_name: '*__name__*',
+        shortName: '*__name__*',
         icons: [
             {
                 src: 'static/img/icons/android-chrome-512x512.png',
@@ -97,8 +97,8 @@ module.exports = {
             }
         ],
         display: 'standalone',
-        background_color: '#000000',
-        theme_color: '#278fef'
+        backgroundColor: '#000000',
+        themeColor: '#278fef'
     },
     serviceWorker: {
         swSrc: path.join(__dirname, 'core/service-worker.js'),

@@ -13,11 +13,11 @@ import {middlewareSeries} from '@/core/utils';
 import {getClientContext} from '@/core/context-client';
 import arrayFindShim from 'array.prototype.find';
 
-// Apply shim & polyfill.
 import 'es6-promise/auto';
-arrayFindShim.shim();
-
 import '@/assets/stylus/main.styl';
+
+// Apply shim & polyfill.
+arrayFindShim.shim();
 
 let loading = Vue.prototype.$loading = new Vue(ProgressBar).$mount();
 let {App, router, store} = createApp();
