@@ -13,26 +13,7 @@ const isProd = process.env.NODE_ENV === 'production';
 module.exports = {
     build: {
         path: BUILD_PATH,
-        publicPath: '/game/',
-        filenames: {
-            entry: isDev ? 'js/[name].[hash:8].js'
-                : 'js/[name].[chunkhash:8].js'
-        },
-        cssExtract: isProd,
-        extend: function (config, {type}) {
-            if (type === 'base') {
-                // Import `theme-variables.styl` in every <style> block in .vue files.
-                let vueRule = config.module.rules[0];
-                vueRule.use.push({
-                    loader: 'vue-style-variables-loader',
-                    options: {
-                        importStatements: [
-                            '@import "~@/assets/stylus/theme-variables.styl";'
-                        ]
-                    }
-                });
-            }
-        },
+        publicPath: '/',
         ssrCopy: isDev ? [] : [
             {
                 src: 'lib'
@@ -53,7 +34,7 @@ module.exports = {
             name: 'main',
             ssr: true,
             mode: 'history',
-            base: '/game/',
+            base: '/',
             routes: /^.*$/,
             pageTransition: {
                 type: 'fade',
@@ -111,7 +92,7 @@ module.exports = {
             'sw-register.js',
             '**/*.map'
         ],
-        appshellUrls: ['/game/appshell'],
+        appshellUrls: ['/appshell/main'],
         dontCacheBustUrlsMatching: /\.\w{8}\./
     }
 };

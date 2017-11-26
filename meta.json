@@ -15,7 +15,7 @@
     ],
     "exportsPackageJson": {
         "name": "*__name__*",
-        "version": "2.0.0-alpha-0",
+        "version": "0.0.1",
         "description": "*__desc__*",
         "author": "*__author__* <*__email__*>",
         "private": true,
@@ -30,7 +30,7 @@
             "axios": "^0.17.0",
             "cross-env": "^5.1.1",
             "koa": "^2.3.0",
-            "lavas-core": "^0.0.35",
+            "lavas": "^2.0.2",
             "normalize.css": "^7.0.0",
             "stoppable": "^1.0.4"
         },
