@@ -12,8 +12,7 @@
 importScripts('/static/js/workbox-sw.prod.v2.1.2.js');
 
 const workboxSW = new WorkboxSW({
-    // cacheId: 'your-custom-cache-name',
-    // directoryIndex: 'index.html',
+    cacheId: 'lavas-cache',
     ignoreUrlParametersMatching: [/^utm_/],
     skipWaiting: true,
     clientsClaim: true
@@ -22,6 +21,5 @@ const workboxSW = new WorkboxSW({
 // Define precache injection point.
 workboxSW.precache([]);
 
-workboxSW.router.registerNavigationRoute('/appshell/main', {
-    blacklist: [/^\/detail/, /^\/appshell/, /\.(js|css)$/]
-});
+// Define response for HTML request.
+workboxSW.router.registerNavigationRoute('/appshell/main');

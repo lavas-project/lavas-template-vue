@@ -16,14 +16,11 @@ module.exports = {
         publicPath: '/',
         ssrCopy: isDev ? [] : [
             {
-                src: 'lib'
-            },
-            {
                 src: 'server.prod.js'
             },
-            // {
-            //     src: 'node_modules'
-            // },
+            {
+                src: 'node_modules'
+            },
             {
                 src: 'package.json'
             }
@@ -42,15 +39,6 @@ module.exports = {
             }
         }
     ],
-    router: {
-        routes: [
-            {
-                pattern: '/detail',
-                lazyLoading: true,
-                chunkname: 'detail'
-            }
-        ]
-    },
     manifest: {
         startUrl: '/?utm_source=homescreen',
         name: '*__name__*',
