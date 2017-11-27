@@ -9,10 +9,7 @@
         "packageJsonAuthor": "*__ author __*<*__ email __*>"
     },
     "renderIgnores": [],
-    "exportsIgnores": [
-        ".gitignore",
-        "test"
-    ],
+    "exportsIgnores": [],
     "exportsPackageJson": {
         "name": "*__name__*",
         "version": "0.0.1",
