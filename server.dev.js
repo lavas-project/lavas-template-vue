@@ -4,7 +4,7 @@
  */
 
 const LavasCore = require('lavas');
-const Koa = require('koa');
+const express = require('express');
 const stoppable = require('stoppable');
 
 let port = process.env.PORT || 3000;
@@ -13,10 +13,10 @@ let app;
 let server;
 
 function startDevServer() {
-    app = new Koa();
+    app = express();
     core.build()
         .then(() => {
-            app.use(core.koaMiddleware());
+            app.use(core.expressMiddleware());
 
             /**
              * server.close() only stop accepting new connections,
@@ -44,8 +44,6 @@ core.init(process.env.NODE_ENV || 'development', true)
     .then(() => startDevServer());
 
 // catch promise error
-process.on('unhandledRejection', (err, promise) => {
-    console.log('in unhandledRejection');
-    console.log(err);
-    // cannot redirect without ctx!
+process.on('unhandledRejection', (err) => {
+    console.log(err, 'in unhandledRejection');
 });

@@ -6,14 +6,15 @@
   "private": true,
   "scripts": {
     "dev": "cross-env NODE_ENV=development node server.dev.js",
-    "build:minify": "npm run build && cd dist && echo [Lavas] remove devDependencies && npm prune --production && echo [Lavas] all complete",
-    "build": "cross-env NODE_ENV=production node build.js",
     "start": "cross-env NODE_ENV=production node server.prod.js",
     "lint": "fecs ./ --rule --type 'vue,js,css'"
   },
   "dependencies": {
+    "array.prototype.find": "^2.0.4",
     "cross-env": "^5.1.1",
-    "koa": "^2.3.0",
+    "es6-promise": "^4.1.1",
+    "express": "^4.0.0",
+    "fastclick": "^1.0.6",
     "lavas": "^2.0.0",
     "normalize.css": "^7.0.0",
     "stoppable": "^1.0.4"
@@ -22,8 +23,8 @@
     "babel-preset-vue-app": "^1.3.1"
   },
   "engines": {
-    "node": ">= 7.0.0",
-    "npm": ">= 4.0.0"
+    "node": ">= 4.0.0",
+    "npm": ">= 3.0.0"
   },
   "browserslist": [
     "> 1%",
