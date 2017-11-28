@@ -17,8 +17,6 @@
         "author": "*__author__* <*__email__*>",
         "private": true,
         "scripts": {
-            "dev": "cross-env NODE_ENV=development node server.dev.js",
-            "start": "cross-env NODE_ENV=production node server.prod.js",
             "lint": "fecs ./ --rule --type 'vue,js,css'"
         },
         "dependencies": {
