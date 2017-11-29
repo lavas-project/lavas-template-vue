@@ -5,6 +5,9 @@
   "author": "*__author__* <*__email__*>",
   "private": true,
   "scripts": {
+    "dev": "lavas dev",
+    "build": "lavas build",
+    "start": "lavas start",
     "lint": "fecs ./ --rule --type 'vue,js,css'"
   },
   "dependencies": {
@@ -21,7 +24,7 @@
     "babel-preset-vue-app": "^1.3.1"
   },
   "engines": {
-    "node": ">= 4.0.0",
+    "node": ">= 5.0.0",
     "npm": ">= 3.0.0"
   },
   "browserslist": [
