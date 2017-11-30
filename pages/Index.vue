@@ -10,7 +10,7 @@ function setState(store) {}
 
 export default {
     name: 'index',
-    head: {
+    metaInfo: {
         title: 'Home',
         titleTemplate: '%s - Lavas',
         meta: [

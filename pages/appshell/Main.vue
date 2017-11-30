@@ -4,7 +4,7 @@
 <script>
 export default {
     name: 'appshell-main',
-    head: {
+    metaInfo: {
         title: 'Lavas',
         meta: [
             {name: 'keywords', content: 'lavas PWA'},
