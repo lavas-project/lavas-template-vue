@@ -72,7 +72,7 @@ module.exports = {
     serviceWorker: {
         swSrc: path.join(__dirname, 'core/service-worker.js'),
         swDest: path.join(BUILD_PATH, 'service-worker.js'),
-        globDirectory: path.basename(BUILD_PATH),
+        globDirectory: BUILD_PATH,
         globPatterns: [
             '**/*.{html,js,css,eot,svg,ttf,woff}'
         ],
