@@ -11,6 +11,7 @@ import {createApp} from './app';
 import ProgressBar from '@/components/ProgressBar';
 import arrayFindShim from 'array.prototype.find';
 import arrayIncludesShim from 'array-includes';
+import {stringify} from 'querystring';
 
 import 'es6-promise/auto';
 import '@/assets/stylus/main.styl';
@@ -105,13 +106,7 @@ function handleMiddlewares() {
             return next();
         }
 
-        let matchedComponents = await router.getMatchedComponents(to);
-
-        if (!matchedComponents.length) {
-            // can't find matched component, use href jump
-            window.location.href = toPath;
-            return next();
-        }
+        let matchedComponents = router.getMatchedComponents(to);
 
         // all + client + components middlewares
         let middlewareNames = [
@@ -123,7 +118,7 @@ function handleMiddlewares() {
         ];
 
         // get all the middlewares defined by user
-        const middlewares = getMiddlewares(middlewareNames);
+        const middlewares = await getMiddlewares(middlewareNames);
 
         let unknowMiddleware = middlewareNames.find(name => typeof middlewares[name] !== 'function');
         if (unknowMiddleware) {
@@ -131,8 +126,7 @@ function handleMiddlewares() {
         }
 
         let nextCalled = false;
-        // nextCalled is true when redirected
-        const nextRedirect = path => {
+        const nextRedirect = opts => {
             if (loading.finish) {
                 loading.finish();
             }
@@ -140,7 +134,15 @@ function handleMiddlewares() {
                 return;
             }
             nextCalled = true;
-            next(path);
+
+            if (opts.external) {
+                opts.query = stringify(opts.query);
+                opts.path = opts.path + (opts.query ? '?' + opts.query : '');
+
+                window.location.replace(opts.path);
+                return next();
+            }
+            next(opts);
         };
 
         // create a new context for middleware, contains store, route etc.

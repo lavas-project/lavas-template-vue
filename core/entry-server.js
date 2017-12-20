@@ -5,7 +5,6 @@
 
 import {getMiddlewares, getServerContext, execSeries, createNext} from './middleware';
 import lavasConfig from '@/.lavas/config';
-import {stringify} from 'querystring';
 
 const {middleware: middConf = {}} = lavasConfig;
 
@@ -59,7 +58,7 @@ export default function (context) {
                 ];
 
                 // get all the middlewares defined by user
-                const middlewares = getMiddlewares(middlewareNames);
+                const middlewares = await getMiddlewares(middlewareNames);
                 let matchedMiddlewares = middlewareNames.map(name => middlewares[name]);
 
                 // if a middleware is undefined, throw an error
