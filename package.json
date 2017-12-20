@@ -11,6 +11,7 @@
     "lint": "fecs ./ --rule --type 'vue,js,css'"
   },
   "dependencies": {
+    "array-includes": "^3.0.3",
     "array.prototype.find": "^2.0.4",
     "cross-env": "^5.1.1",
     "es6-promise": "^4.1.1",

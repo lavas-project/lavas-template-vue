@@ -10,12 +10,14 @@ import lavasConfig from '@/.lavas/config';
 import {createApp} from './app';
 import ProgressBar from '@/components/ProgressBar';
 import arrayFindShim from 'array.prototype.find';
+import arrayIncludesShim from 'array-includes';
 
 import 'es6-promise/auto';
 import '@/assets/stylus/main.styl';
 
 // Apply shim & polyfill.
 arrayFindShim.shim();
+arrayIncludesShim.shim();
 
 let loading = Vue.prototype.$loading = new Vue(ProgressBar).$mount();
 let {App, router, store} = createApp();
