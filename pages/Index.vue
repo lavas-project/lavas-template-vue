@@ -1,23 +1,16 @@
 <template>
     <div>
-        <h2 class="gray--text">LAVAS</h2>
-        <h4 class="gray--text">[ˈlɑ:vəz]</h4>
-        <lavas-link to="/detail/1">detail</lavas-link>
-        <div class="error-handle">
-            <lavas-link to="/list">list(entry not exists)</lavas-link>
-            <lavas-link to="/detail/abc/def">detail/abc/def(route not exists)</lavas-link>
-        </div>
+        <h2>LAVAS</h2>
+        <h4>[ˈlɑ:vəz]</h4>
     </div>
 </template>
 
 <script>
-import axios from 'axios';
-
 function setState(store) {}
 
 export default {
     name: 'index',
-    head: {
+    metaInfo: {
         title: 'Home',
         titleTemplate: '%s - Lavas',
         meta: [
@@ -26,9 +19,6 @@ export default {
         ]
     },
     async asyncData({store, route}) {
-        // let result = await axios(`https://query.yahooapis.com/v1/public/yql?q=select%20item.condition.text%20from%20weather.forecast%20where%20woeid%20%3D%202151330&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys`);
-        // console.log('Weather of Beijing: ', result.data.query.results.channel.item.condition.text);
-
         setState(store);
     }
 };
@@ -36,13 +26,7 @@ export default {
 
 <style lang="stylus" scoped>
 h2
-    margin-top 50%
+    margin-top 70%
     font-size 46px
     font-weight 500
-
-.error-handle
-    margin-top 100px
-
-    a
-        display block
 </style>

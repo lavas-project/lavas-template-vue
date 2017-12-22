@@ -25,6 +25,8 @@ export default class BaseBuilder {
         this.env = core.env;
         this.cwd = core.cwd;
         this.renderer = core.renderer;
+        this.webpackConfig = new WebpackConfig(core.config, this.env);
+        this.routeManager = new RouteManager(core.config, this.env);
 
         // will be overrided by subclass
         this.writeFile = null;
@@ -40,10 +42,10 @@ export default class BaseBuilder {
      */
     init(config) {
         this.config = config;
-        this.webpackConfig = new WebpackConfig(config, this.env);
-        this.routeManager = new RouteManager(config, this.env);
-        this.ssrExists = config.entry.some(e => e.ssr);
-        this.mpaExists = config.entry.some(e => !e.ssr);
+        this.webpackConfig.config = config;
+        this.routeManager.config = config;
+        this.ssrExists = config.entry && config.entry.some(e => e.ssr);
+        this.mpaExists = config.entry && config.entry.some(e => !e.ssr);
     }
 
     /**
@@ -100,7 +102,7 @@ export default class BaseBuilder {
      */
     async writeRuntimeConfig() {
         let filteredConfig = JsonUtil.deepPick(this.config, RUMTIME_ITEMS);
-        await this.writeFileToLavasDir('config.json', JsonUtil.stringify(filteredConfig));
+        await this.writeFileToLavasDir('config.json', JsonUtil.stringify(filteredConfig, null, 4));
     }
 
     /**

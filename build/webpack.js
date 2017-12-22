@@ -14,13 +14,13 @@ import OptimizeCSSPlugin from 'optimize-css-assets-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import VueSSRServerPlugin from 'vue-server-renderer/server-plugin';
 import {BundleAnalyzerPlugin} from 'webpack-bundle-analyzer';
-import ManifestJsonWebpackPlugin from './plugins/manifest-json-webpack-plugin';
 import SWRegisterWebpackPlugin from 'sw-register-webpack-plugin';
-import WorkboxWebpackPlugin from 'workbox-webpack-plugin';
+// import WorkboxWebpackPlugin from 'workbox-webpack-plugin';
+import WorkboxWebpackPlugin from './plugins/workbox-webpack-plugin';
 
 import {vueLoaders, styleLoaders} from './utils/loader';
 import {assetsPath} from './utils/path';
-import {getWorkboxFiles} from './utils/workbox';
+import {WORKBOX_PATH, getWorkboxFiles} from './utils/workbox';
 import {LAVAS_DIRNAME_IN_DIST, SERVER_BUNDLE, ASSETS_DIRNAME_IN_DIST} from './constants';
 
 import fs from 'fs';
@@ -45,11 +45,16 @@ export default class WebpackConfig {
      * @return {Object} webpack base config
      */
     base(buildConfig = {}) {
-        let {globals, build, babel} = this.config;
+        let {globals, build} = this.config;
         /* eslint-disable fecs-one-var-per-line */
-        let {path, publicPath, filenames, cssSourceMap, cssMinimize,
-            cssExtract, jsSourceMap, alias: {base: baseAlias = {}}, extend,
-            plugins: {base: basePlugins = []}} = Object.assign({}, build, buildConfig);
+        let {path, publicPath, filenames, babel, cssSourceMap, cssMinimize,
+            cssExtract, jsSourceMap,
+            alias: {base: baseAlias = {}},
+            defines: {base: baseDefines = {}},
+            extend,
+            plugins: {base: basePlugins = []}
+        } = Object.assign({}, build, buildConfig);
+
         /* eslint-enable fecs-one-var-per-line */
         let baseConfig = {
             output: {
@@ -108,31 +113,36 @@ export default class WebpackConfig {
                         }
                     }
                 ]
-            },
-            plugins: this.isProd
-                ? [
-                    new webpack.optimize.UglifyJsPlugin({
-                        compress: {
-                            warnings: false
-                        },
-                        sourceMap: jsSourceMap
-                    }),
-                    new OptimizeCSSPlugin({
-                        cssProcessorOptions: {
-                            safe: true
-                        }
-                    }),
-                    new SWRegisterWebpackPlugin({
-                        filePath: resolve(__dirname, 'templates/sw-register.js'),
-                        prefix: publicPath
-                    }),
-                    ...basePlugins
-                ]
-                : [
-                    new FriendlyErrorsPlugin(),
-                    ...basePlugins
-                ]
+            }
         };
+
+        let pluginsInProd = [
+            new webpack.optimize.UglifyJsPlugin({
+                compress: {
+                    warnings: false
+                },
+                sourceMap: jsSourceMap
+            }),
+            new OptimizeCSSPlugin({
+                cssProcessorOptions: {
+                    safe: true
+                }
+            })
+        ];
+
+        let pluginsInDev = [
+            new FriendlyErrorsPlugin()
+        ];
+
+        baseConfig.plugins = [
+            ...(this.isProd ? pluginsInProd : pluginsInDev),
+            new webpack.DefinePlugin(baseDefines),
+            new SWRegisterWebpackPlugin({
+                filePath: resolve(__dirname, 'templates/sw-register.js'),
+                prefix: publicPath
+            }),
+            ...basePlugins
+        ];
 
         if (cssExtract) {
             baseConfig.plugins.unshift(
@@ -176,10 +186,7 @@ export default class WebpackConfig {
                 chunkFilename: assetsPath(filenames.chunk)
             },
             resolve: {
-                alias: {
-                    ...clientDefines,
-                    ...clientAlias
-                }
+                alias: clientAlias
             },
             module: {
                 rules: styleLoaders({
@@ -188,13 +195,13 @@ export default class WebpackConfig {
                     cssExtract
                 })
             },
-            devtool: jsSourceMap ? '#source-map' : false,
+            devtool: jsSourceMap ? (this.isDev ? 'cheap-module-eval-source-map' : 'nosources-source-map') : false,
             plugins: [
                 // http://vuejs.github.io/vue-loader/en/workflow/production.html
-                new webpack.DefinePlugin({
+                new webpack.DefinePlugin(Object.assign({
                     'process.env.VUE_ENV': '"client"',
                     'process.env.NODE_ENV': `"${this.env}"`
-                }),
+                }, clientDefines)),
 
                 // split vendor js into its own file
                 new webpack.optimize.CommonsChunkPlugin({
@@ -238,48 +245,23 @@ export default class WebpackConfig {
                     chunks: ['vue']
                 }),
 
-                new ManifestJsonWebpackPlugin({
-                    config: manifest,
-                    publicPath,
-                    path: assetsPath('manifest.json')
-                }),
-
                 // add custom plugins in client side
                 ...clientPlugins
             ]
         });
 
         // Use workbox in prod mode.
-        if (this.isProd && workboxConfig) {
-            if (workboxConfig.appshellUrls && workboxConfig.appshellUrls.length) {
-                workboxConfig.templatedUrls = {};
-                workboxConfig.appshellUrls.forEach(appshellUrl => {
-                    workboxConfig.templatedUrls[appshellUrl] = `${buildVersion}`;
-                });
-            }
+        if (workboxConfig) {
+            // Don't use CDN.
+            workboxConfig.importWorkboxFrom = 'local';
             clientConfig.plugins.push(new WorkboxWebpackPlugin(workboxConfig));
         }
 
         // Copy static files to /dist.
         let copyList = [{
             from: join(globals.rootDir, ASSETS_DIRNAME_IN_DIST),
-            to: ASSETS_DIRNAME_IN_DIST,
-            ignore: ['*.md']
+            to: ASSETS_DIRNAME_IN_DIST
         }];
-        // Copy workbox.dev|prod.js from node_modules manually.
-        if (this.isProd && workboxConfig) {
-            // node_modules/workbox-sw/build/importScripts/workbox-sw.prod.v2.1.2.js
-            const WORKBOX_PATH = require.resolve('workbox-sw');
-            copyList = copyList.concat(
-                getWorkboxFiles(this.isProd)
-                    .map(f => {
-                        return {
-                            from: join(WORKBOX_PATH, `../${f}`),
-                            to: assetsPath(`js/${f}`)
-                        };
-                    })
-            );
-        }
         clientConfig.plugins.push(new CopyWebpackPlugin(copyList));
 
         // Bundle analyzer.
@@ -320,10 +302,7 @@ export default class WebpackConfig {
                 libraryTarget: 'commonjs2'
             },
             resolve: {
-                alias: {
-                    ...serverDefines,
-                    ...serverAlias
-                }
+                alias: serverAlias
             },
             module: {
                 /**
@@ -344,10 +323,10 @@ export default class WebpackConfig {
                 whitelist: [...nodeExternalsWhitelist, /\.(css|vue)$/]
             }),
             plugins: [
-                new webpack.DefinePlugin({
+                new webpack.DefinePlugin(Object.assign({
                     'process.env.VUE_ENV': '"server"',
                     'process.env.NODE_ENV': `"${this.env}"`
-                }),
+                }, serverDefines)),
                 new VueSSRServerPlugin({
                     filename: join(LAVAS_DIRNAME_IN_DIST, SERVER_BUNDLE)
                 }),

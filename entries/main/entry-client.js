@@ -5,19 +5,20 @@
 
 import Vue from 'vue';
 import FastClick from 'fastclick';
-import middleware from '@/core/middleware';
+import {getMiddlewares, execSeries, getClientContext} from '@/core/middleware';
 import lavasConfig from '@/.lavas/config';
 import {createApp} from './app';
 import ProgressBar from '@/components/ProgressBar';
-import {middlewareSeries} from '@/core/utils';
-import {getClientContext} from '@/core/context-client';
 import arrayFindShim from 'array.prototype.find';
+import arrayIncludesShim from 'array-includes';
+import {stringify} from 'querystring';
+
+import 'es6-promise/auto';
+import '@/assets/stylus/main.styl';
 
 // Apply shim & polyfill.
-import 'es6-promise/auto';
 arrayFindShim.shim();
-
-import '@/assets/stylus/main.styl';
+arrayIncludesShim.shim();
 
 let loading = Vue.prototype.$loading = new Vue(ProgressBar).$mount();
 let {App, router, store} = createApp();
@@ -78,7 +79,7 @@ let entryName = context.keys()[0].match(/^\.\/(.*)\/entry-client\.js$/)[1];
  * When `empty-appshell` attribute detected on body, we know current html is appshell.
  */
 let usingAppshell = document.body.hasAttribute('empty-appshell');
-if (!usingAppshell && entryConf.find(e => e.name = entryName).ssr) {
+if (!usingAppshell && entryConf.find(e => e.name === entryName).ssr) {
     app = new App();
     // In SSR client, fetching & mounting should be put in onReady callback.
     router.onReady(() => {
@@ -96,30 +97,6 @@ else {
     app = new App().$mount('#app');
 }
 
-/**
- * execute middlewares
- *
- * @param {Array.<*>} components matched components
- * @param {*} context Vue context
- */
-async function execMiddlewares(components = [], context) {
-    // all + client + components middlewares
-    let middlewareNames = [
-        ...(middConf.all || []),
-        ...(middConf.client || []),
-        ...components
-            .filter(({middleware}) => !!middleware)
-            .reduce((arr, {middleware}) => arr.concat(middleware), [])
-    ];
-
-    let name = middlewareNames.find(name => typeof middleware[name] !== 'function');
-    if (name) {
-        throw new Error(`Unknown middleware ${name}`);
-    }
-
-    await middlewareSeries(middlewareNames.map(name => middleware[name]), context);
-}
-
 function handleMiddlewares() {
     router.beforeEach(async (to, from, next) => {
         // Avoid loop redirect with next(path)
@@ -129,9 +106,27 @@ function handleMiddlewares() {
             return next();
         }
 
+        let matchedComponents = router.getMatchedComponents(to);
+
+        // all + client + components middlewares
+        let middlewareNames = [
+            ...(middConf.all || []),
+            ...(middConf.client || []),
+            ...matchedComponents
+                .filter(({middleware}) => !!middleware)
+                .reduce((arr, {middleware}) => arr.concat(middleware), [])
+        ];
+
+        // get all the middlewares defined by user
+        const middlewares = await getMiddlewares(middlewareNames);
+
+        let unknowMiddleware = middlewareNames.find(name => typeof middlewares[name] !== 'function');
+        if (unknowMiddleware) {
+            throw new Error(`Unknown middleware ${unknowMiddleware}`);
+        }
+
         let nextCalled = false;
-        // nextCalled is true when redirected
-        const nextRedirect = path => {
+        const nextRedirect = opts => {
             if (loading.finish) {
                 loading.finish();
             }
@@ -139,26 +134,27 @@ function handleMiddlewares() {
                 return;
             }
             nextCalled = true;
-            next(path);
+
+            if (opts.external) {
+                opts.query = stringify(opts.query);
+                opts.path = opts.path + (opts.query ? '?' + opts.query : '');
+
+                window.location.replace(opts.path);
+                return next();
+            }
+            next(opts);
         };
 
-        // Update context
-        const ctx = getClientContext({
+        // create a new context for middleware, contains store, route etc.
+        let contextInMiddleware = getClientContext({
             to,
             from,
             store,
             next: nextRedirect
         }, app);
 
-        let matched = await router.getMatchedComponents(to);
-
-        if (!matched.length) {
-            // can't find matched component, use href jump
-            window.location.href = toPath;
-            return next();
-        }
-
-        await execMiddlewares.call(this, matched, ctx);
+        let matchedMiddlewares = middlewareNames.map(name => middlewares[name]);
+        await execSeries(matchedMiddlewares, contextInMiddleware);
 
         if (!nextCalled) {
             next();

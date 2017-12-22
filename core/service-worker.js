@@ -1,33 +1,44 @@
 /**
  * @file service-worker.js with workbox api
- * @desc [example](https://workbox-samples.glitch.me/examples/workbox-sw/)
+ * @desc [example](https://developers.google.com/web/tools/workbox/modules/)
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
-/**
- * Import workbox-sw with `importScripts` function.
- * 1. Need adding publicPath manually.
- * 2. If the version of workbox updated, modification is also required.
- */
-importScripts('/game/static/js/workbox-sw.prod.v2.1.2.js');
+importScripts('/static/js/workbox-v3.0.0-alpha.3/workbox-sw.js');
 
-const workboxSW = new WorkboxSW({
-    // cacheId: 'your-custom-cache-name',
-    // directoryIndex: 'index.html',
-    ignoreUrlParametersMatching: [/^utm_/],
-    skipWaiting: true,
-    clientsClaim: true
+workbox.setConfig({
+    modulePathPrefix: '/static/js/workbox-v3.0.0-alpha.3/'
 });
+
+var APP_SHELL_REVISION = self.__precacheManifest.reduce(function(prev, cur) {
+    return prev + cur.revision;
+}, '');
 
 // Define precache injection point.
-workboxSW.precache([]);
+workbox.precaching.precacheAndRoute(
+    (self.__precacheManifest || [])
+        // Exclude .map, sw-register.js and hot-update files in development mode.
+        .filter(function(entry) {
+            return !/((\.map)|(\.hot-update\.js(on)?)|(sw-register\.js))$/.test(entry.url);
+        })
+        // In SSR mode, request `/appshell` in precaching process.
+        // .concat([
+        //     {
+        //         revision: APP_SHELL_REVISION,
+        //         url: '/appshell/main'
+        //     }
+        // ])
+);
 
-// Respond to navigation requests with appshell precached.
+// Control current page ASAP and skip the default service worker lifecycle.
+workbox.skipWaiting();
+workbox.clientsClaim();
 
-workboxSW.router.registerNavigationRoute('/appshell', {
-    blacklist: [/\.(js|css)$/]
-});
+// In SPA/MPA, respond to navigation requests with HTML precached.
+workbox.routing.registerNavigationRoute('main.html');
+// In SSR mode, respond to navigation requests with appshell precached.
+// workbox.routing.registerNavigationRoute('/appshell/main');
 
 // Define runtime cache.
-workboxSW.router.registerRoute(new RegExp('https://query\.yahooapis\.com/v1/public/yql'),
-    workboxSW.strategies.networkFirst());
+workbox.routing.registerRoute(new RegExp('https://query\.yahooapis\.com/v1/public/yql'),
+    workbox.strategies.networkFirst());

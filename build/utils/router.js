@@ -4,11 +4,12 @@
  */
 import {resolve, dirname, basename, posix} from 'path';
 import glob from 'glob';
+import pathToRegexp from 'path-to-regexp';
 
 export function routes2Reg(routes) {
     let reg;
     if (typeof routes === 'string') {
-        reg = new RegExp('^' + routes.replace(/\/:[^\/]*/g, '/[^\/]+') + '\/?');
+        reg = pathToRegexp(routes);
     }
     else if (routes instanceof RegExp) {
         return routes;

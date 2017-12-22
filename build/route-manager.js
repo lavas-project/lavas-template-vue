@@ -11,10 +11,10 @@ import {join} from 'path';
 import {createHash} from 'crypto';
 import serialize from 'serialize-javascript';
 import template from 'lodash.template';
-import pathToRegexp from 'path-to-regexp';
 
-import {generateRoutes, matchUrl} from './utils/router';
+import {generateRoutes, matchUrl, routes2Reg} from './utils/router';
 import {writeFileInDev} from './utils/webpack';
+import {distLavasPath} from './utils/path';
 
 const routerTemplate = join(__dirname, './templates/router.tmpl');
 
@@ -24,7 +24,7 @@ export default class RouteManager {
         this.config = config;
         this.isDev = env === 'development';
 
-        if (this.config) {
+        if (this.config.globals && this.config.globals.rootDir) {
             this.lavasDir = join(this.config.globals.rootDir, './.lavas');
         }
 
@@ -86,7 +86,7 @@ export default class RouteManager {
             this.flatRoutes.add(route);
 
             // rewrite route path with rules
-            route.path = this.rewriteRoutePath(rewriteRules, route.path);
+            route.rewritePath = this.rewriteRoutePath(rewriteRules, route.path);
             route.fullPath = parentPath ? `${parentPath}/${route.path}` : route.path;
 
             // find error route
@@ -119,7 +119,7 @@ export default class RouteManager {
                 } = routeConfig;
 
                 Object.assign(route, routeConfig, {
-                    path: routePath || route.path,
+                    rewritePath: routePath || route.rewritePath,
                     lazyLoading: lazyLoading || !!chunkname
                 });
             }
@@ -138,9 +138,9 @@ export default class RouteManager {
              * turn route fullpath into regexp
              * eg. /detail/:id => /^\/detail\/[^\/]+\/?$/
              */
-            route.pathRegExp = route.path === '*'
+            route.pathRegExp = route.rewritePath === '*'
                 ? /^.*$/
-                : pathToRegexp(route.path);
+                : routes2Reg(route.rewritePath);
 
             // merge recursively
             if (route.children && route.children.length) {
@@ -164,7 +164,7 @@ export default class RouteManager {
                 // see https://github.com/vuejs/vue-router/issues/724
                 // Solution: write a normal path and add alias with '*'
                 return prev + `{
-                    path: '${cur.path}',
+                    path: '${cur.rewritePath}',
                     name: '${cur.name}',
                     component: _${cur.hash},
                     meta: ${JSON.stringify(cur.meta || {})},
@@ -184,7 +184,7 @@ export default class RouteManager {
             }
 
             return prev + `{
-                path: '${cur.path}',
+                path: '${cur.rewritePath}',
                 name: '${cur.name}',
                 component: _${cur.hash},
                 meta: ${JSON.stringify(cur.meta || {})},
@@ -202,6 +202,7 @@ export default class RouteManager {
      */
     async writeRoutesSourceFile() {
         let writeFile = this.isDev ? writeFileInDev : outputFile;
+
         await Promise.all(this.config.entry.map(async entryConfig => {
             let {
                 name: entryName,
@@ -267,6 +268,49 @@ export default class RouteManager {
         }));
     }
 
+    async writeRouresJsonFile() {
+        let generateRoutesJson = route => {
+            let tmpRoute = {
+                path: route.rewritePath,
+                name: route.name,
+                meta: route.meta || {}
+            };
+
+            if (route.alias) {
+                tmpRoute.alias = route.alias;
+            }
+
+            if (route.children) {
+                tmpRoute.children = [];
+                route.children.forEach(child => tmpRoute.children.push(generateRoutesJson(child)));
+            }
+
+            return tmpRoute;
+        };
+
+        let routesJson = [];
+        this.config.entry.forEach(entry => {
+            let entryConfig = {
+                name: entry.name,
+                ssr: entry.ssr,
+                mode: entry.mode,
+                base: entry.base,
+                routes: entry.routes.toString(),
+                routeArr: []
+            };
+
+            this.routes
+                .filter(route => route.entryName === entry.name)
+                .forEach(route => entryConfig.routeArr.push(generateRoutesJson(route)));
+
+            routesJson.push(entryConfig);
+        });
+
+        await outputFile(
+            distLavasPath(this.config.build.path, 'routes.json'),
+            JSON.stringify(routesJson, null, 4));
+    }
+
     /**
      * output routes.js into .lavas according to /pages
      *
@@ -285,6 +329,10 @@ export default class RouteManager {
 
         // write routes for each entry
         await this.writeRoutesSourceFile();
+
+        if (!this.isDev) {
+            await this.writeRouresJsonFile();
+        }
 
         console.log('[Lavas] all routes are already generated.');
     }

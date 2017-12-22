@@ -6,12 +6,10 @@
 /**
  * generate error middleware
  *
- * @param {Object} core lavas core
+ * @param {string} errPath errPath
  * @return {Function} koa middleware
  */
-export default function (core) {
-
-    const errPath = core.config.errorHandler.errorPath;
+export default function (errPath) {
 
     return async (err, req, res, next) => {
         if (req.lavasIgnoreFlag) {
@@ -37,7 +35,7 @@ export default function (core) {
         // redirect to the corresponding url
         let target = `${errPath}?error=${encodeURIComponent(errorMsg)}`;
         if (errPath) {
-            res.writeHead(301, {Location: target});
+            res.writeHead(302, {Location: target});
         }
 
         res.end();

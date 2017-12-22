@@ -6,12 +6,19 @@
 import {readFile, pathExists} from 'fs-extra';
 import {join} from 'path';
 import glob from 'glob';
-import {merge} from 'lodash';
+import {merge, isArray} from 'lodash';
 import {CONFIG_FILE, LAVAS_CONFIG_FILE} from './constants';
 import {distLavasPath} from './utils/path';
 import * as JsonUtil from './utils/json';
 
+function mergeArray(a, b) {
+    if (isArray(a)) {
+        return a.concat(b);
+    }
+}
+
 const DEFAULT_CONFIG = {
+    buildVersion: null,
     build: {
         publicPath: '/',
         filenames: {
@@ -23,12 +30,16 @@ const DEFAULT_CONFIG = {
             img: 'img/[name].[hash:8].[ext]',
             fonts: 'fonts/[name].[hash:8].[ext]'
         },
+        babel: {
+            presets: ['vue-app'],
+            babelrc: false
+        },
         cssExtract: false,
         cssMinimize: true,
         cssSourceMap: true,
         jsSourceMap: true,
         bundleAnalyzerReport: false,
-        compress: true,
+        compress: false,
         defines: {
             base: {},
             client: {},
@@ -49,10 +60,6 @@ const DEFAULT_CONFIG = {
         extend: null,
         ssrCopy: []
     },
-    babel: {
-        presets: ['vue-app'],
-        babelrc: false
-    },
     entry: [],
     router: {},
     errorHandler: {
@@ -63,21 +70,21 @@ const DEFAULT_CONFIG = {
         server: [],
         client: []
     },
-    manifest: {},
     serviceWorker: null,
     production: {
         build: {
-            cssExtract: true
+            cssExtract: true,
+            compress: true
         }
     },
     development: {
         build: {
             filenames: {
                 entry: 'js/[name].[hash:8].js'
+            },
+            babel: {
+                cacheDirectory: true
             }
-        },
-        babel: {
-            cacheDirectory: true
         }
     }
 };
@@ -86,6 +93,7 @@ const DEFAULT_CONFIG = {
  * config items used in runtime
  */
 export const RUMTIME_ITEMS = {
+    buildVersion: true,
     build: {
         publicPath: true,
         compress: true
@@ -93,7 +101,11 @@ export const RUMTIME_ITEMS = {
     entry: true,
     middleware: true,
     router: true,
-    manifest: true
+    errorHandler: true,
+    manifest: true,
+    serviceWorker: {
+        swDest: true
+    }
 };
 
 export default class ConfigReader {
@@ -116,10 +128,10 @@ export default class ConfigReader {
                 rootDir: this.cwd
             },
             buildVersion: Date.now()
-        });
+        }, mergeArray);
 
         if (config[this.env]) {
-            merge(config, config[this.env]);
+            merge(config, config[this.env], mergeArray);
         }
 
         // read from lavas.config.js
@@ -127,7 +139,7 @@ export default class ConfigReader {
         if (await pathExists(singleConfigPath)) {
             console.log('[Lavas] read lavas.config.js.');
             delete require.cache[require.resolve(singleConfigPath)];
-            merge(config, await import(singleConfigPath));
+            merge(config, await import(singleConfigPath), mergeArray);
         }
         else {
             let configDir = join(this.cwd, 'config');
@@ -161,14 +173,14 @@ export default class ConfigReader {
                 delete require.cache[require.resolve(configPath)];
                 let exportContent = await import(configPath);
                 cur[name] = typeof exportContent === 'object' && exportContent !== null
-                    ? merge(cur[name], exportContent) : exportContent;
+                    ? merge(cur[name], exportContent, mergeArray) : exportContent;
             }));
 
             let temp = config.env || {};
 
             // merge config according env
             if (temp[this.env]) {
-                merge(config, temp[this.env]);
+                merge(config, temp[this.env], mergeArray);
             }
         }
 
