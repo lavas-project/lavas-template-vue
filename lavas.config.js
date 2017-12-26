@@ -27,8 +27,8 @@ module.exports = {
         ]
     },
     router: {
-        name: 'main',
         ssr: true,
+        // templateFile: 'index.html.sf.tmpl',
         mode: 'history',
         base: '/',
         pageTransition: {

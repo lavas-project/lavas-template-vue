@@ -22,7 +22,7 @@ arrayIncludesShim.shim();
 
 let loading = Vue.prototype.$loading = new Vue(ProgressBar).$mount();
 let {App, router, store} = createApp();
-let {entry: entryConf = [], middleware: middConf = {}} = lavasConfig;
+let {router: routerConf, middleware: middConf = {}} = lavasConfig;
 let app;
 
 // Sync with server side state.
@@ -70,16 +70,13 @@ Vue.mixin({
 
 handleMiddlewares();
 
-// find correct entry current entry-client.js belongs to
-let context = require.context('../', true, /^.*\/entry-client\.js$/);
-let entryName = context.keys()[0].match(/^\.\/(.*)\/entry-client\.js$/)[1];
 /**
  * When service-worker handles all navigation requests,
  * the same appshell is always served in which condition data should be fetched in client side.
  * When `empty-appshell` attribute detected on body, we know current html is appshell.
  */
 let usingAppshell = document.body.hasAttribute('empty-appshell');
-if (!usingAppshell && entryConf.find(e => e.name = entryName).ssr) {
+if (!usingAppshell && routerConf.ssr) {
     app = new App();
     // In SSR client, fetching & mounting should be put in onReady callback.
     router.onReady(() => {
