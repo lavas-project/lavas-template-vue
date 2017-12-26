@@ -26,19 +26,16 @@ module.exports = {
             }
         ]
     },
-    entry: [
-        {
-            name: 'main',
-            ssr: true,
-            mode: 'history',
-            base: '/',
-            routes: /^.*$/,
-            pageTransition: {
-                type: 'fade',
-                transitionClass: 'fade'
-            }
+    router: {
+        name: 'main',
+        ssr: true,
+        mode: 'history',
+        base: '/',
+        pageTransition: {
+            type: 'fade',
+            transitionClass: 'fade'
         }
-    ],
+    },
     serviceWorker: {
         swSrc: path.join(__dirname, 'core/service-worker.js'),
         swDest: path.join(BUILD_PATH, 'service-worker.js'),
