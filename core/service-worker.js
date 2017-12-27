@@ -22,4 +22,4 @@ const workboxSW = new WorkboxSW({
 workboxSW.precache([]);
 
 // Define response for HTML request.
-workboxSW.router.registerNavigationRoute('/appshell/main');
+workboxSW.router.registerNavigationRoute('/appshell/index');
