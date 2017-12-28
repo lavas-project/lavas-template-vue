@@ -1,33 +1,25 @@
 /**
  * @file service-worker.js with workbox api
- * @desc [example](https://developers.google.com/web/tools/workbox/modules/)
+ * @desc [example](https://workbox-samples.glitch.me/examples/workbox-sw/)
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
-importScripts('/static/js/workbox-v3.0.0-alpha.3/workbox-sw.js');
+/**
+ * Import workbox-sw with `importScripts` function.
+ * 1. Need adding publicPath manually.
+ * 2. If the version of workbox updated, modification is also required.
+ */
+importScripts('/static/js/workbox-sw.prod.v2.1.2.js');
 
-workbox.setConfig({
-    modulePathPrefix: '/static/js/workbox-v3.0.0-alpha.3/'
+const workboxSW = new WorkboxSW({
+    cacheId: 'lavas-cache',
+    ignoreUrlParametersMatching: [/^utm_/],
+    skipWaiting: true,
+    clientsClaim: true
 });
 
 // Define precache injection point.
-workbox.precaching.precacheAndRoute(
-    (self.__precacheManifest || [])
-        // Exclude .map, sw-register.js and hot-update files in development mode.
-        .filter(function(entry) {
-            return !/((\.map)|(\.hot-update\.js(on)?)|(sw-register\.js))$/.test(entry.url);
-        })
-);
+workboxSW.precache([]);
 
-// Control current page ASAP and skip the default service worker lifecycle.
-workbox.skipWaiting();
-workbox.clientsClaim();
-
-// In SPA/MPA, respond to navigation requests with HTML precached.
-// workbox.routing.registerNavigationRoute('index.html');
-// In SSR mode, respond to navigation requests with appshell precached.
-workbox.routing.registerNavigationRoute('/appshell');
-
-// Define runtime cache.
-workbox.routing.registerRoute(new RegExp('https://query\.yahooapis\.com/v1/public/yql'),
-    workbox.strategies.networkFirst());
+// Define response for HTML request.
+workboxSW.router.registerNavigationRoute('/appshell/main');
