@@ -39,8 +39,8 @@ module.exports = {
         swSrc: path.join(__dirname, 'core/service-worker.js'),
         swDest: 'service-worker.js',
         globDirectory: '.',
-        templatedUrls: {
-            '/appshell': '123'
-        }
+        // templatedUrls: {
+        //     '/appshell': '123'
+        // }
     }
 };

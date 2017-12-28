@@ -82,10 +82,9 @@ export default class Renderer {
     async createWithBundle() {
         this.serverBundle = await readJson(distLavasPath(this.cwd, SERVER_BUNDLE));
 
-        let {ssr} = this.config.router;
         let templatePath = distLavasPath(this.cwd, this.getTemplateName());
         let manifestPath = distLavasPath(this.cwd, CLIENT_MANIFEST);
-        if (ssr) {
+        if (this.config.ssr) {
             this.templates = await readFile(templatePath, 'utf-8');
             this.clientManifest = await readJson(manifestPath);
         }
@@ -100,7 +99,7 @@ export default class Renderer {
         await webpackCompile([this.clientConfig, this.serverConfig]);
 
         // copy index.template.html to dist/lavas/
-        if (this.config.router.ssr) {
+        if (this.config.ssr) {
             let templateContent = await this.getTemplate(this.config.router.base);
             let distTemplatePath = distLavasPath(
                 this.config.build.path,

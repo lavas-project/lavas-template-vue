@@ -168,7 +168,7 @@ export default class WebpackConfig {
      * @return {Object} client base config
      */
     client(buildConfig = {}) {
-        let {buildVersion, globals, build, manifest, serviceWorker: workboxConfig} = this.config;
+        let {buildVersion, ssr, globals, build, manifest, serviceWorker: workboxConfig} = this.config;
 
         /* eslint-disable fecs-one-var-per-line */
         let {publicPath, filenames, cssSourceMap, cssMinimize, cssExtract,
@@ -253,6 +253,11 @@ export default class WebpackConfig {
         if (workboxConfig) {
             // Don't use CDN.
             workboxConfig.importWorkboxFrom = 'disabled';
+            if (ssr) {
+                workboxConfig.templatedUrls = {
+                    '/appshell': `${buildVersion}`
+                };
+            }
             clientConfig.plugins.push(new WorkboxWebpackPlugin.InjectManifest(workboxConfig));
         }
 
