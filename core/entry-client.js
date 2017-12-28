@@ -5,7 +5,7 @@
 
 import Vue from 'vue';
 import FastClick from 'fastclick';
-import {getMiddlewares, execSeries, getClientContext} from '@/core/middleware';
+import {getMiddlewares, execSeries, getClientContext} from '@/.lavas/middleware';
 import lavasConfig from '@/.lavas/config';
 import {createApp} from './app';
 import ProgressBar from '@/components/ProgressBar';
