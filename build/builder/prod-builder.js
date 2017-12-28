@@ -27,11 +27,10 @@ export default class ProdBuilder extends BaseBuilder {
         await emptyDir(build.path);
 
         await this.routeManager.buildRoutes();
-        await this.writeLavasLink();
         await this.writeRuntimeConfig();
 
         // SSR build process
-        if (this.ssrExists) {
+        if (this.ssr) {
             console.log('[Lavas] SSR build starting...');
             // webpack client & server config
             let clientConfig = this.webpackConfig.client();
@@ -72,11 +71,11 @@ export default class ProdBuilder extends BaseBuilder {
             console.log('[Lavas] SSR build completed.');
         }
 
-        // MPA build process
-        if (this.mpaExists) {
-            console.log('[Lavas] MPA build starting...');
+        // SPA build process
+        if (!this.ssr) {
+            console.log('[Lavas] SPA build starting...');
             await webpackCompile(await this.createMPAConfig());
-            console.log('[Lavas] MPA build completed.');
+            console.log('[Lavas] SPA build completed.');
         }
     }
 }

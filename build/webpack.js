@@ -15,7 +15,6 @@ import CopyWebpackPlugin from 'copy-webpack-plugin';
 import VueSSRServerPlugin from 'vue-server-renderer/server-plugin';
 import {BundleAnalyzerPlugin} from 'webpack-bundle-analyzer';
 import SWRegisterWebpackPlugin from 'sw-register-webpack-plugin';
-// import WorkboxWebpackPlugin from 'workbox-webpack-plugin';
 import WorkboxWebpackPlugin from './plugins/workbox-webpack-plugin';
 
 import {vueLoaders, styleLoaders} from './utils/loader';
@@ -253,8 +252,8 @@ export default class WebpackConfig {
         // Use workbox in prod mode.
         if (workboxConfig) {
             // Don't use CDN.
-            workboxConfig.importWorkboxFrom = 'local';
-            clientConfig.plugins.push(new WorkboxWebpackPlugin(workboxConfig));
+            workboxConfig.importWorkboxFrom = 'disabled';
+            clientConfig.plugins.push(new WorkboxWebpackPlugin.InjectManifest(workboxConfig));
         }
 
         // Copy static files to /dist.

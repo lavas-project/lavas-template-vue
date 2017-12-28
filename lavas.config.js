@@ -11,6 +11,7 @@ const isDev = process.env.NODE_ENV === 'development';
 const isProd = process.env.NODE_ENV === 'production';
 
 module.exports = {
+    ssr: true,
     build: {
         path: BUILD_PATH,
         publicPath: '/',
@@ -26,22 +27,20 @@ module.exports = {
             }
         ]
     },
-    entry: [
-        {
-            name: 'main',
-            ssr: false,
-            mode: 'history',
-            base: '/',
-            routes: /^.*$/,
-            pageTransition: {
-                type: 'fade',
-                transitionClass: 'fade'
-            }
+    router: {
+        mode: 'history',
+        base: '/',
+        pageTransition: {
+            type: 'fade',
+            transitionClass: 'fade'
         }
-    ],
+    },
     serviceWorker: {
         swSrc: path.join(__dirname, 'core/service-worker.js'),
-        swDest: path.join(BUILD_PATH, 'service-worker.js'),
-        dontCacheBustUrlsMatching: /\.\w{8}\./
+        swDest: 'service-worker.js',
+        globDirectory: '.',
+        templatedUrls: {
+            '/appshell': '123'
+        }
     }
 };

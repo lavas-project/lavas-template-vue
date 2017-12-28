@@ -1,6 +1,6 @@
 /**
  * @file client entry
- * @author lavas
+ * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
 import Vue from 'vue';
@@ -11,6 +11,7 @@ import {createApp} from './app';
 import ProgressBar from '@/components/ProgressBar';
 import arrayFindShim from 'array.prototype.find';
 import arrayIncludesShim from 'array-includes';
+import {stringify} from 'querystring';
 
 import 'es6-promise/auto';
 import '@/assets/stylus/main.styl';
@@ -21,7 +22,7 @@ arrayIncludesShim.shim();
 
 let loading = Vue.prototype.$loading = new Vue(ProgressBar).$mount();
 let {App, router, store} = createApp();
-let {entry: entryConf = [], middleware: middConf = {}} = lavasConfig;
+let {ssr, middleware: middConf = {}} = lavasConfig;
 let app;
 
 // Sync with server side state.
@@ -69,16 +70,13 @@ Vue.mixin({
 
 handleMiddlewares();
 
-// find correct entry current entry-client.js belongs to
-let context = require.context('../', true, /^.*\/entry-client\.js$/);
-let entryName = context.keys()[0].match(/^\.\/(.*)\/entry-client\.js$/)[1];
 /**
  * When service-worker handles all navigation requests,
  * the same appshell is always served in which condition data should be fetched in client side.
  * When `empty-appshell` attribute detected on body, we know current html is appshell.
  */
 let usingAppshell = document.body.hasAttribute('empty-appshell');
-if (!usingAppshell && entryConf.find(e => e.name = entryName).ssr) {
+if (!usingAppshell && ssr) {
     app = new App();
     // In SSR client, fetching & mounting should be put in onReady callback.
     router.onReady(() => {
@@ -105,13 +103,7 @@ function handleMiddlewares() {
             return next();
         }
 
-        let matchedComponents = await router.getMatchedComponents(to);
-
-        if (!matchedComponents.length) {
-            // can't find matched component, use href jump
-            window.location.href = toPath;
-            return next();
-        }
+        let matchedComponents = router.getMatchedComponents(to);
 
         // all + client + components middlewares
         let middlewareNames = [
@@ -123,7 +115,7 @@ function handleMiddlewares() {
         ];
 
         // get all the middlewares defined by user
-        const middlewares = getMiddlewares(middlewareNames);
+        const middlewares = await getMiddlewares(middlewareNames);
 
         let unknowMiddleware = middlewareNames.find(name => typeof middlewares[name] !== 'function');
         if (unknowMiddleware) {
@@ -131,8 +123,7 @@ function handleMiddlewares() {
         }
 
         let nextCalled = false;
-        // nextCalled is true when redirected
-        const nextRedirect = path => {
+        const nextRedirect = opts => {
             if (loading.finish) {
                 loading.finish();
             }
@@ -140,7 +131,15 @@ function handleMiddlewares() {
                 return;
             }
             nextCalled = true;
-            next(path);
+
+            if (opts.external) {
+                opts.query = stringify(opts.query);
+                opts.path = opts.path + (opts.query ? '?' + opts.query : '');
+
+                window.location.replace(opts.path);
+                return next();
+            }
+            next(opts);
         };
 
         // create a new context for middleware, contains store, route etc.

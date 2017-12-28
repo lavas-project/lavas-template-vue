@@ -19,6 +19,7 @@ function mergeArray(a, b) {
 
 const DEFAULT_CONFIG = {
     buildVersion: null,
+    ssr: true,
     build: {
         publicPath: '/',
         filenames: {
@@ -60,7 +61,6 @@ const DEFAULT_CONFIG = {
         extend: null,
         ssrCopy: []
     },
-    entry: [],
     router: {},
     errorHandler: {
         errorPath: '/error'
@@ -93,16 +93,15 @@ const DEFAULT_CONFIG = {
  * config items used in runtime
  */
 export const RUMTIME_ITEMS = {
+    ssr: true,
     buildVersion: true,
     build: {
         publicPath: true,
         compress: true
     },
-    entry: true,
     middleware: true,
     router: true,
     errorHandler: true,
-    manifest: true,
     serviceWorker: {
         swDest: true
     }

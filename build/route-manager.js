@@ -79,9 +79,9 @@ export default class RouteManager {
          * webpack hot middleware will throw a "Duplicate declaration" error.
          */
         let timestamp = this.isDev ? (new Date()).getTime() : '';
+        let errorIndex;
 
-        routes.forEach(route => {
-
+        routes.forEach((route, index) => {
             // add to set
             this.flatRoutes.add(route);
 
@@ -92,16 +92,9 @@ export default class RouteManager {
             // find error route
             if (route.fullPath === this.config.errorHandler.errorPath) {
                 this.errorRoute = route;
-            }
-            // map entry to every route
-            else {
-                let entry = this.config.entry.find(
-                    entryConfig => matchUrl(entryConfig.routes, route.fullPath)
-                );
-
-                if (entry) {
-                    route.entryName = entry.name;
-                }
+                // add default error route alias
+                this.errorRoute.alias = '*';
+                errorIndex = index;
             }
 
             // find route in config
@@ -124,18 +117,15 @@ export default class RouteManager {
                 });
             }
 
-            if (route.name) {
-                /**
-                 * generate hash for each route which will be used in routes.js template,
-                 * an underscore "_" will be added in front of each hash, because JS variables can't
-                 * start with numbers
-                 */
-                route.hash = timestamp
-                    + createHash('md5').update(route.name).digest('hex');
-            }
+            /**
+             * generate hash for each route which will be used in routes.js template,
+             * an underscore "_" will be added in front of each hash, because JS variables can't
+             * start with numbers
+             */
+            route.hash = timestamp + createHash('md5').update(route.component).digest('hex');
 
             /**
-             * turn route fullpath into regexp
+             * turn route fullPath into regexp
              * eg. /detail/:id => /^\/detail\/[^\/]+\/?$/
              */
             route.pathRegExp = route.rewritePath === '*'
@@ -147,6 +137,11 @@ export default class RouteManager {
                 this.mergeWithConfig(route.children, routesConfig, rewriteRules, route.fullPath);
             }
         });
+
+        // remove errorRoute and add it to the end
+        if (errorIndex !== undefined) {
+            routes.splice(errorIndex, 1);
+        }
     }
 
     /**
@@ -154,121 +149,98 @@ export default class RouteManager {
      * based on nested routes
      *
      * @param {Array} routes route list
-     * @param {boolean} recursive need recursive?
      * @return {string} content
      */
-    generateRoutesContent(routes, recursive) {
-        let commonRoutes = routes.reduce((prev, cur, index) => {
-            if (!recursive && index === routes.length - 1) {
-                // Call `this.$router.replace({name: xxx})` when path of 'xxx' contains '*' will throw error
-                // see https://github.com/vuejs/vue-router/issues/724
-                // Solution: write a normal path and add alias with '*'
-                return prev + `{
-                    path: '${cur.rewritePath}',
-                    name: '${cur.name}',
-                    component: _${cur.hash},
-                    meta: ${JSON.stringify(cur.meta || {})},
-                    alias: '*'
-                },`;
+    generateRoutesContent(routes) {
+        const generate = routes => routes.map(cur => {
+            // Call `this.$router.replace({name: xxx})` when path of 'xxx' contains '*' will throw error
+            // see https://github.com/vuejs/vue-router/issues/724
+            // Solution: write a normal path and add alias with '*'
+            let route = {
+                path: cur.rewritePath,
+                component: `_${cur.hash}`,
+                meta: cur.meta || {}
+            };
+
+            if (cur.name) {
+                route.name = cur.name;
             }
 
-            let childrenContent = '';
-            let aliasContent = '';
-            if (cur.children) {
-                childrenContent = `children: [
-                    ${this.generateRoutesContent(cur.children, true)}
-                ]`;
-            }
             if (cur.alias) {
-                aliasContent = `alias: '${cur.alias}',`;
+                route.alias = cur.alias;
             }
 
-            return prev + `{
-                path: '${cur.rewritePath}',
-                name: '${cur.name}',
-                component: _${cur.hash},
-                meta: ${JSON.stringify(cur.meta || {})},
-                ${aliasContent}
-                ${childrenContent}
-            },`;
-        }, '');
+            if (cur.children) {
+                route.children = generate(cur.children);
+            }
 
-        return commonRoutes;
+            return route;
+        });
+
+        return JSON.stringify(generate(routes), undefined, 4)
+            .replace(/"component": "(_.+)"/mg, '"component": $1');
     }
 
     /**
-     * write routes.js for each entry
+     * write routes.js
      *
      */
     async writeRoutesSourceFile() {
+        // add errorRoute to the end
+        this.routes.push(this.errorRoute);
+
         let writeFile = this.isDev ? writeFileInDev : outputFile;
+        let {
+            mode = 'history',
+            base = '/',
+            pageTransition = {enable: false},
+            scrollBehavior
+        } = this.config.router;
 
-        await Promise.all(this.config.entry.map(async entryConfig => {
-            let {
-                name: entryName,
-                mode = 'history',
-                base = '/',
-                pageTransition = {enable: false},
-                scrollBehavior
-            } = entryConfig;
+        // set page transition, support 2 types: slide|fade
+        let transitionType = pageTransition.type;
+        if (transitionType === 'slide') {
+            pageTransition = Object.assign({
+                enable: true,
+                slideLeftClass: 'slide-left',
+                slideRightClass: 'slide-right',
+                alwaysBackPages: ['index'],
+                alwaysForwardPages: []
+            }, pageTransition);
+        }
+        else if (transitionType) {
+            pageTransition = Object.assign({
+                enable: true,
+                transitionClass: transitionType
+            }, pageTransition);
+        }
+        else {
+            console.log('[Lavas] page transition type is required.');
+            pageTransition = {enable: false};
+        }
 
-            let entryRoutes = this.routes.filter(route => route.entryName === entryName);
-            let entryFlatRoutes = new Set();
-            this.flatRoutes.forEach(flatRoute => {
-                if (flatRoute.entryName === entryName) {
-                    entryFlatRoutes.add(flatRoute);
-                }
-            });
+        // scrollBehavior
+        if (scrollBehavior) {
+            scrollBehavior = serialize(scrollBehavior).replace('scrollBehavior(', 'function(');
+        }
 
-            // set page transition, support 2 types: slide|fade
-            let transitionType = pageTransition.type;
-            if (transitionType === 'slide') {
-                pageTransition = Object.assign({
-                    enable: true,
-                    slideLeftClass: 'slide-left',
-                    slideRightClass: 'slide-right',
-                    alwaysBackPages: ['index'],
-                    alwaysForwardPages: []
-                }, pageTransition);
-            }
-            else if (transitionType) {
-                pageTransition = Object.assign({
-                    enable: true,
-                    transitionClass: transitionType
-                }, pageTransition);
-            }
-            else {
-                console.log('[Lavas] page transition type is required.');
-                pageTransition = {enable: false};
-            }
+        let routesFilePath = join(this.lavasDir, `router.js`);
+        let routesContent = this.generateRoutesContent(this.routes);
 
-            // add error route
-            entryRoutes.push(this.errorRoute);
-            entryFlatRoutes.add(this.errorRoute);
-
-            // scrollBehavior
-            if (scrollBehavior) {
-                scrollBehavior = serialize(scrollBehavior).replace('scrollBehavior(', 'function(');
-            }
-
-            let routesFilePath = join(this.lavasDir, `${entryName}/router.js`);
-            let routesContent = this.generateRoutesContent(entryRoutes);
-
-            let routesFileContent = template(await readFile(routerTemplate, 'utf8'))({
-                router: {
-                    mode,
-                    base,
-                    routes: entryFlatRoutes,
-                    scrollBehavior,
-                    pageTransition
-                },
-                routesContent
-            });
-            await writeFile(routesFilePath, routesFileContent);
-        }));
+        let routesFileContent = template(await readFile(routerTemplate, 'utf8'))({
+            router: {
+                mode,
+                base,
+                routes: this.flatRoutes,
+                scrollBehavior,
+                pageTransition
+            },
+            routesContent
+        });
+        await writeFile(routesFilePath, routesFileContent);
     }
 
-    async writeRouresJsonFile() {
+    async writeRoutesJsonFile() {
         let generateRoutesJson = route => {
             let tmpRoute = {
                 path: route.rewritePath,
@@ -288,27 +260,20 @@ export default class RouteManager {
             return tmpRoute;
         };
 
-        let routesJson = [];
-        this.config.entry.forEach(entry => {
-            let entryConfig = {
-                name: entry.name,
-                ssr: entry.ssr,
-                mode: entry.mode,
-                base: entry.base,
-                routes: entry.routes.toString(),
-                routeArr: []
-            };
+        let routerConfig = this.config.router;
+        let routesJson = {
+            ssr: routerConfig.ssr,
+            mode: routerConfig.mode,
+            base: routerConfig.base,
+            routes: []
+        };
 
-            this.routes
-                .filter(route => route.entryName === entry.name)
-                .forEach(route => entryConfig.routeArr.push(generateRoutesJson(route)));
-
-            routesJson.push(entryConfig);
-        });
+        this.routes.forEach(route => routesJson.routes.push(generateRoutesJson(route)));
 
         await outputFile(
             distLavasPath(this.config.build.path, 'routes.json'),
-            JSON.stringify(routesJson, null, 4));
+            JSON.stringify(routesJson, null, 4)
+        );
     }
 
     /**
@@ -316,22 +281,23 @@ export default class RouteManager {
      *
      */
     async buildRoutes() {
-        const {routes: routesConfig = [], rewrite: rewriteRules = []} = this.config.router;
+        const {routes: routesConfig = [], rewrite: rewriteRules = [], pathRule} = this.config.router;
         this.flatRoutes = new Set();
 
         console.log('[Lavas] auto compile routes...');
 
         // generate routes according to pages dir
-        this.routes = await generateRoutes(join(this.lavasDir, '../pages'));
+        this.routes = await generateRoutes(join(this.lavasDir, '../pages'), {routerOption: {pathRule}});
 
         // merge with routes' config
         this.mergeWithConfig(this.routes, routesConfig, rewriteRules);
 
-        // write routes for each entry
+        // write route.js
         await this.writeRoutesSourceFile();
 
         if (!this.isDev) {
-            await this.writeRouresJsonFile();
+            // write routes.json
+            await this.writeRoutesJsonFile();
         }
 
         console.log('[Lavas] all routes are already generated.');
