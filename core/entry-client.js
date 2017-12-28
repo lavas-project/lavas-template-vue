@@ -22,7 +22,7 @@ arrayIncludesShim.shim();
 
 let loading = Vue.prototype.$loading = new Vue(ProgressBar).$mount();
 let {App, router, store} = createApp();
-let {ssr, middleware: middConf = {}} = lavasConfig;
+let {build: {ssr}, middleware: middConf = {}} = lavasConfig;
 let app;
 
 // Sync with server side state.

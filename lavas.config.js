@@ -11,8 +11,8 @@ const isDev = process.env.NODE_ENV === 'development';
 const isProd = process.env.NODE_ENV === 'production';
 
 module.exports = {
-    ssr: true,
     build: {
+        ssr: true,
         path: BUILD_PATH,
         publicPath: '/',
         ssrCopy: isDev ? [] : [
@@ -46,7 +46,7 @@ module.exports = {
             'sw-register.js',
             '**/*.map'
         ],
-        appshellUrls: ['/appshell/main'],
+        appshellUrls: ['/appshell'],
         dontCacheBustUrlsMatching: /\.\w{8}\./
     }
 };

@@ -3,7 +3,7 @@
  * @author lavas
  */
 
-const LavasCore = require('./lib');
+const LavasCore = require('lavas');
 const express = require('express');
 const app = express();
 
