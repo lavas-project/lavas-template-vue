@@ -3,7 +3,7 @@
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
-import {getMiddlewares, getServerContext, execSeries, createNext} from './middleware';
+import {getMiddlewares, getServerContext, execSeries, createNext} from '@/.lavas/middleware';
 import lavasConfig from '@/.lavas/config';
 import {createApp} from './app';
 
