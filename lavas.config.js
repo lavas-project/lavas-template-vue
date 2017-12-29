@@ -12,6 +12,7 @@ const isProd = process.env.NODE_ENV === 'production';
 
 module.exports = {
     build: {
+        ssr: true,
         path: BUILD_PATH,
         publicPath: '/',
         ssrCopy: isDev ? [] : [
@@ -44,19 +45,14 @@ module.exports = {
             /iscroll/
         ]
     },
-    entry: [
-        {
-            name: 'main',
-            ssr: true,
-            mode: 'history',
-            base: '/',
-            routes: /^.*$/,
-            pageTransition: {
-                type: 'slide',
-                transitionClass: 'slide'
-            }
+    router: {
+        mode: 'history',
+        base: '/',
+        pageTransition: {
+            type: 'slide',
+            transitionClass: 'slide'
         }
-    ],
+    },
     serviceWorker: {
         swSrc: path.join(__dirname, 'core/service-worker.js'),
         swDest: path.join(BUILD_PATH, 'service-worker.js'),
