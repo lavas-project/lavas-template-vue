@@ -14,4 +14,4 @@ Lavas 工程模版基于 [vue-template](https://github.com/vuejs-templates/webpa
 
 ## Changelog
 
-详细的 Changelog 请看 [Release Notes](https://github.com/lavas-project/lavas-template/releases)
+详细的 Changelog 请看 [Release Notes](https://github.com/lavas-project/lavas-template-vue/releases)

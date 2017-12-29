@@ -1,5 +1,5 @@
 /**
- * @file appShell/appHeader module
+ * @file appShell/common module
  * @author lavas
  */
 
