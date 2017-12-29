@@ -9,8 +9,11 @@ import Meta from 'vue-meta';
 import {createRouter} from '@/.lavas/router';
 import {createStore} from '@/.lavas/store';
 import AppComponent from './App.vue';
+import Vuetify from 'vuetify';
 
 Vue.use(Meta);
+
+Vue.use(Vuetify);
 
 Vue.config.productionTip = false;
 

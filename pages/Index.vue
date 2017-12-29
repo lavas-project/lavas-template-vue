@@ -6,7 +6,22 @@
 </template>
 
 <script>
-function setState(store) {}
+import {mapActions} from 'vuex';
+function setState(store) {
+    store.dispatch('appShell/appHeader/setAppHeader', {
+        show: true,
+        title: 'Lavas',
+        showMenu: true,
+        showBack: false,
+        showLogo: false,
+        actions: [
+            {
+                icon: 'search',
+                route: '/search'
+            }
+        ]
+    });
+}
 
 export default {
     name: 'index',
@@ -20,6 +35,9 @@ export default {
     },
     async asyncData({store, route}) {
         setState(store);
+    },
+    activated() {
+        setState(this.$store);
     }
 };
 </script>

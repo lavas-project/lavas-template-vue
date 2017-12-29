@@ -12,7 +12,6 @@ const isProd = process.env.NODE_ENV === 'production';
 
 module.exports = {
     build: {
-        ssr: true,
         path: BUILD_PATH,
         publicPath: '/',
         ssrCopy: isDev ? [] : [
@@ -25,16 +24,39 @@ module.exports = {
             {
                 src: 'package.json'
             }
+        ],
+        /**
+         * alias for webpack
+         *
+         * @type {Object.<string, Object>}
+         */
+        alias: {
+            server: {
+                'iscroll/build/iscroll-lite$': path.join(__dirname, 'components/iscroll-ssr.js')
+            }
+        },
+        /**
+         * node externals
+         *
+         * @type {Array.<string|RegExp>}
+         */
+        nodeExternalsWhitelist: [
+            /iscroll/
         ]
     },
-    router: {
-        mode: 'history',
-        base: '/',
-        pageTransition: {
-            type: 'fade',
-            transitionClass: 'fade'
+    entry: [
+        {
+            name: 'main',
+            ssr: true,
+            mode: 'history',
+            base: '/',
+            routes: /^.*$/,
+            pageTransition: {
+                type: 'slide',
+                transitionClass: 'slide'
+            }
         }
-    },
+    ],
     serviceWorker: {
         swSrc: path.join(__dirname, 'core/service-worker.js'),
         swDest: path.join(BUILD_PATH, 'service-worker.js'),
@@ -46,7 +68,7 @@ module.exports = {
             'sw-register.js',
             '**/*.map'
         ],
-        appshellUrls: ['/appshell'],
+        appshellUrls: ['/appshell/main'],
         dontCacheBustUrlsMatching: /\.\w{8}\./
     }
 };

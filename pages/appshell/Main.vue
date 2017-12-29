@@ -3,7 +3,7 @@
 
 <script>
 export default {
-    name: 'appshell',
+    name: 'appshell-main',
     metaInfo: {
         title: 'Lavas',
         meta: [
