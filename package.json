@@ -17,7 +17,7 @@
     "es6-promise": "^4.1.1",
     "express": "^4.0.0",
     "fastclick": "^1.0.6",
-    "lavas": "^2.1.1",
+    "lavas": "~2.1.8",
     "normalize.css": "^7.0.0",
     "stoppable": "^1.0.4",
     "vuetify": "^0.17.5",
