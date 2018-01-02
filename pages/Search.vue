@@ -1,39 +1,39 @@
 <template>
-        <div class="app-search-page">
-            <header>
-                <v-btn light icon class="search-btn" @click.native="$router.go(-1)">
-                    <v-icon class="search-icon">arrow_back</v-icon>
-                </v-btn>
-                <form @submit.prevent="search">
-                    <input class="search-input" v-model="query" type="search" autocomplete="off" placeholder="请输入搜索词" autocapitalize="off" />
-                </form>
-                <v-btn light icon class="search-btn" @click.native="query = ''">
-                    <v-icon class="search-icon">close</v-icon>
-                </v-btn>
-            </header>
-            <div v-if="loading" class="search-loading">
-                <v-progress-circular indeterminate v-bind:size="70" class="primary--text"></v-progress-circular>
-            </div>
-            <div v-if="data && data.length" class="search-content">
-                <v-list two-line>
-                    <template v-for="(item, index) in data">
-                        <v-list-tile avatar ripple v-bind:key="item.title">
-                            <v-list-tile-content>
-                                <v-list-tile-title>{{ item.title }}</v-list-tile-title>
-                                <v-list-tile-sub-title class="grey--text text--darken-4">{{ item.headline }}</v-list-tile-sub-title>
-                                <v-list-tile-sub-title>{{ item.subtitle }}</v-list-tile-sub-title>
-                            </v-list-tile-content>
-                            <v-list-tile-action>
-                                <v-list-tile-action-text>{{ item.action }}</v-list-tile-action-text>
-                                <v-icon class="grey--text text--lighten-1">star_border</v-icon>
-                            </v-list-tile-action>
-                        </v-list-tile>
-                        <v-divider light v-if="index + 1 < data.length"></v-divider>
-                    </template>
-                </v-list>
-            </div>
+    <div class="app-search-page">
+        <header>
+            <v-btn light icon class="search-btn" @click.native="$router.go(-1)">
+                <v-icon class="search-icon">arrow_back</v-icon>
+            </v-btn>
+            <form @submit.prevent="search">
+                <input class="search-input" v-model="query" type="search" autocomplete="off" placeholder="请输入搜索词" autocapitalize="off" />
+            </form>
+            <v-btn light icon class="search-btn" @click.native="query = ''">
+                <v-icon class="search-icon">close</v-icon>
+            </v-btn>
+        </header>
+        <div v-if="loading" class="search-loading">
+            <v-progress-circular indeterminate v-bind:size="70" class="primary--text"></v-progress-circular>
         </div>
-    </template>
+        <div v-if="data && data.length" class="search-content">
+            <v-list two-line>
+                <template v-for="(item, index) in data">
+                    <v-list-tile avatar ripple v-bind:key="item.title">
+                        <v-list-tile-content>
+                            <v-list-tile-title>{{ item.title }}</v-list-tile-title>
+                            <v-list-tile-sub-title class="grey--text text--darken-4">{{ item.headline }}</v-list-tile-sub-title>
+                            <v-list-tile-sub-title>{{ item.subtitle }}</v-list-tile-sub-title>
+                        </v-list-tile-content>
+                        <v-list-tile-action>
+                            <v-list-tile-action-text>{{ item.action }}</v-list-tile-action-text>
+                            <v-icon class="grey--text text--lighten-1">star_border</v-icon>
+                        </v-list-tile-action>
+                    </v-list-tile>
+                    <v-divider light v-if="index + 1 < data.length"></v-divider>
+                </template>
+            </v-list>
+        </div>
+    </div>
+</template>
 
 <script>
 import {mapActions} from 'vuex';
