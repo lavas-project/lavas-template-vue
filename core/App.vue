@@ -20,20 +20,17 @@
                 :class="[pageTransitionClass]"
                 ></router-view>
         </transition>
-        <offline-toast></offline-toast>
         <update-toast></update-toast>
     </div>
 </template>
 
 <script>
 import {mapState} from 'vuex';
-import OfflineToast from '@/components/OfflineToast';
 import UpdateToast from '@/components/UpdateToast';
 
 export default {
     name: 'app',
     components: {
-        OfflineToast,
         UpdateToast
     },
     computed: {
