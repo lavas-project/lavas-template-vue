@@ -35,7 +35,6 @@
                     :class="[{'app-view-with-header': appHeaderShow}, pageTransitionClass]"
                     ></router-view>
             </transition>
-            <offline-toast></offline-toast>
             <update-toast></update-toast>
         </v-app>
     </div>
@@ -45,13 +44,11 @@
 import {mapState, mapActions} from 'vuex';
 import AppHeader from '@/components/AppHeader';
 import AppSidebar from '@/components/AppSidebar';
-import OfflineToast from '@/components/OfflineToast';
 import UpdateToast from '@/components/UpdateToast';
 
 export default {
     name: 'app',
     components: {
-        OfflineToast,
         UpdateToast,
         AppHeader,
         AppSidebar

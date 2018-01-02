@@ -54,12 +54,12 @@ $close-btn-height = 28px
     flex-direction row
     justify-content space-between
     align-items center
-    background-color #dc322f
+    background-color #333
     color #ffffff
     font-size 16px
     height $height
     line-height $height
-    padding 0 8px
+    padding 0 13px
     opacity 1
     transform translateY(0)
     z-index 1000
