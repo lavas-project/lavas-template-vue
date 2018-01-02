@@ -33,7 +33,7 @@ module.exports = {
          */
         alias: {
             server: {
-                'iscroll/build/iscroll-lite$': path.join(__dirname, 'components/iscroll-ssr.js')
+                'iscroll/build/iscroll-lite$': path.join(__dirname, 'core/iscroll-ssr.js')
             }
         },
         /**
