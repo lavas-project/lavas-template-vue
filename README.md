@@ -7,10 +7,22 @@
 ``` bash
 # 安装工程依赖
 npm install
+
+# 在本地启动调试 server
+npm run dev
+
+# 构建线上生产环境产物
+npm run build
+
+# 启动编译后的代码，注意，需要在 dist 目录中启动
+npm run start
+
+# 检查代码是否符合规范
+npm run lint
 ```
 
-Lavas 工程模版基于 [vue-template](https://github.com/vuejs-templates/webpack) 模版创建。
-如果想要了解具体如何玩转整个 Lavas 创建的 PWA 工程, 请查看 [vue-template 指南](http://vuejs-templates.github.io/webpack/) 和 [vue-loader 指南](http://vuejs.github.io/vue-loader)。
+Lavas 工程模版基于 [vue-template-vue](https://github.com/lavas-project/lavas-template-vue/) 模版的 `release-*` 分支创建。
+如果想要了解具体如何玩转整个 Lavas 创建的 PWA 工程, 请查看[Lavas 官网教程](https://lavas.baidu.com/guide)。
 
 ## Changelog
 
