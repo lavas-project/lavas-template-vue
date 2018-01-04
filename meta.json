@@ -64,14 +64,36 @@
             "regExp": "^([a-z_][0-9a-z_\\-]{0,213})?$",
             "invalidate": "项目名称请输入小写字母数字 - _ 等 url 安全字符",
             "description": "工程的项目名和文件夹名",
-            "jsonType": "string"
+            "jsonType": "string",
+            "locals": {
+                "zh_CN": {
+                    "name": "项目名称",
+                    "description": "工程的项目名称和文件夹名",
+                    "invalidate": "项目名称请输入小写字母数字 - _ 等 url 安全字符"
+                },
+                "en": {
+                    "name": "project name",
+                    "description": "Your project name",
+                    "invalidate": "Please enter letters, numbers, - , _"
+                }
+            }
         },
         "author": {
             "type": "string",
             "name": "项目作者",
             "default": "yourname",
             "description": "工程的作者，代码注释和 package.json 需要用到",
-            "jsonType": "string"
+            "jsonType": "string",
+            "locals": {
+                "zh_CN": {
+                    "name": "项目作者",
+                    "description": "工程的作者，代码注释和 package.json 需要用到"
+                },
+                "en": {
+                    "name": "project arthor",
+                    "description": "Your name"
+                }
+            }
         },
         "email": {
             "type": "string",
@@ -80,14 +102,36 @@
             "regExp": "^(\\w-*\\.*)+@(\\w-?)+(\\.\\w{2,})+$",
             "invalidate": "邮箱格式错误",
             "jsonType": "string",
-            "description": "作者邮箱"
+            "description": "作者邮箱",
+            "locals": {
+                "zh_CN": {
+                    "description": "作者邮箱",
+                    "invalidate": "邮箱格式错误"
+                },
+                "en": {
+                    "description": "Your email address",
+                    "invalidate": "email invalid"
+                }
+            }
         },
         "desc": {
             "type": "string",
             "name": "项目描述",
             "default": "这是一个 Lavas PWA 项目",
             "jsonType": "string",
-            "description": "工程的描述，用于 package.json 和 manifest.json 中的项目描述"
+            "description": "工程的描述，用于 package.json 和 manifest.json 中的项目描述",
+            "locals": {
+                "zh_CN": {
+                    "name": "项目描述",
+                    "default": "这是一个 Lavas PWA 项目",
+                    "description": "工程的描述，用于 package.json 和 manifest.json 中的项目描述"
+                },
+                "en": {
+                    "default": "This is a Lavas PWA project",
+                    "description": "For package.json",
+                    "name": "project description"
+                }
+            }
         }
     }
 }
