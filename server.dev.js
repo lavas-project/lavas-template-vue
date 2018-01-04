@@ -3,7 +3,7 @@
  * @author lavas
  */
 
-const LavasCore = require('lavas');
+const LavasCore = require('lavas-core-vue');
 const express = require('express');
 const stoppable = require('stoppable');
 
