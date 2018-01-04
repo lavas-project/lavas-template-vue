@@ -29,7 +29,7 @@
             "es6-promise": "^4.1.1",
             "fastclick": "^1.0.6",
             "express": "^4.0.0",
-            "lavas": "~2.1.8",
+            "lavas-core-vue": "^1.0.0",
             "normalize.css": "^7.0.0",
             "stoppable": "^1.0.4"
         },
