@@ -20,9 +20,6 @@ module.exports = {
                 src: 'server.prod.js'
             },
             {
-                src: 'node_modules'
-            },
-            {
                 src: 'package.json'
             }
         ]
