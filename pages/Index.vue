@@ -1,7 +1,11 @@
 <template>
     <div>
-        <h2>LAVAS</h2>
-        <h4>[ˈlɑ:vəz]</h4>
+        <div class="content">
+            <div>
+                <h2>LAVAS</h2>
+                <h4>[ˈlɑ:vəz]</h4>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -43,8 +47,13 @@ export default {
 </script>
 
 <style lang="stylus" scoped>
-h2
-    margin-top 70%
-    font-size 46px
-    font-weight 500
+.content
+    display flex
+    align-items center
+    justify-content center
+    height 100%
+    flex-wrap wrap
+    h2
+        font-size 46px
+        font-weight 500
 </style>
