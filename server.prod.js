@@ -11,7 +11,7 @@ let port = process.env.PORT || 3000;
 
 let core = new LavasCore(__dirname);
 
-module.exports = (options) => {
+module.exports = options => {
     core.init(process.env.NODE_ENV || 'production', false, options)
         .then(() => core.runAfterBuild())
         .then(() => {
