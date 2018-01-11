@@ -30,7 +30,7 @@ function startDevServer() {
         });
 }
 
-module.exports = (options) => {
+module.exports = options => {
     /**
      * every time lavas rebuild, stop current server first and restart
      */
