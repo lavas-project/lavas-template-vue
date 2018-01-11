@@ -11,23 +11,21 @@ let port = process.env.PORT || 3000;
 
 let core = new LavasCore(__dirname);
 
-module.exports = options => {
-    core.init(process.env.NODE_ENV || 'production')
-        .then(() => core.runAfterBuild())
-        .then(() => {
-            app.use(core.expressMiddleware());
-            app.listen(port, () => {
-                console.log('server started at localhost:' + port);
-            });
-        }).catch(err => {
-            console.log(err);
+core.init(process.env.NODE_ENV || 'production')
+    .then(() => core.runAfterBuild())
+    .then(() => {
+        app.use(core.expressMiddleware());
+        app.listen(port, () => {
+            console.log('server started at localhost:' + port);
         });
-
-    // catch promise error
-    process.on('unhandledRejection', (err, promise) => {
-        console.log('in unhandledRejection');
+    }).catch(err => {
         console.log(err);
-        // cannot redirect without ctx!
     });
-}
+
+// catch promise error
+process.on('unhandledRejection', (err, promise) => {
+    console.log('in unhandledRejection');
+    console.log(err);
+    // cannot redirect without ctx!
+});
 

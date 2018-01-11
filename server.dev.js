@@ -30,22 +30,26 @@ function startDevServer() {
         });
 }
 
-module.exports = options => {
-    /**
-     * every time lavas rebuild, stop current server first and restart
-     */
-    core.on('rebuild', () => {
-        core.close().then(() => {
-            server.stop();
-            startDevServer();
-        });
-    });
+let config;
 
-    core.init(process.env.NODE_ENV || 'development', true)
-        .then(() => startDevServer());
-
-    // catch promise error
-    process.on('unhandledRejection', (err) => {
-        console.log(err, 'in unhandledRejection');
-    });
+if (process.argv.length >= 3) {
+    config = process.argv[2];
 }
+
+/**
+ * every time lavas rebuild, stop current server first and restart
+ */
+core.on('rebuild', () => {
+    core.close().then(() => {
+        server.stop();
+        startDevServer();
+    });
+});
+
+core.init(process.env.NODE_ENV || 'development', true, {config})
+    .then(() => startDevServer());
+
+// catch promise error
+process.on('unhandledRejection', (err) => {
+    console.log(err, 'in unhandledRejection');
+});
