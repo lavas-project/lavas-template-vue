@@ -30,6 +30,12 @@ function startDevServer() {
         });
 }
 
+let config;
+
+if (process.argv.length >= 3) {
+    config = process.argv[2];
+}
+
 /**
  * every time lavas rebuild, stop current server first and restart
  */
@@ -40,7 +46,7 @@ core.on('rebuild', () => {
     });
 });
 
-core.init(process.env.NODE_ENV || 'development', true)
+core.init(process.env.NODE_ENV || 'development', true, {config})
     .then(() => startDevServer());
 
 // catch promise error
