@@ -32,6 +32,7 @@ function startDevServer() {
 
 let config;
 
+// fix https://github.com/lavas-project/lavas/issues/50
 if (process.argv.length >= 3 && process.argv[2] !== 'dev') {
     config = process.argv[2];
 }
