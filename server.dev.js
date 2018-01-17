@@ -32,7 +32,7 @@ function startDevServer() {
 
 let config;
 
-if (process.argv.length >= 3) {
+if (process.argv.length >= 3 && process.argv[2] !== 'dev') {
     config = process.argv[2];
 }
 
