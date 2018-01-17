@@ -50,6 +50,7 @@ core.init(process.env.NODE_ENV || 'development', true, {config})
     .then(() => startDevServer());
 
 // catch promise error
-process.on('unhandledRejection', (err) => {
-    console.log(err, 'in unhandledRejection');
+process.on('unhandledRejection', err => {
+    console.warn(err);
 });
+
