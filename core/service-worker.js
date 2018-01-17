@@ -4,6 +4,8 @@
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
+/* globals WorkboxSW */
+
 const workboxSW = new WorkboxSW({
     cacheId: 'lavas-cache',
     ignoreUrlParametersMatching: [/^utm_/],
