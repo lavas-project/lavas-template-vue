@@ -15,19 +15,13 @@
                 :name="pageTransitionEffect"
                 @before-enter="handleBeforeEnter"
                 @after-enter="handleAfterEnter">
-                <keep-alive>
+                <keep-alive v-if="$route.meta.keepAlive">
                     <router-view
                         :key="$route.fullPath"
-                        v-if="$route.meta.keepAlive"
                         class="app-view"
                         :class="[{'app-view-with-header': appHeaderShow}, pageTransitionClass]"
                         ></router-view>
                 </keep-alive>
-            </transition>
-            <transition
-                :name="pageTransitionEffect"
-                @before-enter="handleBeforeEnter"
-                @after-enter="handleAfterEnter">
                 <router-view
                     :key="$route.fullPath"
                     v-if="!$route.meta.keepAlive"
