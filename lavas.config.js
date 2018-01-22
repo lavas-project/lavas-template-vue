@@ -64,6 +64,5 @@ module.exports = {
         ],
         appshellUrl: '/appshell',
         dontCacheBustUrlsMatching: /\.\w{8}\./
-    },
-    proxyTable: {}
+    }
 };

@@ -15,7 +15,15 @@ if (process.argv.length >= 3 && process.argv[2] !== 'dev') {
     configPath = process.argv[2];
 }
 
-let lavasConfig = require(configPath);
+/**
+ * API Proxy Configuration
+ *
+ * @see https://github.com/chimurai/http-proxy-middleware
+ * @type {Object}
+ */
+const proxyTable = {
+    // add proxy configuration here
+};
 
 let port = process.env.PORT || 3000;
 let core = new LavasCore(__dirname);
@@ -30,13 +38,9 @@ function startDevServer() {
     core.build()
         .then(() => {
             // API Proxying during development
-            // see https://github.com/chimurai/http-proxy-middleware
-            let proxyTable = lavasConfig.proxyTable;
-            if (proxyTable) {
-                Object.keys(proxyTable).forEach(pattern => {
-                    app.use(pattern, proxy(proxyTable[pattern]));
-                });
-            }
+            Object.keys(proxyTable).forEach(pattern => {
+                app.use(pattern, proxy(proxyTable[pattern]));
+            });
 
             app.use(core.expressMiddleware());
 
@@ -66,8 +70,6 @@ if (process.argv.length >= 3 && process.argv[2] !== 'dev') {
 core.on('rebuild', () => {
     core.close().then(() => {
         server.stop();
-
-        lavasConfig = require(configPath);
         startDevServer();
     });
 });
