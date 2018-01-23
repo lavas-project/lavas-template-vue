@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="page-index">
         <h2>LAVAS</h2>
         <h4>[ˈlɑ:vəz]</h4>
     </div>
@@ -25,8 +25,16 @@ export default {
 </script>
 
 <style lang="stylus" scoped>
-h2
-    margin-top 70%
-    font-size 46px
-    font-weight 500
+
+.page-index
+    display flex
+    justify-content center
+    align-items center
+    flex-direction column
+
+    h2
+        font-size 46px
+        font-weight 500
+        margin-bottom 0
+
 </style>
