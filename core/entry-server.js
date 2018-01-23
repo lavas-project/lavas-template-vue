@@ -3,7 +3,7 @@
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
-import {getMiddlewares, getServerContext, execSeries, createNext} from '@/.lavas/middleware';
+// import {getMiddlewares, getServerContext, execSeries, createNext} from '@/.lavas/middleware';
 import lavasConfig from '@/.lavas/config';
 import {createApp} from './app';
 
@@ -44,36 +44,36 @@ export default function (context) {
 
             try {
                 // collect names of middlewares from lavas.config & matched components
-                let middlewareNames = [
-                    ...(middConf.all || []),
-                    ...(middConf.server || []),
-                    ...matchedComponents
-                        .filter(({middleware}) => !!middleware)
-                        .reduce((arr, {middleware}) => arr.concat(middleware), [])
-                ];
+                // let middlewareNames = [
+                //     ...(middConf.all || []),
+                //     ...(middConf.server || []),
+                //     ...matchedComponents
+                //         .filter(({middleware}) => !!middleware)
+                //         .reduce((arr, {middleware}) => arr.concat(middleware), [])
+                // ];
 
-                // get all the middlewares defined by user
-                const middlewares = await getMiddlewares(middlewareNames);
-                let matchedMiddlewares = middlewareNames.map(name => middlewares[name]);
+                // // get all the middlewares defined by user
+                // const middlewares = await getMiddlewares(middlewareNames);
+                // let matchedMiddlewares = middlewareNames.map(name => middlewares[name]);
 
-                // if a middleware is undefined, throw an error
-                let unknowMiddleware = middlewareNames.find(
-                    name => typeof middlewares[name] !== 'function');
-                if (unknowMiddleware) {
-                    reject({
-                        status: 500,
-                        message: `Unknown middleware ${unknowMiddleware}`
-                    });
-                }
+                // // if a middleware is undefined, throw an error
+                // let unknowMiddleware = middlewareNames.find(
+                //     name => typeof middlewares[name] !== 'function');
+                // if (unknowMiddleware) {
+                //     reject({
+                //         status: 500,
+                //         message: `Unknown middleware ${unknowMiddleware}`
+                //     });
+                // }
 
                 // add next() to context
-                context.next = createNext(context);
+                // context.next = createNext(context);
 
                 // create a new context for middleware, contains store, route etc.
-                const contextInMiddleware = getServerContext(context, app);
+                // const contextInMiddleware = getServerContext(context, app);
 
                 // exec middlewares
-                await execSeries(matchedMiddlewares, contextInMiddleware);
+                // await execSeries(matchedMiddlewares, contextInMiddleware);
 
                 // exec asyncData() defined in every matched component
                 await Promise.all(
