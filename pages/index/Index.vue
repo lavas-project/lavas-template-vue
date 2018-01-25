@@ -2,6 +2,7 @@
     <div>
         <h2>LAVAS</h2>
         <h4>[ˈlɑ:vəz]</h4>
+        <h4><lavas-link to="/detail/1" entry="detail">More</lavas-link></h4>
     </div>
 </template>
 

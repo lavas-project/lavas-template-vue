@@ -47,25 +47,19 @@ module.exports = {
             'sw-register.js',
             '**/*.map'
         ],
-        appshellUrl: '/[entryName]/appshell',
         dontCacheBustUrlsMatching: /\.\w{8}\./
     },
-    // entries: [{
-    //     name: 'index',
-    //     serviceWorker: {
-    //         swSrc: path.join(__dirname, 'entries/[entryName]/service-worker.js'),
-    //         swDest: path.join(BUILD_PATH, '[entryName]/service-worker.js'),
-    //         globDirectory: BUILD_PATH,
-    //         globPatterns: [
-    //             '**/*.{html,js,css,eot,svg,ttf,woff}'
-    //         ],
-    //         globIgnores: [
-    //             'sw-register.js',
-    //             '**/*.map'
-    //         ],
-    //         appshellUrl: '/[entryName]/appshell',
-    //         dontCacheBustUrlsMatching: /\.\w{8}\./
-    //     }
-    // }, 'detail']
-    entries: ['index', 'detail']
+    entries: [{
+        name: 'detail',
+        router: {
+            mode: 'history',
+            base: '/detail-entry/',
+            pageTransition: {
+                enable: false
+            }
+        },
+        urlReg: /^\/detail-entry\/detail/
+    }, 'index']
+    // for short
+    // entries: ['index', 'detail']
 };
