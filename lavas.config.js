@@ -37,29 +37,20 @@ module.exports = {
     },
     serviceWorker: {
         swSrc: path.join(__dirname, 'entries/[entryName]/service-worker.js'),
-        swDest: path.join(BUILD_PATH, '[entryName]/service-worker.js'),
+        swDest: path.join(BUILD_PATH, '[entryName]-service-worker.js'),
         // swPath: '/custom_path/', // specify custom serveice worker file's path, default is publicPath
         globDirectory: BUILD_PATH,
         globPatterns: [
+            // '[entryName].html',
             '**/*.{html,js,css,eot,svg,ttf,woff}'
         ],
         globIgnores: [
-            'sw-register.js',
+            '**/service-worker.js',
+            '**/sw-register.js',
             '**/*.map'
         ],
         dontCacheBustUrlsMatching: /\.\w{8}\./
     },
-    entries: [{
-        name: 'detail',
-        router: {
-            mode: 'history',
-            base: '/detail-entry/',
-            pageTransition: {
-                enable: false
-            }
-        },
-        urlReg: /^\/detail-entry\/detail/
-    }, 'index']
-    // for short
-    // entries: ['index', 'detail']
+    // you can also use serviceWorker config here
+    entries: ['detail', 'index']
 };
