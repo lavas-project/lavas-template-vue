@@ -37,7 +37,7 @@ module.exports = {
     },
     serviceWorker: {
         swSrc: path.join(__dirname, 'entries/[entryName]/service-worker.js'),
-        swDest: path.join(BUILD_PATH, '[entryName]-service-worker.js'),
+        swDest: path.join(BUILD_PATH, '[entryName]/service-worker.js'),
         // swPath: '/custom_path/', // specify custom serveice worker file's path, default is publicPath
         globDirectory: BUILD_PATH,
         globPatterns: [
