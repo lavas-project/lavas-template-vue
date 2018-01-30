@@ -15,17 +15,7 @@ module.exports = {
         ssr: false,
         path: BUILD_PATH,
         publicPath: '/',
-        ssrCopy: isDev ? [] : [
-            {
-                src: 'server.prod.js'
-            },
-            {
-                src: 'package.json'
-            }
-        ],
-        skeleton: {
-            enable: false
-        }
+        cssExtract: true
     },
     router: {
         mode: 'history',
@@ -52,5 +42,34 @@ module.exports = {
         dontCacheBustUrlsMatching: /\.\w{8}\./
     },
     // you can also use serviceWorker config here
-    entries: ['detail', 'index']
+    entries: [
+        {
+            name: 'detail',
+            skeleton: {
+                enable: true,
+                routes: [
+                    {
+                        path: '/detail/:id',
+                        componentPath: 'entries/detail/DetailSkeleton.vue'
+                    },
+                    {
+                        path: '*',
+                        componentPath: 'entries/detail/Skeleton.vue'
+                    }
+                ]
+            }
+        },
+        {
+            name: 'index',
+            skeleton: {
+                enable: true,
+                routes: [
+                    {
+                        path: '*',
+                        componentPath: 'entries/index/Skeleton.vue'
+                    }
+                ]
+            }
+        }
+    ]
 };
