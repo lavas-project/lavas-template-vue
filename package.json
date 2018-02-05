@@ -17,7 +17,7 @@
     "es6-promise": "^4.1.1",
     "express": "^4.0.0",
     "fastclick": "^1.0.6",
-    "lavas-core-vue": "1.0.6-rc.5",
+    "lavas-core-vue": "1.0.6-rc.6",
     "normalize.css": "^7.0.0",
     "stoppable": "^1.0.4"
   },
