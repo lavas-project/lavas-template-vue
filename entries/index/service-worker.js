@@ -4,17 +4,18 @@
  * @author *__ author __*{% if: *__ email __* %}(*__ email __*){% /if %}
  */
 
-/* globals WorkboxSW */
-
-const workboxSW = new WorkboxSW({
-    cacheId: 'lavas-index-cache',
-    ignoreUrlParametersMatching: [/^utm_/],
-    skipWaiting: true,
-    clientsClaim: true
+workbox.core.setCacheNameDetails({
+    prefix: 'lavas-cache-index',
+    suffix: 'v1',
+    precache: 'install-time',
+    runtime: 'run-time',
+    googleAnalytics: 'ga'
 });
 
-// Define precache injection point.
-workboxSW.precache([]);
+workbox.skipWaiting();
+workbox.clientsClaim();
+
+workbox.precaching.precacheAndRoute(self.__precacheManifest);
 
 /**
  * example runningCache with api

@@ -41,35 +41,6 @@ module.exports = {
         ],
         dontCacheBustUrlsMatching: /\.\w{8}\./
     },
-    // you can also use serviceWorker config here
-    entries: [
-        {
-            name: 'detail',
-            skeleton: {
-                enable: true,
-                routes: [
-                    {
-                        path: '/detail/:id',
-                        componentPath: 'entries/detail/DetailSkeleton.vue'
-                    },
-                    {
-                        path: '*',
-                        componentPath: 'entries/detail/Skeleton.vue'
-                    }
-                ]
-            }
-        },
-        {
-            name: 'index',
-            skeleton: {
-                enable: true,
-                routes: [
-                    {
-                        path: '*',
-                        componentPath: 'entries/index/Skeleton.vue'
-                    }
-                ]
-            }
-        }
-    ]
+    // indicate template html path for both SSR and SPA/MPA
+    templatePath: 'core/index.html.tmpl'
 };
