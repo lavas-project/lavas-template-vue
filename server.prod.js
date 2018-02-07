@@ -3,13 +3,13 @@
  * @author lavas
  */
 
-const LavasCore = require('lavas-core-vue');
-const express = require('express');
-const app = express();
+var LavasCore = require('lavas-core-vue');
+var express = require('express');
+var app = express();
 
-let port = process.env.PORT || 3000;
+var port = process.env.PORT || 3000;
 
-let core = new LavasCore(__dirname);
+var core = new LavasCore(__dirname);
 
 core.init(process.env.NODE_ENV || 'production')
     .then(() => core.runAfterBuild())

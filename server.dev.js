@@ -3,13 +3,13 @@
  * @author lavas
  */
 
-const LavasCore = require('lavas-core-vue');
-const express = require('express');
-const stoppable = require('stoppable');
-const proxy = require('http-proxy-middleware');
+var LavasCore = require('lavas-core-vue');
+var express = require('express');
+var stoppable = require('stoppable');
+var proxy = require('http-proxy-middleware');
 
 
-let configPath = './lavas.config.js';
+var configPath = './lavas.config.js';
 // fix https://github.com/lavas-project/lavas/issues/50
 if (process.argv.length >= 3 && process.argv[2] !== 'dev') {
     configPath = process.argv[2];
@@ -21,7 +21,7 @@ if (process.argv.length >= 3 && process.argv[2] !== 'dev') {
  * @see https://github.com/chimurai/http-proxy-middleware
  * @type {Object}
  */
-const proxyTable = {
+var proxyTable = {
     // proxy table example
     // '/api': {
     //     target: 'https://lavas.baidu.com',
@@ -29,10 +29,10 @@ const proxyTable = {
     // }
 };
 
-let port = process.env.PORT || 3000;
-let core = new LavasCore(__dirname);
-let app;
-let server;
+var port = process.env.PORT || 3000;
+var core = new LavasCore(__dirname);
+var app;
+var server;
 
 /**
  * start dev server
