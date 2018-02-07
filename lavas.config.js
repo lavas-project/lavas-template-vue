@@ -25,6 +25,8 @@ module.exports = {
             transitionClass: 'fade'
         }
     },
+    // indicate template html path for both SSR and SPA/MPA
+    templatePath: 'core/index.html.tmpl',
     serviceWorker: {
         swSrc: path.join(__dirname, 'entries/[entryName]/service-worker.js'),
         swDest: path.join(BUILD_PATH, '[entryName]/service-worker.js'),
@@ -41,6 +43,10 @@ module.exports = {
         ],
         dontCacheBustUrlsMatching: /\.\w{8}\./
     },
-    // indicate template html path for both SSR and SPA/MPA
-    templatePath: 'core/index.html.tmpl'
+    // Disable service worker in development mode.
+    development: {
+        serviceWorker: {
+            enable: false
+        }
+    }
 };
