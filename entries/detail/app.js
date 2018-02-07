@@ -4,14 +4,14 @@
  */
 
 import Vue from 'vue';
-import Meta from 'vue-meta';
+// import Meta from 'vue-meta';
 
 import {createRouter} from '@/.lavas/detail/router';
 import {createStore} from '@/.lavas/store';
 import LavasLink from '@/.lavas/LavasLink';
 import AppComponent from './App.vue';
 
-Vue.use(Meta);
+// Vue.use(Meta);
 Vue.component(LavasLink.name, LavasLink);
 
 Vue.config.productionTip = false;
