@@ -40,9 +40,9 @@ var server;
 function startDevServer() {
     app = express();
     core.build()
-        .then(() => {
+        .then(function () {
             // API Proxying during development
-            Object.keys(proxyTable).forEach(pattern => {
+            Object.keys(proxyTable).forEach(function (pattern) {
                 app.use(pattern, proxy(proxyTable[pattern]));
             });
 
@@ -52,11 +52,11 @@ function startDevServer() {
              * server.close() only stop accepting new connections,
              * we need to close existing connections with help of stoppable
              */
-            server = stoppable(app.listen(port, () => {
+            server = stoppable(app.listen(port, function () {
                 console.log('server started at localhost:' + port);
             }));
         })
-        .catch(err => {
+        .catch(function (err) {
             console.log(err);
         });
 }
@@ -64,18 +64,20 @@ function startDevServer() {
 /**
  * every time lavas rebuild, stop current server first and restart
  */
-core.on('rebuild', () => {
-    core.close().then(() => {
+core.on('rebuild', function () {
+    core.close().then(function () {
         server.stop();
         startDevServer();
     });
 });
 
 core.init(process.env.NODE_ENV || 'development', true, {configPath})
-    .then(() => startDevServer());
+    .then(funciton () {
+        startDevServer();
+    });
 
 // catch promise error
-process.on('unhandledRejection', err => {
+process.on('unhandledRejection', function (err) {
     console.warn(err);
 });
 
