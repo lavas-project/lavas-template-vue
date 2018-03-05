@@ -12,5 +12,5 @@ module.exports = {
     templateObject: {
         title: 'This is Index Page'
     }
-    // urlReg, serviceWorker and templatePath if needed
+    // serviceWorker and templatePath if needed
 };

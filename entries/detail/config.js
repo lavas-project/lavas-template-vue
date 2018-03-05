@@ -15,6 +15,9 @@ module.exports = {
     },
     templateObject: {
         title: 'This is Detail Page'
-    }
-    // urlReg, serviceWorker and templatePath if needed
+    },
+    // only support Lv1 dir name
+    pages: ['detail', 'info']
+
+    // serviceWorker and templatePath if needed
 };
