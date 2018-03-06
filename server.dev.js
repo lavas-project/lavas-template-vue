@@ -72,7 +72,7 @@ core.on('rebuild', function () {
 });
 
 core.init(process.env.NODE_ENV || 'development', true, {configPath})
-    .then(funciton () {
+    .then(function () {
         startDevServer();
     });
 
