@@ -3,13 +3,13 @@
  * @author lavas
  */
 
-const LavasCore = require('lavas-core-vue');
-const express = require('express');
-const stoppable = require('stoppable');
-const proxy = require('http-proxy-middleware');
+var LavasCore = require('lavas-core-vue');
+var express = require('express');
+var stoppable = require('stoppable');
+var proxy = require('http-proxy-middleware');
 
 
-let configPath = './lavas.config.js';
+var configPath = './lavas.config.js';
 // fix https://github.com/lavas-project/lavas/issues/50
 if (process.argv.length >= 3 && process.argv[2] !== 'dev') {
     configPath = process.argv[2];
@@ -21,7 +21,7 @@ if (process.argv.length >= 3 && process.argv[2] !== 'dev') {
  * @see https://github.com/chimurai/http-proxy-middleware
  * @type {Object}
  */
-const proxyTable = {
+var proxyTable = {
     // proxy table example
     // '/api': {
     //     target: 'https://lavas.baidu.com',
@@ -29,10 +29,10 @@ const proxyTable = {
     // }
 };
 
-let port = process.env.PORT || 3000;
-let core = new LavasCore(__dirname);
-let app;
-let server;
+var port = process.env.PORT || 3000;
+var core = new LavasCore(__dirname);
+var app;
+var server;
 
 /**
  * start dev server
@@ -40,9 +40,9 @@ let server;
 function startDevServer() {
     app = express();
     core.build()
-        .then(() => {
+        .then(function () {
             // API Proxying during development
-            Object.keys(proxyTable).forEach(pattern => {
+            Object.keys(proxyTable).forEach(function (pattern) {
                 app.use(pattern, proxy(proxyTable[pattern]));
             });
 
@@ -52,16 +52,16 @@ function startDevServer() {
              * server.close() only stop accepting new connections,
              * we need to close existing connections with help of stoppable
              */
-            server = stoppable(app.listen(port, () => {
+            server = stoppable(app.listen(port, function () {
                 console.log('server started at localhost:' + port);
             }));
         })
-        .catch(err => {
+        .catch(function (err) {
             console.log(err);
         });
 }
 
-let config;
+var config;
 
 // fix https://github.com/lavas-project/lavas/issues/50
 if (process.argv.length >= 3 && process.argv[2] !== 'dev') {
@@ -71,18 +71,20 @@ if (process.argv.length >= 3 && process.argv[2] !== 'dev') {
 /**
  * every time lavas rebuild, stop current server first and restart
  */
-core.on('rebuild', () => {
-    core.close().then(() => {
+core.on('rebuild', function () {
+    core.close().then(function () {
         server.stop();
         startDevServer();
     });
 });
 
 core.init(process.env.NODE_ENV || 'development', true, {configPath})
-    .then(() => startDevServer());
+    .then(function () {
+        startDevServer();
+    });
 
 // catch promise error
-process.on('unhandledRejection', err => {
+process.on('unhandledRejection', function (err) {
     console.warn(err);
 });
 

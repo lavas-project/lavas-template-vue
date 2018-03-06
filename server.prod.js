@@ -3,27 +3,29 @@
  * @author lavas
  */
 
-const LavasCore = require('lavas-core-vue');
-const express = require('express');
-const app = express();
+var LavasCore = require('lavas-core-vue');
+var express = require('express');
+var app = express();
 
-let port = process.env.PORT || 3000;
+var port = process.env.PORT || 3000;
 
-let core = new LavasCore(__dirname);
+var core = new LavasCore(__dirname);
 
 core.init(process.env.NODE_ENV || 'production')
-    .then(() => core.runAfterBuild())
-    .then(() => {
+    .then(function () {
+        core.runAfterBuild()
+    })
+    .then(function () {
         app.use(core.expressMiddleware());
-        app.listen(port, () => {
+        app.listen(port, function () {
             console.log('server started at localhost:' + port);
         });
-    }).catch(err => {
+    }).catch(function (err) {
         console.log(err);
     });
 
 // catch promise error
-process.on('unhandledRejection', (err, promise) => {
+process.on('unhandledRejection', function (err, promise) {
     console.log('in unhandledRejection');
     console.log(err);
     // cannot redirect without ctx!
