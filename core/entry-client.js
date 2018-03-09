@@ -22,7 +22,7 @@ arrayIncludesShim.shim();
 
 let loading = Vue.prototype.$loading = new Vue(ProgressBar).$mount();
 let {App, router, store} = createApp();
-let {build: {ssr}, middleware: middConf = {}} = lavasConfig;
+let {build: {ssr, cssExtract}, middleware: middConf = {}, skeleton: {enable: enableSkeleton, asyncCSS}} = lavasConfig;
 let app;
 
 // Sync with server side state.
@@ -89,9 +89,27 @@ if (!usingAppshell && ssr) {
     });
 }
 else {
+    /**
+     * Use async CSS in SPA to render skeleton faster.
+     * https://github.com/lavas-project/lavas/issues/73
+     *
+     * You can disable this feature by set`skeleton.asyncCSS = false` in lavas.config.js.
+     */
+    let enableAsyncCSS = enableSkeleton && asyncCSS && cssExtract;
+    window.mountLavas = () => {
+        // https://huangxuan.me/2017/07/12/upgrading-eleme-to-pwa/#fast-skeleton-painting-with-settimeout-hack
+        setTimeout(() => app.$mount('#app'), 0);
+    };
+
     // Fetch data in client side.
     handleAsyncData();
-    app = new App().$mount('#app');
+    app = new App();
+
+    // if style is ready, start mounting immediately
+    if (!enableAsyncCSS
+        || (enableAsyncCSS && window.STYLE_READY)) {
+        window.mountLavas();
+    }
 }
 
 function handleMiddlewares() {
