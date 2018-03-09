@@ -48,9 +48,7 @@ test.serial('it should run in development mode correctly', async t => {
 test.serial('it should run in production mode correctly', async t => {
     await core.init('production', true);
 
-    // switch to SPA mode
     core.config.build.ssr = false;
-    // disable stats
     core.config.build.stats = false;
     syncConfig(core, core.config);
 
