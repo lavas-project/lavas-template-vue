@@ -9,25 +9,17 @@
     "build": "lavas build",
     "start": "lavas start",
     "lint": "fecs ./ --rule --type 'vue,js,css'",
-    "test": "nyc ava"
+    "test": "ava"
   },
   "ava": {
     "concurrency": 1,
     "failFast": true,
     "files": [
-      "test/spa.test.js"
-    ],
-    "backupFiles": [
-      "test/spa.test.js"
+      "test/cases/*.test.js"
     ],
     "require": [
       "babel-register",
       "babel-polyfill"
-    ]
-  },
-  "nyc": {
-    "exclude": [
-      "test/**/*.js"
     ]
   },
   "dependencies": {
@@ -49,7 +41,6 @@
     "express": "^4.16.2",
     "http-proxy-middleware": "^0.17.4",
     "koa": "^2.5.0",
-    "nyc": "^11.4.1",
     "semver": "^5.5.0",
     "superkoa": "^1.0.3",
     "supertest": "^3.0.0"
