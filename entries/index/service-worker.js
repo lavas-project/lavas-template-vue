@@ -20,8 +20,8 @@ workbox.precaching.precacheAndRoute(self.__precacheManifest);
 /**
  * example runningCache with api
  */
-// workboxSW.router.registerRoute(/^https:\/\/lavas\.baidu\.com\/some\/api/,
-//     workboxSW.strategies.networkFirst());
+// workbox.routing.registerRoute(/^https:\/\/lavas\.baidu\.com\/some\/api/,
+//     workbox.strategies.networkFirst());
 
 
 /**
@@ -29,15 +29,14 @@ workbox.precaching.precacheAndRoute(self.__precacheManifest);
  * including maxAge, maxEntries
  * cacheableResponse is important for CDN
  */
-// workboxSW.router.registerRoute(/^https:\/\/cdn\.baidu\.com/i,
-//     workboxSW.strategies.cacheFirst({
+// workbox.routing.registerRoute(/^https:\/\/cdn\.baidu\.com/i,
+//     workbox.strategies.cacheFirst({
 //         cacheName: 'lavas-cache-images',
-//         cacheExpiration: {
-//             maxEntries: 100,
-//             maxAgeSeconds: 7 * 24 * 60 * 60
-//         },
-//         cacheableResponse: {
-//             statuses: [0, 200]
-//         }
+//         plugins: [
+//             new workbox.expiration.Plugin({
+//                 maxEntries: 100,
+//                 maxAgeSeconds: 7 * 24 * 60 * 60
+//             })
+//         ]
 //     })
 // );
