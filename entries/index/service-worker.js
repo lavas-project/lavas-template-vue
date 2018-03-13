@@ -36,6 +36,9 @@ workbox.precaching.precacheAndRoute(self.__precacheManifest);
 //             new workbox.expiration.Plugin({
 //                 maxEntries: 100,
 //                 maxAgeSeconds: 7 * 24 * 60 * 60
+//             }),
+//             new workbox.cacheableResponse.Plugin({
+//                 statuses: [0, 200]
 //             })
 //         ]
 //     })
