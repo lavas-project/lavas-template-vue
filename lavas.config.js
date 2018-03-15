@@ -12,7 +12,7 @@ const isProd = process.env.NODE_ENV === 'production';
 
 module.exports = {
     build: {
-        ssr: true,
+        ssr: false,
         path: BUILD_PATH,
         publicPath: '/',
         ssrCopy: isDev ? [] : [
