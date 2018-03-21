@@ -25,6 +25,9 @@ module.exports = {
             transitionClass: 'fade'
         }
     },
+    middleware: {
+        all: ['client']
+    },
     // indicate template html path for both SSR and SPA/MPA
     templatePath: 'core/index.html.tmpl',
     serviceWorker: {

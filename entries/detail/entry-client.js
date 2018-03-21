@@ -5,7 +5,7 @@
 
 import Vue from 'vue';
 import FastClick from 'fastclick';
-// import {getMiddlewares, execSeries, getClientContext} from '@/.lavas/detail/middleware';
+import {getMiddlewares, execSeries, getClientContext} from '@/.lavas/middleware';
 import lavasConfig from '@/.lavas/config';
 import {createApp} from './app';
 import ProgressBar from '@/components/ProgressBar';
@@ -68,7 +68,7 @@ Vue.mixin({
  * These guards must be added before new App().
  */
 
-// handleMiddlewares();
+handleMiddlewares();
 
 /**
  * When service-worker handles all navigation requests,
@@ -94,70 +94,70 @@ else {
     app = new App().$mount('#app');
 }
 
-// function handleMiddlewares() {
-//     router.beforeEach(async (to, from, next) => {
-//         // Avoid loop redirect with next(path)
-//         const fromPath = from.fullPath.split('#')[0];
-//         const toPath = to.fullPath.split('#')[0];
-//         if (fromPath === toPath) {
-//             return next();
-//         }
+function handleMiddlewares() {
+    router.beforeEach(async (to, from, next) => {
+        // Avoid loop redirect with next(path)
+        // const fromPath = from.fullPath.split('#')[0];
+        // const toPath = to.fullPath.split('#')[0];
+        // if (fromPath === toPath) {
+        //     return next();
+        // }
 
-//         let matchedComponents = router.getMatchedComponents(to);
+        // let matchedComponents = router.getMatchedComponents(to);
 
-//         // all + client + components middlewares
-//         let middlewareNames = [
-//             ...(middConf.all || []),
-//             ...(middConf.client || []),
-//             ...matchedComponents
-//                 .filter(({middleware}) => !!middleware)
-//                 .reduce((arr, {middleware}) => arr.concat(middleware), [])
-//         ];
+        // all + client + components middlewares
+        let middlewareNames = [
+            ...(middConf.all || []),
+            ...(middConf.client || [])
+            // ...matchedComponents
+            //     .filter(({middleware}) => !!middleware)
+            //     .reduce((arr, {middleware}) => arr.concat(middleware), [])
+        ];
 
-//         // get all the middlewares defined by user
-//         const middlewares = await getMiddlewares(middlewareNames);
+        // get all the middlewares defined by user
+        const middlewares = await getMiddlewares(middlewareNames);
 
-//         let unknowMiddleware = middlewareNames.find(name => typeof middlewares[name] !== 'function');
-//         if (unknowMiddleware) {
-//             throw new Error(`Unknown middleware ${unknowMiddleware}`);
-//         }
+        let unknowMiddleware = middlewareNames.find(name => typeof middlewares[name] !== 'function');
+        if (unknowMiddleware) {
+            throw new Error(`Unknown middleware ${unknowMiddleware}`);
+        }
 
-//         let nextCalled = false;
-//         const nextRedirect = opts => {
-//             if (loading.finish) {
-//                 loading.finish();
-//             }
-//             if (nextCalled) {
-//                 return;
-//             }
-//             nextCalled = true;
+        let nextCalled = false;
+        const nextRedirect = opts => {
+            if (loading.finish) {
+                loading.finish();
+            }
+            if (nextCalled) {
+                return;
+            }
+            nextCalled = true;
 
-//             if (opts.external) {
-//                 opts.query = stringify(opts.query);
-//                 opts.path = opts.path + (opts.query ? '?' + opts.query : '');
+            if (opts.external) {
+                opts.query = stringify(opts.query);
+                opts.path = opts.path + (opts.query ? '?' + opts.query : '');
 
-//                 window.location.replace(opts.path);
-//                 return next();
-//             }
-//             next(opts);
-//         };
+                window.location.replace(opts.path);
+                return next();
+            }
+            next(opts);
+        };
 
-//         // create a new context for middleware, contains store, route etc.
-//         let contextInMiddleware = getClientContext({
-//             to,
-//             from,
-//             store,
-//             next: nextRedirect
-//         }, app);
+        // create a new context for middleware, contains store, route etc.
+        let contextInMiddleware = getClientContext({
+            to,
+            from,
+            store,
+            next: nextRedirect
+        }, app);
 
-//         let matchedMiddlewares = middlewareNames.map(name => middlewares[name]);
-//         await execSeries(matchedMiddlewares, contextInMiddleware);
+        let matchedMiddlewares = middlewareNames.map(name => middlewares[name]);
+        await execSeries(matchedMiddlewares, contextInMiddleware);
 
-//         if (!nextCalled) {
-//             next();
-//         }
-//     });
-// }
+        if (!nextCalled) {
+            next();
+        }
+    });
+}
 
 function handleAsyncData() {
     router.beforeResolve((to, from, next) => {
