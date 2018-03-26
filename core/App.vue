@@ -2,19 +2,22 @@
     <div id="app">
         <transition
             :name="pageTransitionEffect">
-            <keep-alive v-if="$route.meta.keepAlive">
+            <div>
+                <keep-alive>
+                    <router-view
+                        :key="$route.fullPath"
+                        v-if="$route.meta.keepAlive"
+                        class="app-view"
+                        :class="[pageTransitionClass]"
+                        ></router-view>
+                </keep-alive>
                 <router-view
                     :key="$route.fullPath"
+                    v-if="!$route.meta.keepAlive"
                     class="app-view"
                     :class="[pageTransitionClass]"
                     ></router-view>
-            </keep-alive>
-            <router-view
-                :key="$route.fullPath"
-                v-if="!$route.meta.keepAlive"
-                class="app-view"
-                :class="[pageTransitionClass]"
-                ></router-view>
+            </div>
         </transition>
         <update-toast></update-toast>
     </div>
