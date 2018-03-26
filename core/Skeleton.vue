@@ -21,13 +21,6 @@ export default {
     100%
         transform skew(-20deg) translateX(70px)
 
-@-webkit-keyframes toplight-frame
-    0%
-        transform skew(-20deg) translateX(-70px)
-
-    100%
-        transform skew(-20deg) translateX(70px)
-
 .skeleton-wrapper
     img
         width 96px
@@ -46,6 +39,5 @@ export default {
         margin -50px 0 0 -10px
         background-color rgba(255,255,255,.5)
         animation 1s toplight-frame infinite
-        -webkit-animation 1s toplight-frame infinite
 
 </style>
