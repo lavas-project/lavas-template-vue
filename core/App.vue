@@ -19,7 +19,6 @@
                     :include="[...keepAlivePages]">
                     <router-view
                         :key="$route.fullPath"
-                        v-if="!$route.meta.keepAlive"
                         class="app-view"
                         :class="[{'app-view-with-header': appHeaderShow}, pageTransitionClass]"
                         ></router-view>
