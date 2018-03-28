@@ -15,22 +15,14 @@
                 :name="pageTransitionEffect"
                 @before-enter="handleBeforeEnter"
                 @after-enter="handleAfterEnter">
-                <div>
-                    <keep-alive>
-                        <router-view
-                            :key="$route.fullPath"
-                            v-if="$route.meta.keepAlive"
-                            class="app-view"
-                            :class="[{'app-view-with-header': appHeaderShow}, pageTransitionClass]"
-                            ></router-view>
-                    </keep-alive>
+                <keep-alive
+                    :include="[...keepAlivePages]">
                     <router-view
                         :key="$route.fullPath"
-                        v-if="!$route.meta.keepAlive"
                         class="app-view"
                         :class="[{'app-view-with-header': appHeaderShow}, pageTransitionClass]"
                         ></router-view>
-                </div>
+                </keep-alive>
             </transition>
             <update-toast></update-toast>
         </v-app>
@@ -42,6 +34,7 @@ import {mapState, mapActions} from 'vuex';
 import AppHeader from '@/components/AppHeader';
 import AppSidebar from '@/components/AppSidebar';
 import UpdateToast from '@/components/UpdateToast';
+import {keepAlivePages} from '@/.lavas/router';
 
 export default {
     name: 'app',
@@ -63,6 +56,11 @@ export default {
         pageTransitionClass() {
             return `transition-${this.pageTransitionType}`;
         }
+    },
+    data() {
+        return {
+            keepAlivePages
+        };
     },
     methods: {
         ...mapActions('appShell/appSidebar', [
