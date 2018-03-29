@@ -4,7 +4,6 @@
  */
 
 import Vue from 'vue';
-import FastClick from 'fastclick';
 import {getMiddlewares, execSeries, getClientContext} from '@/.lavas/middleware';
 import lavasConfig from '@/.lavas/config';
 import {createApp} from './app';
@@ -32,7 +31,6 @@ if (window.__INITIAL_STATE__) {
 
 // Add loading component.
 document.body.appendChild(loading.$el);
-FastClick.attach(document.body);
 
 Vue.mixin({
 
