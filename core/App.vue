@@ -18,7 +18,7 @@
                 <keep-alive
                     :include="[...keepAlivePages]">
                     <router-view
-                        :key="$route.fullPath"
+                        :key="routerViewKey"
                         class="app-view"
                         :class="[{'app-view-with-header': appHeaderShow}, pageTransitionClass]"
                         ></router-view>
@@ -55,10 +55,21 @@ export default {
 
         pageTransitionClass() {
             return `transition-${this.pageTransitionType}`;
+        },
+
+        // https://github.com/lavas-project/lavas/issues/119
+        routerViewKey() {
+            let {name, params} = this.$route;
+            let paramKeys = Object.keys(params);
+            if (paramKeys.length) {
+                return name + paramKeys.reduce((prev, cur) => prev + params[cur], '');
+            }
+            return null;
         }
     },
     data() {
         return {
+            // https://github.com/lavas-project/lavas/issues/112
             keepAlivePages
         };
     },
