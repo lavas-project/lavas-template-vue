@@ -65,7 +65,8 @@ Vue.mixin({
  * Add your custom router global guards here.
  * These guards must be added before new App().
  */
-
+// https://github.com/lavas-project/lavas/issues/121
+let isInitialRoute = true;
 handleMiddlewares();
 
 /**
@@ -113,11 +114,10 @@ else {
 function handleMiddlewares() {
     router.beforeEach(async (to, from, next) => {
         // Avoid loop redirect with next(path)
-        const fromPath = from.fullPath.split('#')[0];
-        const toPath = to.fullPath.split('#')[0];
-        if (fromPath === toPath) {
+        if (!isInitialRoute && to.path === from.path) {
             return next();
         }
+        isInitialRoute = false;
 
         let matchedComponents = router.getMatchedComponents(to);
 
