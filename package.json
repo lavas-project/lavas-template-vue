@@ -31,8 +31,7 @@
     "cross-env": "^5.1.1",
     "es6-promise": "^4.1.1",
     "express": "^4.0.0",
-    "fastclick": "^1.0.6",
-    "lavas-core-vue": "^1.1.5",
+    "lavas-core-vue": "^1.1.8",
     "normalize.css": "^7.0.0",
     "stoppable": "^1.0.4"
   },
@@ -45,7 +44,7 @@
     "supertest": "^3.0.0"
   },
   "engines": {
-    "node": ">= 5.0.0",
+    "node": ">= 6.9.0",
     "npm": ">= 3.0.0"
   },
   "browserslist": [

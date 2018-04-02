@@ -2,22 +2,14 @@
     <div id="app">
         <transition
             :name="pageTransitionEffect">
-            <div>
-                <keep-alive>
-                    <router-view
-                        :key="$route.fullPath"
-                        v-if="$route.meta.keepAlive"
-                        class="app-view"
-                        :class="[pageTransitionClass]"
-                        ></router-view>
-                </keep-alive>
+            <keep-alive
+                :include="[...keepAlivePages]">
                 <router-view
-                    :key="$route.fullPath"
-                    v-if="!$route.meta.keepAlive"
+                    :key="routerViewKey"
                     class="app-view"
                     :class="[pageTransitionClass]"
                     ></router-view>
-            </div>
+            </keep-alive>
         </transition>
         <update-toast></update-toast>
     </div>
@@ -26,6 +18,7 @@
 <script>
 import {mapState} from 'vuex';
 import UpdateToast from '@/components/UpdateToast';
+import {keepAlivePages} from '@/.lavas/router';
 
 export default {
     name: 'app',
@@ -40,7 +33,23 @@ export default {
 
         pageTransitionClass() {
             return `transition-${this.pageTransitionType}`;
+        },
+
+        // https://github.com/lavas-project/lavas/issues/119
+        routerViewKey() {
+            let {name, params} = this.$route;
+            let paramKeys = Object.keys(params);
+            if (paramKeys.length) {
+                return name + paramKeys.reduce((prev, cur) => prev + params[cur], '');
+            }
+            return null;
         }
+    },
+    data() {
+        return {
+            // https://github.com/lavas-project/lavas/issues/112
+            keepAlivePages
+        };
     }
 };
 </script>
