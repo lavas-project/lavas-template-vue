@@ -29,6 +29,11 @@ if (window.__INITIAL_STATE__) {
     store.replaceState(window.__INITIAL_STATE__);
 }
 
+// Don't let browser restore scroll position.
+if ('scrollRestoration' in window.history) {
+    window.history.scrollRestoration = 'manual';
+}
+
 // Add loading component.
 document.body.appendChild(loading.$el);
 
