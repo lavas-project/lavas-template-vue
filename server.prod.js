@@ -20,6 +20,7 @@ core.init(process.env.NODE_ENV || 'production')
         });
     }).catch(err => {
         console.log(err);
+        process.exit(1);
     });
 
 // catch promise error

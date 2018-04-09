@@ -48,10 +48,12 @@ core.on('rebuild', () => {
 });
 
 core.init(process.env.NODE_ENV || 'development', true, {config})
-    .then(() => startDevServer());
+    .then(() => startDevServer())
+    .catch((e) => {
+        process.exit(1);
+    });
 
 // catch promise error
 process.on('unhandledRejection', err => {
     console.warn(err);
 });
-

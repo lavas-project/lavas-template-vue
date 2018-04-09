@@ -4,7 +4,6 @@
  */
 
 import Vue from 'vue';
-import FastClick from 'fastclick';
 import {getMiddlewares, execSeries, getClientContext} from '@/.lavas/middleware';
 import lavasConfig from '@/.lavas/config';
 import {createApp} from './app';
@@ -22,7 +21,7 @@ arrayIncludesShim.shim();
 
 let loading = Vue.prototype.$loading = new Vue(ProgressBar).$mount();
 let {App, router, store} = createApp();
-let {build: {ssr}, middleware: middConf = {}} = lavasConfig;
+let {build: {ssr, cssExtract}, middleware: middConf = {}} = lavasConfig;
 let app;
 
 // Sync with server side state.
@@ -30,9 +29,13 @@ if (window.__INITIAL_STATE__) {
     store.replaceState(window.__INITIAL_STATE__);
 }
 
+// Don't let browser restore scroll position.
+if ('scrollRestoration' in window.history) {
+    window.history.scrollRestoration = 'manual';
+}
+
 // Add loading component.
 document.body.appendChild(loading.$el);
-FastClick.attach(document.body);
 
 Vue.mixin({
 
@@ -67,7 +70,8 @@ Vue.mixin({
  * Add your custom router global guards here.
  * These guards must be added before new App().
  */
-
+// https://github.com/lavas-project/lavas/issues/121
+let isInitialRoute = true;
 handleMiddlewares();
 
 /**
@@ -91,27 +95,27 @@ if (!usingAppshell && ssr) {
 else {
     // Fetch data in client side.
     handleAsyncData();
-    app = new App().$mount('#app');
+    app = new App();
+    setTimeout(() => app.$mount('#app'), 0);
 }
 
 function handleMiddlewares() {
     router.beforeEach(async (to, from, next) => {
         // Avoid loop redirect with next(path)
-        // const fromPath = from.fullPath.split('#')[0];
-        // const toPath = to.fullPath.split('#')[0];
-        // if (fromPath === toPath) {
-        //     return next();
-        // }
+        if (!isInitialRoute && to.path === from.path) {
+            return next();
+        }
+        isInitialRoute = false;
 
-        // let matchedComponents = router.getMatchedComponents(to);
+        let matchedComponents = router.getMatchedComponents(to);
 
         // all + client + components middlewares
         let middlewareNames = [
             ...(middConf.all || []),
-            ...(middConf.client || [])
-            // ...matchedComponents
-            //     .filter(({middleware}) => !!middleware)
-            //     .reduce((arr, {middleware}) => arr.concat(middleware), [])
+            ...(middConf.client || []),
+            ...matchedComponents
+                .filter(({middleware}) => !!middleware)
+                .reduce((arr, {middleware}) => arr.concat(middleware), [])
         ];
 
         // get all the middlewares defined by user
