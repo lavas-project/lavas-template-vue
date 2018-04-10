@@ -4,6 +4,7 @@
   "description": "*__desc__*",
   "author": "*__author__* <*__email__*>",
   "private": true,
+  "lavas": true,
   "scripts": {
     "dev": "lavas dev",
     "build": "lavas build",
