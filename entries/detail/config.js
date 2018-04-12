@@ -17,7 +17,11 @@ module.exports = {
         title: 'This is Detail Page'
     },
     // only support Lv1 dir name
-    pages: ['detail', 'info']
+    pages: ['detail', 'info'],
 
-    // serviceWorker and templatePath if needed
+    serviceWorker: {
+        swName: 'someName_detail_service_worker.js',
+        swRegisterName: 'someName_detail_sw_register.js',
+        scope: '/tb/mobile/detail'
+    }
 };
