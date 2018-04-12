@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="page-error">
         <p>{{ message }}</p>
     </div>
 </template>
@@ -9,7 +9,7 @@ export default {
     name: 'error',
     computed: {
         message() {
-            return this.$route.params.error || 'Oops! Something is not quite right o(╥﹏╥)o';
+            return this.$route.params.error || '您访问的路径不存在';
         }
     },
     created() {
@@ -23,3 +23,11 @@ export default {
     }
 };
 </script>
+
+<style lang="stylus" scoped>
+.page-error
+    display flex
+    justify-content center
+    align-items center
+    flex-direction column
+</style>
