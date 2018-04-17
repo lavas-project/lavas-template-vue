@@ -41,7 +41,12 @@
     "semver": "^5.5.0",
     "stoppable": "^1.0.4",
     "superkoa": "^1.0.3",
-    "supertest": "^3.0.0"
+    "supertest": "^3.0.0",
+
+    "autoprefixer": "^7.2.5",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-vue-app": "^1.3.1",
+    "stoppable": "^1.0.4"
   },
   "engines": {
     "node": ">= 6.9.0",
