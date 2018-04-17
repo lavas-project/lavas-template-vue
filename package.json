@@ -26,15 +26,10 @@
   "dependencies": {
     "array-includes": "^3.0.3",
     "array.prototype.find": "^2.0.4",
-    "autoprefixer": "^7.2.5",
-    "babel-polyfill": "^6.26.0",
-    "babel-preset-vue-app": "^1.3.1",
-    "cross-env": "^5.1.1",
     "es6-promise": "^4.1.1",
     "express": "^4.0.0",
     "lavas-core-vue": "^1.1.8",
-    "normalize.css": "^7.0.0",
-    "stoppable": "^1.0.4"
+    "normalize.css": "^7.0.0"
   },
   "devDependencies": {
     "ava": "^0.25.0",
@@ -42,7 +37,12 @@
     "koa": "^2.5.0",
     "semver": "^5.5.0",
     "superkoa": "^1.0.3",
-    "supertest": "^3.0.0"
+    "supertest": "^3.0.0",
+
+    "autoprefixer": "^7.2.5",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-vue-app": "^1.3.1",
+    "stoppable": "^1.0.4"
   },
   "engines": {
     "node": ">= 6.9.0",
