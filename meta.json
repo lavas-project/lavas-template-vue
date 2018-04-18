@@ -16,6 +16,7 @@
         "description": "*__desc__*",
         "author": "*__author__* <*__email__*>",
         "private": true,
+        "lavas": true,
         "scripts": {
             "dev": "lavas dev",
             "build": "lavas build",
@@ -25,18 +26,16 @@
         "dependencies": {
             "array-includes": "^3.0.3",
             "array.prototype.find": "^2.0.4",
-            "autoprefixer": "^7.2.5",
-            "babel-polyfill": "^6.26.0",
-            "babel-preset-vue-app": "^1.3.1",
-            "cross-env": "^5.1.1",
             "es6-promise": "^4.1.1",
             "lavas-core-vue": "^1.1.8",
-            "normalize.css": "^7.0.0",
-            "stoppable": "^1.0.4"
+            "normalize.css": "^7.0.0"
         },
         "devDependencies": {
+            "autoprefixer": "^7.2.5",
+            "babel-preset-vue-app": "^1.3.1",
             "express": "^4.16.2",
-            "http-proxy-middleware": "^0.17.4"
+            "http-proxy-middleware": "^0.17.4",
+            "stoppable": "^1.0.4"
         },
         "engines": {
           "node": ">= 6.9.0",
