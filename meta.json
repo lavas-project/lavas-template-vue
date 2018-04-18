@@ -31,7 +31,7 @@
             "babel-preset-vue-app": "^1.3.1",
             "cross-env": "^5.1.1",
             "es6-promise": "^4.1.1",
-            "lavas-core-vue": "^1.1.8",
+            "lavas-core-vue": "^1.1.11",
             "normalize.css": "^7.0.0",
             "stoppable": "^1.0.4",
             "vuetify": "^0.17.5",
