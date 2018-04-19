@@ -9,7 +9,7 @@
         "packageJsonAuthor": "*__ author __*<*__ email __*>"
     },
     "renderIgnores": [],
-    "exportsIgnores": ["test"],
+    "exportsIgnores": ["test", ".babelrc"],
     "exportsPackageJson": {
         "name": "*__name__*",
         "version": "0.0.1",
@@ -27,7 +27,7 @@
             "array-includes": "^3.0.3",
             "array.prototype.find": "^2.0.4",
             "es6-promise": "^4.1.1",
-            "lavas-core-vue": "^1.1.8",
+            "lavas-core-vue": "^1.1.11",
             "normalize.css": "^7.0.0"
         },
         "devDependencies": {
