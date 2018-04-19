@@ -102,7 +102,14 @@ else {
     let enableAsyncCSS = enableSkeleton && asyncCSS && cssExtract;
     window.mountLavas = () => {
         // https://huangxuan.me/2017/07/12/upgrading-eleme-to-pwa/#fast-skeleton-painting-with-settimeout-hack
-        setTimeout(() => app.$mount('#app'), 0);
+        setTimeout(() => {
+            let appRoot = document.querySelector('#app');
+            if (appRoot) {
+                appRoot.innerHTML = '';
+            }
+
+            app.$mount('#app');
+        }, 0);
     };
 
     // Fetch data in client side.
