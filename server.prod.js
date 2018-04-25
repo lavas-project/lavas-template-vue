@@ -11,7 +11,9 @@ var port = process.env.PORT || 3000;
 
 var core = new LavasCore(__dirname);
 
-core.init(process.env.NODE_ENV || 'production')
+process.env.NODE_ENV = 'production';
+
+core.init(process.env.NODE_ENV)
     .then(function () {
         core.runAfterBuild()
     })
