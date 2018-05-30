@@ -117,7 +117,7 @@ else {
     app = new App();
 
     // if style is ready, start mounting immediately
-    if (!enableAsyncCSS
+    if (ssr || !enableAsyncCSS
         || (enableAsyncCSS && window.STYLE_READY)) {
         window.mountLavas();
     }
