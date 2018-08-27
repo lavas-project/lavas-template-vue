@@ -34,6 +34,8 @@ var core = new LavasCore(__dirname);
 var app;
 var server;
 
+process.env.NODE_ENV = 'development';
+
 /**
  * start dev server
  */
@@ -78,7 +80,7 @@ core.on('rebuild', function () {
     });
 });
 
-core.init(process.env.NODE_ENV || 'development', true, {configPath})
+core.init(process.env.NODE_ENV, true, {configPath})
     .then(function () {
         startDevServer();
     });

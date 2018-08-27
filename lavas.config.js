@@ -51,18 +51,22 @@ module.exports = {
         }
     },
     serviceWorker: {
+        // If true, generate service-worker.js and sw-register.js
+        // Default to `false`
+        enable: true,
+
+        // Path of service worker template
         swSrc: path.join(__dirname, 'core/service-worker.js'),
+
+        // Path of generated service worker file
         swDest: path.join(BUILD_PATH, 'service-worker.js'),
-        // swPath: '/custom_path/', // specify custom serveice worker file's path, default is publicPath
-        globDirectory: BUILD_PATH,
-        globPatterns: [
-            '**/*.{html,js,css,eot,svg,ttf,woff}'
-        ],
-        globIgnores: [
-            'sw-register.js',
-            '**/*.map'
-        ],
-        appshellUrl: '/appshell',
-        dontCacheBustUrlsMatching: /\.\w{8}\./
+
+        // If true, `workbox.routing.registerNavigationRoute()` won't be generated
+        // Defaults to `false`
+        disableGenerateNavigationRoute: false,
+
+        // URL of appshell page
+        // ONLY works in SSR mode
+        appshellUrl: '/appshell'
     }
 };
