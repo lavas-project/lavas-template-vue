@@ -24,7 +24,7 @@
     </head>
     <body {{{ meta.bodyAttrs.text() }}}>
         <!--vue-ssr-outlet-->
-        << if (isProd) { >>
+        << if (isProd && config.serviceWorker.enable !== false) { >>
         <script>
             window.onload = function () {
                 var script = document.createElement('script');
