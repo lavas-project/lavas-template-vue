@@ -27,7 +27,8 @@
             "array-includes": "^3.0.3",
             "array.prototype.find": "^2.0.4",
             "es6-promise": "^4.1.1",
-            "lavas-core-vue": "^1.1.11",
+            "express": "^4.0.0",
+            "lavas-core-vue": "^1.2.0",
             "normalize.css": "^7.0.0"
         },
         "devDependencies": {
