@@ -29,8 +29,7 @@
     "es6-promise": "^4.1.1",
     "express": "^4.0.0",
     "lavas-core-vue": "^1.2.0",
-    "normalize.css": "^7.0.0",
-    "stoppable": "^1.0.4"
+    "normalize.css": "^7.0.0"
   },
   "devDependencies": {
     "autoprefixer": "^7.2.5",
