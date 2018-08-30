@@ -28,15 +28,9 @@
     "array.prototype.find": "^2.0.4",
     "es6-promise": "^4.1.1",
     "express": "^4.0.0",
-<<<<<<< 6fccc9580ec9a2aa5b267c98c4d8e005ec43e5a6
     "lavas-core-vue": "^1.2.0",
-    "normalize.css": "^7.0.0"
-=======
-    "fastclick": "^1.0.6",
-    "lavas-core-vue": "^1.1.5",
     "normalize.css": "^7.0.0",
     "stoppable": "^1.0.4"
->>>>>>> 更新 lavas-core-vue 的依赖版本
   },
   "devDependencies": {
     "autoprefixer": "^7.2.5",
