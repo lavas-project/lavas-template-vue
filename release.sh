@@ -28,4 +28,4 @@ for i in ${files[@]}; do
 done
 
 tar -zcvf template.tar.gz $file
-baidubce bos --put-object template.tar.gz bos://assets/lavas/appshell/templates.tar.gz
+baidubce bos --put-object template.tar.gz bos://assets/lavas/vue/appshell/templates.tar.gz
