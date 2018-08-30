@@ -9,7 +9,7 @@
         "packageJsonAuthor": "*__ author __*<*__ email __*>"
     },
     "renderIgnores": [],
-    "exportsIgnores": ["test", ".babelrc"],
+    "exportsIgnores": ["test", ".babelrc", "release.sh"],
     "exportsPackageJson": {
         "name": "*__name__*",
         "version": "0.0.1",
