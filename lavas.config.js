@@ -63,7 +63,7 @@ module.exports = {
 
         // If true, `workbox.routing.registerNavigationRoute()` won't be generated
         // Defaults to `false`
-        disableGenerateNavigationRoute: false,
+        disableGenerateNavigationRoute: true,
 
         // URL of appshell page
         // ONLY works in SSR mode
