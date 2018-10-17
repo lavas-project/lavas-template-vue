@@ -7,3 +7,4 @@ yarn-error.log*
 .lavas/
 .nyc_output
 template.tar.gz
+package-lock.json
