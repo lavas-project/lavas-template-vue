@@ -11,6 +11,8 @@
 
 <script>
 
+let refreshing = false
+
 export default {
     name: 'updateToast',
     props: {
@@ -25,16 +27,35 @@ export default {
         };
     },
     mounted() {
-        window.addEventListener('sw.update', this.handleUpdate);
+        window.addEventListener('sw.update', this.showUpdate);
+        if (navigator.serviceWorker) {
+            navigator.serviceWorker.addEventListener('controllerchange', this.handleSWChange);
+        }
     },
     beforeDestroy() {
-        window.removeEventListener('sw.update', this.handleUpdate);
+        window.removeEventListener('sw.update', this.showUpdate);
+        if (navigator.serviceWorker) {
+            navigator.serviceWorker.removeEventListener('controllerchange', this.handleSWChange);
+        }
     },
     methods: {
-        handleUpdate(event) {
+        showUpdate(event) {
             this.show = true;
         },
         handleRefresh() {
+            try {
+                navigator.serviceWorker.getRegistration().then(reg => {
+                    reg.waiting.postMessage('skipWaiting')
+                })
+            } catch (e) {
+                window.location.reload();
+            }
+        },
+        handleSWChange() {
+            if (refreshing) {
+                return
+            }
+            refreshing = true;
             window.location.reload();
         }
     }
