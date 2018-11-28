@@ -11,7 +11,7 @@
 
 <script>
 
-let refreshing = false
+let refreshing = false;
 
 export default {
     name: 'updateToast',
@@ -45,15 +45,15 @@ export default {
         handleRefresh() {
             try {
                 navigator.serviceWorker.getRegistration().then(reg => {
-                    reg.waiting.postMessage('skipWaiting')
-                })
+                    reg.waiting.postMessage('skipWaiting');
+                });
             } catch (e) {
                 window.location.reload();
             }
         },
         handleSWChange() {
             if (refreshing) {
-                return
+                return;
             }
             refreshing = true;
             window.location.reload();
