@@ -17,7 +17,7 @@
                 </v-btn>
                 <div v-if="showLogo" @click="handleClick('logo')">
                     <slot name="logo">
-                        <img v-if="logoIcon.src" :src="logoIcon.src" :alt="logoIcon.alt" class="app-header-icon"></img>
+                        <img v-if="logoIcon.src" :src="logoIcon.src" :alt="logoIcon.alt" class="app-header-icon">
                     </slot>
                 </div>
             </div>
